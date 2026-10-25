@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FutFox – Finish SBCs for less</title>
+<meta name="description" content="A free, read-only Chrome extension for the EA SPORTS FC 27 Web App. It finds the cheapest squad for an SBC from your own club and pre-fills market searches for the rest.">
+<meta name="theme-color" content="#0e0b1f">
+<meta property="og:title" content="FutFox – Finish SBCs for less">
+<meta property="og:description" content="Finish SBCs with the players you already own. Free and read-only.">
+<meta property="og:image" content="/assets/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/assets/site.webmanifest">
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/site.css">
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="fox" viewBox="0 0 256 256">
+    <path fill="#C6FF3D" d="M56 140L110.1 154.5L105.4 171.9L68.7 162.1ZM200 140L145.9 154.5L150.6 171.9L187.3 162.1Z"/>
+    <path fill="#8B5CF6" fill-rule="evenodd" d="M128 102L101.59 86.75L63.59 20.93L39 112.7L11.2 160.85L60.82 189.5L100.62 200.16L128 227.54L155.38 200.16L195.18 189.5L244.8 160.85L217 112.7L192.41 20.93L154.41 86.75ZM66.51 62.54L81.27 88.1L55.71 102.86ZM189.49 62.54L174.73 88.1L200.29 102.86ZM56 140L110.1 154.5L105.4 171.9L68.7 162.1ZM200 140L145.9 154.5L150.6 171.9L187.3 162.1Z"/>
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="click" viewBox="0 0 24 24"><path d="M6 3.5l12.5 7.2-5.6 1.5 3.4 5.9-2.6 1.5-3.4-5.9-4.3 3.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+</svg>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="FutFox home"><svg aria-hidden="true"><use href="#fox"/></svg>FutFox</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#safety">Safety</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/abouhilalbadr/futfox">GitHub</a>
+      <a class="btn btn-primary" href="#install">Install</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">For the EA SPORTS FC 27 Web App</p>
+        <h1>Finish SBCs with the players you already own.</h1>
+        <p class="lede">FutFox reads an SBC's requirements, searches your club and suggests the cheapest squad that meets every rule. When your club falls short, it opens the market search with the filters already set.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#install">Get it free for Chrome</a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="fineprint">Read-only. FutFox never buys, bids, lists or submits.</p>
+      </div>
+
+      <figure class="panel" aria-label="The FutFox panel with a solved SBC">
+        <div class="panel-head">
+          <span class="title"><svg aria-hidden="true"><use href="#fox"/></svg>FutFox</span>
+          <span class="close" aria-hidden="true">×</span>
+        </div>
+        <div class="panel-body">
+          <div class="field">
+            <span class="label">Challenge</span>
+            <span class="select">League and Nation Hybrid – 3 Leagues &amp; 2 Nations</span>
+          </div>
+          <div class="summary">
+            <span><strong>9</strong> from your club</span>
+            <span><strong>2</strong> to buy</span>
+            <span><strong>~2,452</strong> est. coins</span>
+            <span class="good">Meets the rules</span>
+          </div>
+          <ul class="squad">
+            <li><span class="pos">GK</span><strong>79</strong><span>Club player<span class="meta">LALIGA · Spain</span></span><span class="tag tag-untr">Untradeable</span></li>
+            <li><span class="pos">CB</span><strong>81</strong><span>Club player<span class="meta">Premier League · England</span></span><span class="tag tag-untr">Untradeable</span></li>
+            <li><span class="pos">CM</span><strong>80</strong><span>Club player<span class="meta">Bundesliga · Spain</span></span><span class="tag tag-untr">Untradeable</span></li>
+            <li><span class="pos">ST</span><strong>82</strong><span>Buy an 82-rated ST<span class="meta">LALIGA · England</span></span><span class="tag tag-buy">Search market</span></li>
+          </ul>
+          <p class="panel-note">Picked from your club. Nothing has been placed in your squad.</p>
+        </div>
+        <figcaption class="panel-note" style="padding: 0 18px 16px">Example based on a real test in the Web App. Your club gives different answers.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="how" class="section band">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Five steps, all inside the Web App</h2>
+        <p class="section-lede">These are the real FutFox panel screens, shown with an example club.</p>
+      </div>
+      <div class="how">
+        <ol class="how-steps">
+          <li class="how-step is-active">
+            <h3><button type="button" class="how-btn" aria-expanded="true" aria-controls="how-text-1" data-step="1"><span class="how-no" aria-hidden="true">1</span>Open the Web App</button></h3>
+            <p id="how-text-1">Sign in to the EA SPORTS FC 27 Web App in Chrome. The FutFox button appears in the bottom-right corner.</p>
+          </li>
+          <li class="how-step">
+            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-2" data-step="2"><span class="how-no" aria-hidden="true">2</span>Open an SBC and pick the challenge</button></h3>
+            <p id="how-text-2">Open an SBC set so the Web App loads its requirements, then press <strong>FutFox</strong>. Pick the challenge and check its rules under Requirements.</p>
+          </li>
+          <li class="how-step">
+            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-3" data-step="3"><span class="how-no" aria-hidden="true">3</span>Load your club</button></h3>
+            <p id="how-text-3">Press <strong>Load my club</strong> once per session. FutFox reads your club list the way the Club screen does, one page every few seconds.</p>
+          </li>
+          <li class="how-step">
+            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-4" data-step="4"><span class="how-no" aria-hidden="true">4</span>Find the cheapest squad</button></h3>
+            <p id="how-text-4">Press <strong>Find cheapest squad</strong>. You get the rating, chemistry and estimated coins, and each player is marked Untradeable or Club. By default your active squad and players rated 87 or more stay out.</p>
+          </li>
+          <li class="how-step">
+            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-5" data-step="5"><span class="how-no" aria-hidden="true">5</span>Buy what's missing, then submit yourself</button></h3>
+            <p id="how-text-5"><strong>Search market</strong> opens the Transfer Market with quality, position, league and nation already set. There's no rating filter there, so look for the rating FutFox shows. You press Search and Buy, then build and submit the squad in the SBC screen.</p>
+          </li>
+        </ol>
+        <div class="how-stage">
+          <img class="shot is-active" data-step="1" src="/assets/steps/step-1.png" width="300" height="150" alt="The FutFox button in the bottom-right corner of the Web App">
+          <img class="shot" data-step="2" src="/assets/steps/step-2.png" width="420" height="470" alt="The panel with a challenge selected and its five requirements listed">
+          <img class="shot" data-step="3" src="/assets/steps/step-3.png" width="420" height="330" alt="The Your club section while loading, with 182 players read so far">
+          <img class="shot" data-step="4" src="/assets/steps/step-4.png" width="420" height="640" alt="A suggested squad: 79 rating, 24 chemistry, about 1,193 coins, with one card to buy">
+          <img class="shot" data-step="5" src="/assets/steps/step-5.png" width="420" height="330" alt="A card to buy with its Search market button">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="safety" class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Safety</p>
+        <h2>It looks. You decide.</h2>
+        <p class="section-lede">FutFox only reads and suggests. Every coin you spend and every squad you submit is your own click.</p>
+      </div>
+      <div class="who">
+        <div class="who-card">
+          <h3 class="who-title who-fox">FutFox does</h3>
+          <ul>
+            <li><svg aria-hidden="true"><use href="#check"/></svg>Reads the SBC's requirements</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg>Reads your club, only when you press Load my club</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg>Suggests the cheapest squad that meets the rules</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg>Fills in the market search for cards you're missing</li>
+          </ul>
+        </div>
+        <div class="who-card who-you">
+          <h3 class="who-title">Only you do</h3>
+          <ul>
+            <li><svg aria-hidden="true"><use href="#click"/></svg>Buy and bid on cards</li>
+            <li><svg aria-hidden="true"><use href="#click"/></svg>List your cards on the market</li>
+            <li><svg aria-hidden="true"><use href="#click"/></svg>Move players and save squads</li>
+            <li><svg aria-hidden="true"><use href="#click"/></svg>Submit the SBC</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="section band">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Get FutFox</p>
+        <h2>Two ways to install</h2>
+      </div>
+      <div class="get-grid">
+        <article class="get-card">
+          <span class="pill pill-ok">Available now</span>
+          <h3>Install it yourself</h3>
+          <ol class="get-steps">
+            <li><a href="https://github.com/abouhilalbadr/futfox/archive/refs/heads/main.zip">Download the code</a> and unzip it.</li>
+            <li>Open <code>chrome://extensions</code> and turn on <strong>Developer mode</strong>.</li>
+            <li>Choose <strong>Load unpacked</strong>, pick the <code>futfox-main</code> folder and open the Web App.</li>
+          </ol>
+        </article>
+        <article class="get-card">
+          <span class="pill">Coming soon</span>
+          <h3>Chrome Web Store</h3>
+          <!-- TODO: link the store listing here once the extension is published. -->
+          <p>FutFox is on its way to the Chrome Web Store. From there it installs in one click and keeps itself up to date.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Questions</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Is FutFox free?</summary>
+          <p>Yes. There's no account, no subscription and no ads.</p>
+        </details>
+        <details>
+          <summary>Can it buy cards or submit the SBC for me?</summary>
+          <p>No. FutFox only suggests. It never buys, bids, lists cards, moves players, saves squads or submits an SBC. Every one of those is your own click.</p>
+        </details>
+        <details>
+          <summary>Is it allowed by EA?</summary>
+          <p>EA's terms don't allow unauthorised third-party software. FutFox doesn't automate anything and only reads what the Web App already shows you, but there is still a risk, so use it at your own risk.</p>
+        </details>
+        <details>
+          <summary>Are the coin prices exact?</summary>
+          <p>No. They're estimates based on each card's rating, used to compare squads. FutFox doesn't read market prices, so check the market before you buy.</p>
+        </details>
+        <details>
+          <summary>Why does loading my club take a while?</summary>
+          <p>FutFox reads your club one page every few seconds, the way the Club screen does, so it stays gentle with EA's servers. You only need to do it once per session.</p>
+        </details>
+        <details>
+          <summary>I play on PlayStation, Xbox or PC. Does it work for me?</summary>
+          <p>Yes. The Web App shows the same club you play with. FutFox runs in Chrome on a computer, not on a phone or console.</p>
+        </details>
+        <details>
+          <summary>Does it work in Edge, Brave or other browsers?</summary>
+          <p>It's built and tested in Chrome. Other Chromium browsers, such as Edge and Brave, can load it the same way, but they aren't tested.</p>
+        </details>
+        <details>
+          <summary>How do I update it?</summary>
+          <p>If you installed it yourself, download the code again, replace the <code>futfox-main</code> folder and press the reload icon on FutFox in <code>chrome://extensions</code>. The Chrome Web Store version will update itself.</p>
+        </details>
+        <details>
+          <summary>What does it collect?</summary>
+          <p>Nothing. There's no FutFox server. Your panel options are saved in your own browser. Read the <a href="/privacy">privacy policy</a>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="/site.js" defer></script>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>© 2026 FutFox · <a href="/privacy">Privacy</a> · <a href="https://github.com/abouhilalbadr/futfox">GitHub</a></span>
+    <span>Not affiliated with or endorsed by EA. EA SPORTS FC is a trademark of Electronic Arts.</span>
+  </div>
+</footer>
+</body>
+</html>

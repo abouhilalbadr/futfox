@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 256">
+  <g>  <g transform="rotate(45 128 118)">
+    <rect x="62" y="52" width="60" height="60" rx="8"/>
+    <rect x="130" y="52" width="60" height="60" rx="8"/>
+    <rect x="62" y="120" width="60" height="60" rx="8"/>
+    <rect x="148" y="138" width="60" height="60" rx="8"/>
+  </g></g>
+  <text x="280" y="168" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="120" letter-spacing="-2">FutCraft</text>
+</svg>

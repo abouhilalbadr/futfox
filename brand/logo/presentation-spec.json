@@ -1,0 +1,55 @@
+{
+  "brand": "FutFox",
+  "tagline": "The cheapest way to finish any SBC",
+  "brief": "A free, read-only Chrome extension for the EA SPORTS FC 27 Web App. It finds the cheapest squad for an SBC from your own club and pre-fills market searches for the rest. It never buys.",
+  "adjectives": [
+    "sly",
+    "sharp",
+    "gamer",
+    "trustworthy"
+  ],
+  "criteria": "Bold and gamer, clearly a fox, readable as a 16 px toolbar icon, distinct from FUT.GG (orange), FUTGenie (gold), FUTBIN (blue) and from MetaMask's faceted fox.",
+  "mockups": [
+    "app-icon",
+    "favicon-tab",
+    "website",
+    "social",
+    "sticker",
+    "tshirt"
+  ],
+  "nav": [
+    "How it works",
+    "Safety",
+    "Install"
+  ],
+  "brand_color": "#8B5CF6",
+  "tile_color": "#0E0B1F",
+  "greyscale": false,
+  "designer": "FutFox",
+  "round": 4,
+  "concepts": [
+    {
+      "name": "Bandit",
+      "symbol": "futfox-symbol.svg",
+      "lockup": "futfox-horizontal-light.svg",
+      "symbol_on_tile": "futfox-symbol.svg",
+      "symbol_on_dark": "futfox-symbol.svg",
+      "lockup_on_dark": "futfox-horizontal.svg",
+      "lockup_on_tile": "futfox-horizontal.svg",
+      "stacked_on_tile": "futfox-stacked.svg",
+      "stacked_on_dark": "futfox-stacked.svg",
+      "idea": "A fox in a bandit mask: the sly one who finds the cheap squad.",
+      "rationale": [
+        "Glowing lime eyes: the colour of a full chemistry link",
+        "Every edge on a 15\u00b0 grid; ear cut-outs drop out below 24 px",
+        "Violet and lime are unused by the big FUT sites"
+      ]
+    }
+  ],
+  "recommendation": "Bandit, in Fox Violet and Chem Lime on Night.",
+  "next_steps": [
+    "Rename done in the extension",
+    "Build the website",
+    "Trademark search before publishing"
+  ]
+}

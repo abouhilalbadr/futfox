@@ -1,0 +1,111 @@
+<!doctype html>
+<!--
+  Renders the real FutFox panel (src/) with an example club, for the website's "How it works" images.
+  Only the Web App layer (FutFox.fut) is replaced; the panel, rules and solver are the shipped code.
+  Use: scripts/capture-screens.sh, which opens this page once per step (#step-1 … #step-5).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; height: 100%; background: #1d2330; }
+</style>
+<script src="../../src/core/requirements.js"></script>
+<script src="../../src/core/rating.js"></script>
+<script src="../../src/core/chemistry.js"></script>
+<script src="../../src/core/solver.js"></script>
+</head>
+<body>
+<script>
+(function () {
+  const R = FutFox.requirements;
+  const POS = { 0: 'GK', 3: 'RB', 5: 'CB', 7: 'LB', 10: 'CDM', 14: 'CM', 18: 'CAM', 23: 'RW', 25: 'ST', 27: 'LW' };
+  const LEAGUES = { 13: 'Premier League', 53: 'LALIGA', 19: 'Bundesliga', 31: 'Serie A', 16: 'Ligue 1' };
+  const NATIONS = { 14: 'England', 45: 'Spain', 21: 'Germany', 27: 'Italy', 18: 'France', 54: 'Brazil' };
+
+  // An example club: [name, rating, position ids, league, nation, untradeable]
+  const CLUB = [
+    ['R. Okafor', 79, [0], 13, 14, true], ['D. Herrera', 77, [0], 53, 45, false],
+    ['T. Walsh', 80, [3], 13, 14, true], ['M. Ibáñez', 78, [3, 5], 53, 45, true],
+    ['L. Becker', 81, [5], 19, 21, true], ['C. Moreno', 80, [5], 53, 45, true], ['J. Patel', 79, [5, 7], 13, 14, true],
+    ['S. Navarro', 79, [7], 53, 45, true], ['K. Doyle', 77, [7], 13, 14, false],
+    ['P. Ruiz', 80, [14, 10], 53, 45, true], ['A. Fletcher', 81, [14], 13, 14, true], ['F. Lozano', 78, [14, 18], 53, 45, true],
+    ['O. Brandt', 82, [14], 19, 21, false], ['E. Castro', 79, [18, 14], 53, 54, true],
+    ['G. Rossi', 80, [23], 31, 27, true], ['N. Grant', 79, [23, 27], 13, 14, true],
+    ['I. Vidal', 81, [27], 53, 45, false], ['H. Laurent', 80, [25], 16, 18, true],
+    ['B. Schulz', 83, [25], 19, 21, false], ['Y. Diallo', 78, [27, 23], 16, 18, true],
+  ];
+  let id = 0;
+  const pool = CLUB.map(([name, rating, positions, leagueId, nationId, untradeable]) => {
+    id += 1;
+    const estimate = FutFox.solver.estimatePrice(rating);
+    return {
+      key: 'club:' + id, id, defId: 1000 + id, name, rating, quality: R.qualityOf(rating),
+      nationId, leagueId, clubId: leagueId * 100 + (id % 3), rarity: 0, isIcon: false, positions,
+      profile: FutFox.chemistry.DEFAULT_PROFILES.base, untradeable,
+      cost: untradeable ? Math.round(estimate * 0.15) : estimate, source: 'club',
+    };
+  });
+
+  const rule = (key, scope, values, label) => R.parseRequirement({ kvPairs: { _collection: { [key]: values } }, count: -1, scope }, label);
+  const RULES = [
+    rule(R.KEY.LEAGUE_COUNT, 2, [3], 'Leagues in Squad: Exactly 3'),
+    rule(R.KEY.NATION_COUNT, 1, [2], 'Nations in Squad: Max. 2'),
+    rule(R.KEY.SAME_LEAGUE_COUNT, 1, [5], 'Same League Count: Max. 5'),
+    rule(R.KEY.PLAYER_QUALITY, 0, [3], 'Player Quality: Min. Gold'),
+    rule(R.KEY.CHEMISTRY_POINTS, 0, [20], 'Total Chemistry: Min. 20'),
+  ];
+
+  let loading = null;
+  FutFox.fut = {
+    isReady: () => true,
+    getChallenges: () => [{ id: 1, setName: 'League and Nation Hybrid', name: '3 Leagues & 2 Nations', status: 'OPEN', challenge: {} }],
+    rulesFor: () => RULES,
+    slotsFor: () => [0, 3, 5, 5, 7, 14, 14, 14, 23, 25, 27].map((typeId) => ({ typeId })),
+    requiredSlotsFor: () => Array.from({ length: 11 }, (_, i) => i),
+    knownClubItems: () => (location.hash === '#step-3' ? new Array(182) : new Array(642)),
+    loadClub: (progress) => { progress(91); progress(182); return loading || (loading = new Promise(() => {})); },
+    clubPool: () => pool,
+    ratingUsesFloat: () => true,
+    chemThresholds: () => FutFox.chemistry.DEFAULT_THRESHOLDS,
+    eaChemistry: () => null,
+    leagueName: (lid) => LEAGUES[lid] || 'Any league',
+    nationName: (nid) => NATIONS[nid] || 'Any nation',
+    positionName: (t) => POS[t] || String(t),
+    openMarketSearch: () => {},
+  };
+})();
+</script>
+<script src="../../src/page/panel.js"></script>
+<script>
+(function () {
+  // A fixed seed keeps the pictures the same between runs.
+  const realNow = Date.now;
+  Date.now = () => 42;
+  FutFox.panel.create();
+  Date.now = realNow;
+  const shadow = document.getElementById('futfox-root').shadowRoot;
+  const $ = (sel) => shadow.querySelector(sel);
+  const button = (text) => [...shadow.querySelectorAll('button')].find((b) => b.textContent.trim() === text);
+  const heading = (text) => [...shadow.querySelectorAll('h2')].find((h) => h.textContent.trim() === text);
+  const step = location.hash;
+  if (step === '#step-1') return;
+  $('.toggle').click();
+  if (step === '#step-3') {
+    button('Load my club').click();
+    heading('Your club').scrollIntoView();
+  }
+  if (step === '#step-4' || step === '#step-5') {
+    const origNow = Date.now;
+    Date.now = () => 42;
+    button('Find cheapest squad').click();
+    setTimeout(() => {
+      Date.now = origNow;
+      if (step === '#step-4') heading('Suggested squad').scrollIntoView();
+      else [...shadow.querySelectorAll('button')].find((b) => b.textContent === 'Search market').closest('tr').scrollIntoView({ block: 'center' });
+    }, 400);
+  }
+})();
+</script>
+</body>
+</html>

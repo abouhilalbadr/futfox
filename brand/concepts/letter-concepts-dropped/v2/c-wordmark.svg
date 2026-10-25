@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 888 256" role="img"><title>FutCraft wordmark</title>
+  <g fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M44 200V90A36 36 0 0 1 80 54H88M20 112H74"/>
+    <path d="M132 104V158A42 42 0 0 0 216 158V104M216 150V200"/>
+    <path d="M282 64V168A32 32 0 0 0 314 200H320M260 112H312"/>
+    <path d="M442 120A48 48 0 1 0 442 184"/>
+    <path d="M486 104V200M486 152A48 48 0 0 1 534 104H540"/>
+    <circle cx="628" cy="152" r="48"/><path d="M676 104V200"/>
+    <path d="M739 200V90A36 36 0 0 1 775 54H783M813 64V168A32 32 0 0 0 845 200H851M719 112H835"/>
+  </g>
+  <circle cx="719" cy="112" r="24"/><circle cx="835" cy="112" r="24"/>
+</svg>

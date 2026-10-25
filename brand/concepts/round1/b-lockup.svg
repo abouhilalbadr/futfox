@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 256">
+  <g>  <path d="M62 40H194a22 22 0 0 1 22 22V80H96v52h72v36H96v48H62a22 22 0 0 1-22-22V62a22 22 0 0 1 22-22Z"/>
+  <path d="M108 92H216V194a22 22 0 0 1-22 22H108V180h72V120H108Z"/></g>
+  <text x="280" y="168" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-weight="700" font-size="120" letter-spacing="-2">FutCraft</text>
+</svg>
