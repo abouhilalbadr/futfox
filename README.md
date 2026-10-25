@@ -28,6 +28,10 @@ so use it at your own risk.
    league and nation set. The market screen has no rating filter, so look for the rating
    the panel shows. You press Search and Buy yourself.
 
+The **Gallery** tab lists your club cards by Gallery Item Score, with EA's collected mark and
+likely First Owner cards (EA reports one owner). It reads these from the club pages the Web App
+receives; press **Load my club** to read them all. FutFox doesn't read or fill your Gallery sets.
+
 Options:
 
 - **Keep my active squad players**: leaves out the players the app loaded at login

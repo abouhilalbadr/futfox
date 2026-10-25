@@ -1,7 +1,8 @@
 // Everything that touches the EA FC Web App lives here. It reads the app's in-memory
 // objects (services, repositories) and makes exactly one kind of request: the paged
-// club list, and only when the user presses "Load my club". It never bids, buys,
-// lists, saves or submits anything.
+// club list, and only when the user presses "Load my club". It also reads, without
+// changing them, the club list replies the Web App receives, for their Gallery marks.
+// It never bids, buys, lists, saves or submits anything.
 (function (root) {
   'use strict';
 
@@ -188,6 +189,52 @@
       .map((item) => toPlayer(item, prices));
   }
 
+  // ---- Gallery ----------------------------------------------------------------------
+
+  // Club list replies carry an isCollected mark that the Web App drops while parsing them.
+  // Watching the replies (the user's own Club pages and "Load my club") keeps it.
+  const CLUB_REPLY = /\/ut\/game\/[^/]+\/club(\?|$)/;
+  const gallerySeen = new Set();
+  const galleryCollected = new Set();
+
+  function onClubReply() {
+    if (this.status !== 200) return;
+    const reply = attempt(() => (this.responseType === 'json' ? this.response : JSON.parse(this.responseText)), null);
+    const { seen, collected } = H.gallery.readClubReply(reply);
+    for (const id of seen) gallerySeen.add(id);
+    for (const id of collected) galleryCollected.add(id);
+  }
+
+  function watchClubReplies() {
+    const XHR = root.XMLHttpRequest;
+    if (!XHR || XHR.prototype.futfoxWatched) return;
+    const open = XHR.prototype.open;
+    const send = XHR.prototype.send;
+    XHR.prototype.open = function (method, url) {
+      this.futfoxUrl = String(url);
+      return open.apply(this, arguments);
+    };
+    XHR.prototype.send = function () {
+      if (CLUB_REPLY.test(this.futfoxUrl || '')) this.addEventListener('load', onClubReply);
+      return send.apply(this, arguments);
+    };
+    XHR.prototype.futfoxWatched = true;
+  }
+  watchClubReplies();
+
+  function galleryCards() {
+    const cards = knownClubItems().map((item) => ({
+      id: item.id,
+      name: attempt(() => item._staticData.name, null) || `#${item.definitionId}`,
+      rating: item.rating,
+      score: item.sbsScore || 0,
+      owners: item.owners,
+      leagueId: item.leagueId,
+      nationId: item.nationId,
+    }));
+    return H.gallery.galleryRows(cards, { seen: gallerySeen, collected: galleryCollected });
+  }
+
   // ---- Game settings ----------------------------------------------------------------
 
   function ratingUsesFloat() {
@@ -256,7 +303,7 @@
 
   H.fut = {
     isReady, getChallenges, rulesFor, slotsFor, requiredSlotsFor,
-    knownClubItems, rememberActiveSquad, loadClub, clubPool, ratingUsesFloat, chemThresholds, eaChemistry,
+    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryCards, ratingUsesFloat, chemThresholds, eaChemistry,
     leagueName, nationName, positionName, openMarketSearch,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
