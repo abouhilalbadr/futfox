@@ -326,11 +326,12 @@
     function render() {
       const entry = selected();
       const known = H.fut.knownClubItems().length;
-      const tab = (view, label) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(settings.view === view), text: label, onclick: () => setView(view) });
-      panel.replaceChildren(
+      const view = H.fut.galleryEnabled ? settings.view : 'sbc';
+      const tab = (name, label) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(view === name), text: label, onclick: () => setView(name) });
+      panel.replaceChildren(...[
         el('header', {}, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: () => (panel.hidden = true) })]),
-        el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery')]),
-        settings.view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known)) : el('div', { class: 'body' }, [
+        H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery')]) : null,
+        view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known)) : el('div', { class: 'body' }, [
           el('section', {}, [
             el('h2', { text: 'Challenge' }),
             state.challenges.length
@@ -365,7 +366,7 @@
           renderResult(),
         ]),
         el('footer', { text: 'Read-only: FutFox never buys, bids, lists or submits. Not affiliated with EA.' }),
-      );
+      ].filter(Boolean));
     }
 
     render();
