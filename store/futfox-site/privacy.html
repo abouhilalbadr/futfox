@@ -29,35 +29,51 @@
   </div>
 </header>
 
-<main id="main" class="doc">
-  <div class="wrap">
+<main id="main" class="doc-band">
+  <div class="wrap doc-grid">
+    <nav class="toc" aria-label="On this page">
+      <p class="eyebrow">On this page</p>
+      <ol>
+        <li><a href="#runs">Where FutFox runs</a></li>
+        <li><a href="#reads">What it reads</a></li>
+        <li><a href="#stores">What it stores</a></li>
+        <li><a href="#never">What it never does</a></li>
+        <li><a href="#site">This website</a></li>
+        <li><a href="#contact">Changes and contact</a></li>
+      </ol>
+    </nav>
+    <article class="doc">
+    <p class="eyebrow">Privacy</p>
     <h1>Privacy policy</h1>
-    <p>Last updated 25 October 2026.</p>
-    <p>FutFox is a Chrome extension for the EA SPORTS FC 27 Ultimate Team Web App. It has no account, no server, no analytics and no ads. It does not collect, sell or share any personal data.</p>
+    <p class="doc-date">Last updated 25 October 2026</p>
+    <div class="callout">
+      <p><strong>The short version:</strong> FutFox is a Chrome extension for the EA SPORTS FC 27 Ultimate Team Web App. It has no account, no server, no analytics and no ads. It does not collect, sell or share any personal data.</p>
+    </div>
 
-    <h2>Where FutFox runs</h2>
+    <h2 id="runs">Where FutFox runs</h2>
     <p>FutFox only runs on the Web App's pages at <code>www.ea.com/…/ultimate-team/web-app/</code>. It does nothing on any other site.</p>
 
-    <h2>What it reads</h2>
+    <h2 id="reads">What it reads</h2>
     <ul>
       <li>The SBCs and requirements the Web App has already loaded.</li>
       <li>Your club list, only when you press <strong>Load my club</strong>. FutFox asks the Web App for it the same way the Club screen does, one page every few seconds. That request goes to EA, like everything else the Web App does.</li>
     </ul>
     <p>This information stays in the page while it's open. FutFox never sends it anywhere else.</p>
 
-    <h2>What it stores</h2>
+    <h2 id="stores">What it stores</h2>
     <p>Your panel options (for example "Keep players rated 87 and above") are saved in your browser's local storage for the Web App, under the key <code>futfox.settings</code>. Nothing else is stored. Clearing your browser's site data for ea.com removes it.</p>
 
-    <h2>What it never does</h2>
+    <h2 id="never">What it never does</h2>
     <p>FutFox never buys, bids, lists cards, moves players, saves squads or submits SBCs. It doesn't read your EA password or payment details.</p>
 
-    <h2>This website</h2>
+    <h2 id="site">This website</h2>
     <p>This site uses no cookies, analytics or trackers, and hosts its own font. It's hosted on Vercel, which keeps standard server logs, such as IP addresses, to run and protect the service.</p>
 
-    <h2>Changes and contact</h2>
+    <h2 id="contact">Changes and contact</h2>
     <p>If this policy changes, the date at the top changes with it. Questions: <a href="https://github.com/abouhilalbadr/futfox/issues">open an issue on GitHub</a>.</p>
 
     <p>FutFox is not affiliated with or endorsed by EA. EA SPORTS FC is a trademark of Electronic Arts.</p>
+    </article>
   </div>
 </main>
 
