@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copies the icons, font, share image and step screenshots into the website folder.
-# The copies are generated (git-ignored); run this before every site deploy.
+# The copies are committed, because Vercel deploys the site straight from GitHub; run
+# this again and commit the result whenever the logo, font or screenshots change.
 set -eu
 cd "$(dirname "$0")/.."
 site=store/futfox-site
