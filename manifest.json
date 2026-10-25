@@ -21,6 +21,7 @@
         "src/core/rating.js",
         "src/core/chemistry.js",
         "src/core/solver.js",
+        "src/core/gallery.js",
         "src/page/fut-adapter.js",
         "src/page/panel.js",
         "src/page/main.js"

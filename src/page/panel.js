@@ -52,11 +52,21 @@
     button.small { padding: 3px 8px; font-size: 11px; }
     .note { font-size: 11px; color: #9A93B8; }
     .error { color: #f08a7a; }
+    .tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
+    .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: #9A93B8; padding: 8px 10px; font-weight: 600; }
+    .tabs button[aria-selected="true"] { color: #fff; border-bottom-color: #8B5CF6; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button { padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+    .chips button[aria-pressed="true"] { background: #8B5CF6; border-color: #8B5CF6; color: #fff; font-weight: 700; }
+    td.score { text-align: right; font-weight: 700; white-space: nowrap; }
+    td.marks { text-align: right; }
+    .marks .tag { display: inline-block; margin: 2px 0 2px 4px; }
+    .tag.owner { background: #2A1F4D; color: #C4B1FF; }
     footer { padding: 10px 16px; border-top: 1px solid #2A2445; font-size: 11px; color: #9A93B8; }
   `;
 
   function loadSettings() {
-    const defaults = { keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false };
+    const defaults = { keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc' };
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
     } catch (e) {
@@ -115,7 +125,7 @@
     document.body.append(host);
 
     const settings = loadSettings();
-    const state = { challenges: [], selectedId: null, result: null, loading: false, error: null, solving: false };
+    const state = { challenges: [], selectedId: null, result: null, loading: false, error: null, solving: false, galleryFilter: 'all', galleryLimit: 50 };
 
     const toggle = el('button', { class: 'toggle', type: 'button' }, [foxIcon(), 'FutFox']);
     const panel = el('aside', { class: 'panel', hidden: true, 'aria-label': 'FutFox' });
@@ -253,12 +263,74 @@
       ]);
     }
 
+    function clubSection(known) {
+      return el('section', {}, [
+        el('h2', { text: 'Your club' }),
+        el('p', { class: 'muted', text: state.loading ? `Loading… ${state.loadedCount || 0} players so far` : `${known} players known` }),
+        el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Load my club', disabled: state.loading, onclick: loadClub })]),
+        el('p', { class: 'note', text: 'Reads your club list the same way the Club screen does, one page every few seconds.' }),
+      ]);
+    }
+
+    const GALLERY_FILTERS = [['all', 'All'], ['collected', 'Collected'], ['unmarked', 'Not marked'], ['firstOwner', 'First owner']];
+
+    function renderGallery(known) {
+      const rows = H.fut.galleryCards();
+      const counts = H.gallery.countByFilter(rows);
+      const shown = H.gallery.filterRows(rows, state.galleryFilter);
+      const visible = shown.slice(0, state.galleryLimit);
+
+      const chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Show' }, GALLERY_FILTERS.map(([key, label]) =>
+        el('button', {
+          type: 'button',
+          'aria-pressed': String(state.galleryFilter === key),
+          text: `${label} ${counts[key].toLocaleString('en-US')}`,
+          onclick: () => { state.galleryFilter = key; state.galleryLimit = 50; render(); },
+        })));
+
+      const table = el('table', {}, [el('tbody', {}, visible.map((row) => el('tr', {}, [
+        el('td', { class: 'r', text: String(row.rating) }),
+        el('td', {}, [el('span', { class: 'name', text: row.name }), el('span', { class: 'meta', text: `${H.fut.leagueName(row.leagueId)} · ${H.fut.nationName(row.nationId)}` })]),
+        el('td', { class: 'score', title: 'Gallery Item Score', text: coins(row.score) }),
+        el('td', { class: 'marks' }, [
+          row.collected ? el('span', { class: 'tag untr', text: 'Collected' }) : null,
+          row.firstOwner ? el('span', { class: 'tag owner', title: 'EA reports one owner, so you most likely packed it', text: '1st owner' }) : null,
+        ]),
+      ])))]);
+
+      return [
+        el('section', {}, [
+          el('h2', { text: 'Gallery' }),
+          el('p', { class: 'note', text: "Each club card's Gallery Item Score, EA's collected mark and likely First Owner cards, highest score first. FutFox doesn't read or fill your Gallery sets: build those in the game." }),
+          chips,
+          shown.length
+            ? table
+            : el('p', { class: 'muted', text: rows.length ? 'No cards match this filter.' : 'No club cards yet. Press Load my club.' }),
+          shown.length > visible.length
+            ? el('div', { class: 'row' }, [
+                el('span', { class: 'muted', text: `Showing ${visible.length} of ${shown.length}` }),
+                el('button', { class: 'small', type: 'button', text: 'Show 50 more', onclick: () => { state.galleryLimit += 50; render(); } }),
+              ])
+            : null,
+          el('p', { class: 'note', text: 'Collected marks come from the club pages FutFox has read, so press Load my club to see them all. "1st owner" means EA reports one owner; EA doesn\'t say for certain who packed a card.' }),
+        ]),
+        clubSection(known),
+      ];
+    }
+
+    function setView(view) {
+      setSetting('view', view);
+      render();
+    }
+
     function render() {
       const entry = selected();
       const known = H.fut.knownClubItems().length;
+      const tab = (view, label) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(settings.view === view), text: label, onclick: () => setView(view) });
       panel.replaceChildren(
         el('header', {}, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: () => (panel.hidden = true) })]),
-        el('div', { class: 'body' }, [
+        el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery')]),
+        settings.view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known)) : el('div', { class: 'body' }, [
           el('section', {}, [
             el('h2', { text: 'Challenge' }),
             state.challenges.length
@@ -278,12 +350,7 @@
                 })),
               ])
             : null,
-          el('section', {}, [
-            el('h2', { text: 'Your club' }),
-            el('p', { class: 'muted', text: state.loading ? `Loading… ${state.loadedCount || 0} players so far` : `${known} players known` }),
-            el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Load my club', disabled: state.loading, onclick: loadClub })]),
-            el('p', { class: 'note', text: 'Reads your club list the same way the Club screen does, one page every few seconds.' }),
-          ]),
+          clubSection(known),
           el('section', {}, [
             el('h2', { text: 'Options' }),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-keep', type: 'checkbox', checked: settings.keepActiveSquad, onchange: (e) => setSetting('keepActiveSquad', e.target.checked) }), 'Keep my active squad players']),
