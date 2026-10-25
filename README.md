@@ -71,7 +71,8 @@ plain scripts (they attach to `window.FutFox`).
 The site lives in `store/futfox-site` (home page and privacy policy, plain HTML and CSS).
 `scripts/build-site.sh` copies the icons, a Latin subset of the Inter font, the share image and
 the step screenshots (made from the real panel by `scripts/capture-screens.sh`) into `store/futfox-site/assets` (generated, git-ignored). Run it before each deploy,
-then deploy the folder on Vercel with `store/futfox-site` as the project root; `vercel.json` turns
+then deploy the folder with `vercel deploy --prod` from `store/futfox-site` (live at
+https://futfox-site.vercel.app); `vercel.json` turns
 on clean URLs so `/privacy` serves `privacy.html`.
 
 ## Credits
