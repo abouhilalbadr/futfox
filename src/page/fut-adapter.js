@@ -3,6 +3,9 @@
 // club list, and only when the user presses "Load my club". It also reads, without
 // changing them, the club list replies the Web App receives, for their Gallery marks.
 // It never bids, buys, lists, saves or submits anything.
+//
+// The Gallery view is switched off (GALLERY_ENABLED) until FutFox has Gallery set data;
+// while it is off, club replies are not watched.
 (function (root) {
   'use strict';
 
@@ -191,6 +194,9 @@
 
   // ---- Gallery ----------------------------------------------------------------------
 
+  // Off until FutFox can show Gallery sets: card scores alone don't help plan a set.
+  const GALLERY_ENABLED = false;
+
   // Club list replies carry an isCollected mark that the Web App drops while parsing them.
   // Watching the replies (the user's own Club pages and "Load my club") keeps it.
   const CLUB_REPLY = /\/ut\/game\/[^/]+\/club(\?|$)/;
@@ -220,7 +226,7 @@
     };
     XHR.prototype.futfoxWatched = true;
   }
-  watchClubReplies();
+  if (GALLERY_ENABLED) watchClubReplies();
 
   function galleryCards() {
     const cards = knownClubItems().map((item) => ({
@@ -303,7 +309,7 @@
 
   H.fut = {
     isReady, getChallenges, rulesFor, slotsFor, requiredSlotsFor,
-    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryCards, ratingUsesFloat, chemThresholds, eaChemistry,
+    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, ratingUsesFloat, chemThresholds, eaChemistry,
     leagueName, nationName, positionName, openMarketSearch,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
