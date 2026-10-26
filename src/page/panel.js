@@ -9,7 +9,7 @@
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; }
-    .toggle { position: fixed; right: 16px; bottom: 16px; z-index: 2147483000; border: 0; border-radius: 999px;
+    .toggle { position: fixed; right: 24px; bottom: 24px; z-index: 2147483000; border: 0; border-radius: 999px;
       padding: 8px 16px 8px 10px; font: 700 14px/1 system-ui, sans-serif; letter-spacing: .04em; cursor: pointer;
       display: flex; align-items: center; gap: 8px; background: #0E0B1F; color: #fff; box-shadow: 0 0 0 1px #8B5CF6, 0 4px 14px rgba(0,0,0,.35); }
     .fox { width: 24px; height: 24px; flex: none; }
