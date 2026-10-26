@@ -94,20 +94,38 @@ h1, h2, h3 { text-wrap: balance; }
 .panel-head .title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
 .panel-head svg { width: 26px; height: 26px; }
 .panel-head .close { color: var(--muted); font-size: 20px; line-height: 1; }
+.panel-tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 600; font-size: 14px; }
+.panel-tabs span { display: flex; align-items: center; gap: 8px; padding: 10px 8px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.panel-tabs .is-on { color: var(--text); border-bottom-color: var(--violet); }
+.panel-tabs img { width: 18px; height: 18px; }
 .panel-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 .label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .select { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 10px; }
 .summary { display: flex; flex-wrap: wrap; gap: 6px 16px; background: var(--surface); border-radius: 10px; padding: 10px 12px; font-variant-numeric: tabular-nums; }
 .summary strong { font-size: 15px; }
+.summary span { display: inline-flex; align-items: baseline; gap: 4px; }
+.summary .coin { width: 14px; height: 14px; align-self: center; }
 .good { color: var(--ok); }
 .squad { list-style: none; margin: 0; padding: 0; }
 .squad li {
-  display: grid; grid-template-columns: 36px 28px minmax(0, 1fr) auto; gap: 8px; align-items: center;
+  display: grid; grid-template-columns: 30px 30px 24px minmax(0, 1fr) auto auto; gap: 8px; align-items: center;
   padding: 8px 0; border-bottom: 1px solid var(--row-line);
 }
 .squad li:last-child { border-bottom: 0; }
 .pos { color: var(--muted); font-size: 11px; }
+.chem { color: var(--lime); font-size: 14px; letter-spacing: -2px; }
+/* A small card in the game's shape, as the panel draws it in each squad row. */
+.fc {
+  position: relative; display: block; width: 30px; aspect-ratio: 576 / 800;
+  clip-path: polygon(50% 0, 63% 3.5%, 100% 5%, 100% 90%, 50% 100%, 0 90%, 0 5%, 37% 3.5%);
+  background: linear-gradient(160deg, #6e4bd8, #241a4d); color: var(--text);
+}
+.fc-gold { background: linear-gradient(160deg, #f3d77a, #c9a64a); color: #2b2210; }
+.fc-totw { background: linear-gradient(160deg, #3b3553, #121019); color: #e8c45a; }
+.fc-buy { background: var(--line); }
+.fc svg { position: absolute; left: 18%; bottom: 22%; width: 64%; height: auto; aspect-ratio: 1; fill: currentColor; opacity: 0.45; }
+.fc-buy svg { display: none; }
 .meta { display: block; color: var(--muted); font-size: 11px; }
 .tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 999px; background: var(--line); color: var(--text-soft); white-space: nowrap; }
 .tag-untr { background: var(--ok-bg); color: var(--ok); }
@@ -115,8 +133,9 @@ h1, h2, h3 { text-wrap: balance; }
 .panel-note { margin: 0; color: var(--muted); font-size: 11px; }
 @media (max-width: 520px) {
   .panel-body { padding: 14px; }
-  .squad li { grid-template-columns: 30px 26px minmax(0, 1fr); row-gap: 6px; }
-  .squad li > :last-child { grid-column: 3; justify-self: start; }
+  .squad li { grid-template-columns: 26px 26px 22px minmax(0, 1fr) auto; row-gap: 6px; }
+  .fc { width: 26px; }
+  .squad li > :last-child { grid-column: 4 / -1; justify-self: start; }
 }
 
 /* Sections */
@@ -163,6 +182,39 @@ html:not(.js) .how-stage { height: auto; gap: 16px; }
   .how-step p { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .js .shot, .how-step { transition: none; } }
+
+/* "New" marks for the Gallery in the nav and the hero */
+.nav-new {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; vertical-align: 1px;
+  background: var(--lime); color: var(--night); font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+}
+.hero-new {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px;
+  border: 1px solid var(--line-strong); border-radius: 999px; color: var(--text-soft); text-decoration: none; font-size: 14px;
+}
+.hero-new .nav-new { margin-left: 0; }
+.hero-new:hover { border-color: var(--violet); color: var(--text); }
+
+/* Gallery: the copy next to a replica of the set page */
+.gallery .wrap { padding-block: 88px; }
+.gallery-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 56px; }
+.gallery-copy { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.gallery-copy .section-lede strong { color: var(--text); }
+.gallery-points { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.gallery-points li { display: flex; gap: 14px; align-items: flex-start; }
+.gp-icon {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line-strong); color: var(--lime);
+}
+.gp-icon svg { width: 20px; height: 20px; }
+.gallery-points h3 { margin: 0; font-size: 17px; }
+.gallery-points p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+
+.gallery-shot { flex: 1 1 360px; max-width: 400px; margin: 0 auto; }
+.gallery-shot img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 24px 60px rgba(139, 92, 246, 0.16);
+}
 
 /* Safety: what FutFox does next to what only you do */
 .who { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; }
@@ -212,7 +264,7 @@ code { background: var(--night); border: 1px solid var(--line); padding: 1px 6px
 }
 .faq details[open] summary::after { content: "\2212"; background: var(--violet); color: var(--text); }
 .faq summary:hover { color: var(--violet-soft); }
-.faq details p { margin: 0; padding: 0 48px 24px 0; color: var(--text-soft); font-size: 17px; max-width: 40em; }
+.faq details p { margin: 0; padding: 0 48px 24px 0; color: var(--text-soft); font-size: 17px; }
 
 .site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-block: 32px; color: var(--muted); font-size: 13px; }
 

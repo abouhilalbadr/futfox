@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// FutFox Gallery sets.
+// - admins/{uid}: one document per admin, added by scripts/make-admin.mjs. Nobody can write it from a browser.
+// - sets/{setId}: the sets being edited in the admin page. Admins only.
+// - public/gallery: the published sets FutFox downloads. Anyone can read it; admins publish it.
+// - players/{doc}: EA's player names and card versions for the admin page, written by
+//   scripts/sync-players.mjs signed in as an admin (or with an owner's access token).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validSet(d) {
+      return d.keys().hasOnly(['name', 'group', 'slotCount', 'tokens', 'status', 'slots', 'grades', 'rewards', 'bonusTags', 'updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.group is string && d.group.size() <= 80
+        && d.status in ['draft', 'live']
+        && d.slotCount is int && d.slotCount >= 1 && d.slotCount <= 40
+        && d.tokens is int && d.tokens >= 0
+        && d.slots is list && d.slots.size() == d.slotCount
+        && d.grades is map
+        && (!('rewards' in d) || d.rewards is map)
+        && d.bonusTags is list && d.bonusTags.size() <= 60
+        && d.updatedAt is int;
+    }
+
+    function validGallery(d) {
+      return d.keys().hasOnly(['schema', 'publishedAt', 'sets'])
+        && d.schema == 1
+        && d.publishedAt is int
+        && d.sets is list;
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /sets/{setId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && validSet(request.resource.data);
+    }
+
+    match /public/gallery {
+      allow read: if true;
+      allow write: if isAdmin() && validGallery(request.resource.data);
+    }
+
+    match /players/{doc} {
+      allow read: if isAdmin();
+      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['rows', 'count', 'chunks', 'syncedAt', 'source']);
+    }
+  }
+}

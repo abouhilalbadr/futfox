@@ -10,6 +10,10 @@
 <style>
   html, body { margin: 0; height: 100%; background: #1d2330; }
 </style>
+<script>
+  // Open on the SBC tab, whatever the Gallery capture left in this browser.
+  localStorage.setItem('futfox.settings', JSON.stringify({ view: 'sbc' }));
+</script>
 <script src="../../src/core/requirements.js"></script>
 <script src="../../src/core/rating.js"></script>
 <script src="../../src/core/chemistry.js"></script>
@@ -59,6 +63,9 @@
   let loading = null;
   FutFox.fut = {
     isReady: () => true,
+    // Shows the SBC and Gallery tabs, as in the Web App.
+    galleryEnabled: true,
+    openChallengeId: () => null,
     getChallenges: () => [{ id: 1, setName: 'League and Nation Hybrid', name: '3 Leagues & 2 Nations', status: 'OPEN', challenge: {} }],
     rulesFor: () => RULES,
     slotsFor: () => [0, 3, 5, 5, 7, 14, 14, 14, 23, 25, 27].map((typeId) => ({ typeId })),
@@ -73,9 +80,14 @@
     nationName: (nid) => NATIONS[nid] || 'Any nation',
     positionName: (t) => POS[t] || String(t),
     openMarketSearch: () => {},
+    // The Web App's coin icon isn't reachable from this page, so the website's coin stands in for it.
+    coinImage: () => "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23E8C45A'/%3E%3Ccircle cx='12' cy='12' r='7' fill='none' stroke='%23B8902F' stroke-width='1.6'/%3E%3Cpath d='M14.6 9.4a3.6 3.6 0 1 0 0 5.2' fill='none' stroke='%237A5A14' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E",
+    // Every club card is drawn on EA's Team of the Week frame; the players are made up, so no faces.
+    cardImage: () => 'https://www.ea.com/ea-sports-fc/ultimate-team/web-app/content/27A3C9F1-6B2E-4D7A-8C1F-2E9B5A4D6C7E/2027/fut/items/images/backgrounds/itemBGs/39536884-f4a8-4ac1-8962-09ad897ee4ea/cards_bg_e_1_3_3.png',
   };
 })();
 </script>
+<script src="../../src/page/art.js"></script>
 <script src="../../src/page/panel.js"></script>
 <script>
 (function () {
@@ -101,8 +113,8 @@
     button('Find cheapest squad').click();
     setTimeout(() => {
       Date.now = origNow;
-      if (step === '#step-4') heading('Suggested squad').scrollIntoView();
-      else [...shadow.querySelectorAll('button')].find((b) => b.textContent === 'Search market').closest('tr').scrollIntoView({ block: 'center' });
+      // Step 4 is the squad page from its top; step 5 centres the card to buy.
+      if (step === '#step-5') [...shadow.querySelectorAll('button')].find((b) => b.textContent === 'Search market').closest('tr').scrollIntoView({ block: 'center' });
     }, 400);
   }
 })();

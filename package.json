@@ -1,10 +1,12 @@
 {
   "name": "futfox",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Read-only Chrome extension that suggests the cheapest way to complete EA FC Ultimate Team SBCs.",
   "license": "UNLICENSED",
   "scripts": {
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "emulators": "npx -y firebase-tools@15.32.1 emulators:start --project futfox-gallery --config firebase/firebase.json",
+    "sync-players": "node scripts/sync-players.mjs"
   }
 }

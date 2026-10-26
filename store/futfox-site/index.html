@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FutFox – Finish SBCs for less</title>
-<meta name="description" content="A free, read-only Chrome extension for the EA SPORTS FC 27 Web App. It finds the cheapest squad for an SBC from your own club and pre-fills market searches for the rest.">
+<meta name="description" content="A free, read-only Chrome extension for the EA SPORTS FC 27 Web App. It finds the cheapest squad for an SBC from your own club, pre-fills market searches for the rest and shows your grade in every Gallery set.">
 <meta name="theme-color" content="#0e0b1f">
 <meta property="og:title" content="FutFox – Finish SBCs for less">
-<meta property="og:description" content="Finish SBCs with the players you already own. Free and read-only.">
+<meta property="og:description" content="Finish SBCs and Gallery sets with the players you already own. Free and read-only.">
 <meta property="og:image" content="https://futfox-site.vercel.app/assets/og.png">
 <meta property="og:url" content="https://futfox-site.vercel.app/">
 <meta property="og:type" content="website">
@@ -28,6 +28,12 @@
   </symbol>
   <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="click" viewBox="0 0 24 24"><path d="M6 3.5l12.5 7.2-5.6 1.5 3.4 5.9-2.6 1.5-3.4-5.9-4.3 3.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="grade" viewBox="0 0 24 24"><path d="M12 2.5 21.5 12 12 21.5 2.5 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="cards" viewBox="0 0 24 24"><path d="M9 4.5h10v15H9zM5 7v13.5h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="suggest" viewBox="0 0 24 24"><path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="player" viewBox="0 0 40 40"><circle cx="20" cy="13" r="8"/><path d="M4 40c1-10 7.5-15 16-15s15 5 16 15z"/></symbol>
+  <symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#E8C45A"/><circle cx="12" cy="12" r="7" fill="none" stroke="#B8902F" stroke-width="1.6"/><path d="M14.6 9.4a3.6 3.6 0 1 0 0 5.2" fill="none" stroke="#7A5A14" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="pick" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
 </svg>
 <a class="skip" href="#main">Skip to content</a>
 
@@ -36,6 +42,7 @@
     <a class="brand" href="/" aria-label="FutFox home"><svg aria-hidden="true"><use href="#fox"/></svg>FutFox</a>
     <nav class="site-nav" aria-label="Main">
       <a href="#how">How it works</a>
+      <a href="#gallery">Gallery <span class="nav-new">New</span></a>
       <a href="#safety">Safety</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/abouhilalbadr/futfox">GitHub</a>
@@ -48,6 +55,7 @@
   <section class="hero">
     <div class="wrap">
       <div class="hero-copy">
+        <a class="hero-new" href="#gallery"><span class="nav-new">New</span>Gallery sets: see your grade before you place a card</a>
         <p class="eyebrow">For the EA SPORTS FC 27 Web App</p>
         <h1>Finish SBCs with the players you already own.</h1>
         <p class="lede">FutFox reads an SBC's requirements, searches your club and suggests the cheapest squad that meets every rule. When your club falls short, it opens the market search with the filters already set.</p>
@@ -58,27 +66,32 @@
         <p class="fineprint">Read-only. FutFox never buys, bids, lists or submits.</p>
       </div>
 
-      <figure class="panel" aria-label="The FutFox panel with a solved SBC">
+      <figure class="panel" aria-label="The FutFox panel with a suggested squad">
         <div class="panel-head">
           <span class="title"><svg aria-hidden="true"><use href="#fox"/></svg>FutFox</span>
           <span class="close" aria-hidden="true">×</span>
+        </div>
+        <div class="panel-tabs" aria-hidden="true">
+          <span class="is-on"><img src="/assets/icons/sbc.webp" alt="" width="18" height="18">SBC</span>
+          <span><img src="/assets/icons/token.webp" alt="" width="18" height="18">Gallery</span>
         </div>
         <div class="panel-body">
           <div class="field">
             <span class="label">Challenge</span>
             <span class="select">League and Nation Hybrid – 3 Leagues &amp; 2 Nations</span>
           </div>
+          <span class="label">Suggested squad</span>
           <div class="summary">
-            <span><strong>9</strong> from your club</span>
-            <span><strong>2</strong> to buy</span>
-            <span><strong>~2,452</strong> est. coins</span>
+            <span><strong>79</strong> rating</span>
+            <span><strong>24</strong> chemistry (estimate)</span>
+            <span><svg class="coin" aria-hidden="true"><use href="#coin"/></svg><strong>2,452</strong> est. coins</span>
             <span class="good">Meets the rules</span>
           </div>
           <ul class="squad">
-            <li><span class="pos">GK</span><strong>79</strong><span>Club player<span class="meta">LALIGA · Spain</span></span><span class="tag tag-untr">Untradeable</span></li>
-            <li><span class="pos">CB</span><strong>81</strong><span>Club player<span class="meta">Premier League · England</span></span><span class="tag tag-untr">Untradeable</span></li>
-            <li><span class="pos">CM</span><strong>80</strong><span>Club player<span class="meta">Bundesliga · Spain</span></span><span class="tag tag-untr">Untradeable</span></li>
-            <li><span class="pos">ST</span><strong>82</strong><span>Buy an 82-rated ST<span class="meta">LALIGA · England</span></span><span class="tag tag-buy">Search market</span></li>
+            <li><span class="pos">GK</span><span class="fc fc-gold" aria-hidden="true"><svg><use href="#player"/></svg></span><strong>79</strong><span>Club player<span class="meta">LALIGA · Spain</span></span><span class="chem" aria-label="3 chemistry">◆◆◆</span><span class="tag tag-untr">Untradeable</span></li>
+            <li><span class="pos">CB</span><span class="fc" aria-hidden="true"><svg><use href="#player"/></svg></span><strong>81</strong><span>Club player<span class="meta">Premier League · England</span></span><span class="chem" aria-label="3 chemistry">◆◆◆</span><span class="tag tag-untr">Untradeable</span></li>
+            <li><span class="pos">CM</span><span class="fc fc-totw" aria-hidden="true"><svg><use href="#player"/></svg></span><strong>80</strong><span>Club player<span class="meta">Bundesliga · Spain</span></span><span class="chem" aria-label="2 chemistry">◆◆</span><span class="tag tag-untr">Untradeable</span></li>
+            <li><span class="pos">ST</span><span class="fc fc-buy" aria-hidden="true"><svg><use href="#player"/></svg></span><strong>82</strong><span>Buy an 82-rated ST<span class="meta">LALIGA · England</span></span><span class="chem" aria-label="2 chemistry">◆◆</span><span class="tag tag-buy">Search market</span></li>
           </ul>
           <p class="panel-note">Picked from your club. Nothing has been placed in your squad.</p>
         </div>
@@ -110,20 +123,42 @@
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-4" data-step="4"><span class="how-no" aria-hidden="true">4</span>Find the cheapest squad</button></h3>
-            <p id="how-text-4">Press <strong>Find cheapest squad</strong>. You get the rating, chemistry and estimated coins, and each player is marked Untradeable or Club. By default your active squad and players rated 87 or more stay out.</p>
+            <p id="how-text-4">Press <strong>Find cheapest squad</strong>. The squad opens on its own page: the rating, chemistry and estimated coins, and every player with their card, marked Untradeable or Club. By default your active squad and players rated 87 or more stay out.</p>
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-5" data-step="5"><span class="how-no" aria-hidden="true">5</span>Buy what's missing, then submit yourself</button></h3>
-            <p id="how-text-5"><strong>Search market</strong> opens the Transfer Market with quality, position, league and nation already set. There's no rating filter there, so look for the rating FutFox shows. You press Search and Buy, then build and submit the squad in the SBC screen.</p>
+            <p id="how-text-5"><strong>Search market</strong> opens the Transfer Market with quality, position, league and nation already set. There's no rating filter there, so look for the rating FutFox shows. You press Search and Buy, then place each player in the SBC screen, following the steps under the squad, and submit it yourself.</p>
           </li>
         </ol>
         <div class="how-stage">
           <img class="shot is-active" data-step="1" src="/assets/steps/step-1.png" width="300" height="150" alt="The FutFox button in the bottom-right corner of the Web App">
-          <img class="shot" data-step="2" src="/assets/steps/step-2.png" width="420" height="470" alt="The panel with a challenge selected and its five requirements listed">
-          <img class="shot" data-step="3" src="/assets/steps/step-3.png" width="420" height="330" alt="The Your club section while loading, with 182 players read so far">
-          <img class="shot" data-step="4" src="/assets/steps/step-4.png" width="420" height="640" alt="A suggested squad: 79 rating, 24 chemistry, about 1,193 coins, with one card to buy">
-          <img class="shot" data-step="5" src="/assets/steps/step-5.png" width="420" height="330" alt="A card to buy with its Search market button">
+          <img class="shot" data-step="2" src="/assets/steps/step-2.png" width="500" height="470" alt="The panel with a challenge selected and its five requirements listed">
+          <img class="shot" data-step="3" src="/assets/steps/step-3.png" width="500" height="360" alt="The Your club section while loading, with 182 players read so far">
+          <img class="shot" data-step="4" src="/assets/steps/step-4.png" width="500" height="780" alt="A suggested squad: 79 rating, 24 chemistry, about 1,193 coins, each player with their card, and one card to buy">
+          <img class="shot" data-step="5" src="/assets/steps/step-5.png" width="500" height="330" alt="A card to buy with its Search market button">
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gallery" class="section gallery">
+    <div class="wrap">
+      <div class="gallery-grid">
+        <div class="gallery-copy">
+          <p class="eyebrow">New · Gallery</p>
+          <h2>Know your grade before you place a card.</h2>
+          <p class="section-lede">Press FutFox, then <strong>Gallery</strong>, and open any set. FutFox picks the best cards from your club for each slot, adds up the Item Score they reach and shows the grade and tokens you'd earn.</p>
+          <ul class="gallery-points">
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#grade"/></svg></span><div><h3>Your grade and tokens</h3><p>The Item Score your cards reach with their bonus tags, the grade and tokens it gives, and how much more you need for the next grade.</p></div></li>
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#cards"/></svg></span><div><h3>Every slot, card by card</h3><p>Each slot shows the card FutFox would use from your club, a card you placed before it left your club, or the card that's still missing.</p></div></li>
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#suggest"/></svg></span><div><h3>Suggest cards</h3><p>Choose the grade you want and FutFox fills every empty slot: cards from your club first, then the squad builder list, with the Item Score each one adds.</p></div></li>
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#pick"/></svg></span><div><h3>Pick player</h3><p>Already placed a card that left your club? Pick it from the squad builder list and its real Item Score counts.</p></div></li>
+          </ul>
+        </div>
+
+        <figure class="gallery-shot">
+          <img src="/assets/gallery/set-page.png" width="500" height="1040" loading="lazy" alt="The FutFox Gallery page for one set: 5 of 10 cards, 120,650 Item Score and grade C, with five suggested cards from the squad builder list that reach grade B">
+        </figure>
       </div>
     </div>
   </section>
@@ -143,6 +178,8 @@
             <li><svg aria-hidden="true"><use href="#check"/></svg>Reads your club, only when you press Load my club</li>
             <li><svg aria-hidden="true"><use href="#check"/></svg>Suggests the cheapest squad that meets the rules</li>
             <li><svg aria-hidden="true"><use href="#check"/></svg>Fills in the market search for cards you're missing</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg>Downloads the list of Gallery sets once a day, sending nothing about you</li>
+            <li><svg aria-hidden="true"><use href="#check"/></svg>Searches the squad builder list, only when you press Pick player or Suggest cards</li>
           </ul>
         </div>
         <div class="who-card who-you">
@@ -152,6 +189,7 @@
             <li><svg aria-hidden="true"><use href="#click"/></svg>List your cards on the market</li>
             <li><svg aria-hidden="true"><use href="#click"/></svg>Move players and save squads</li>
             <li><svg aria-hidden="true"><use href="#click"/></svg>Submit the SBC</li>
+            <li><svg aria-hidden="true"><use href="#click"/></svg>Place cards in Gallery sets</li>
           </ul>
         </div>
       </div>
@@ -208,6 +246,14 @@
           <p>No. They're estimates based on each card's rating, used to compare squads. FutFox doesn't read market prices, so check the market before you buy.</p>
         </details>
         <details>
+          <summary>Where do the Gallery sets come from?</summary>
+          <p>The Web App doesn't share Gallery data, so FutFox publishes the sets itself after each Gallery update. A brand-new set can take a little while to appear in the panel.</p>
+        </details>
+        <details>
+          <summary>Is the Gallery Item Score exact?</summary>
+          <p>For cards in your club and cards you pick, it's the Item Score EA gives that card. A slot that names a version FutFox can't check yet is marked "?", so check that card in the game.</p>
+        </details>
+        <details>
           <summary>Why does loading my club take a while?</summary>
           <p>FutFox reads your club one page every few seconds, the way the Club screen does, so it stays gentle with EA's servers. You only need to do it once per session.</p>
         </details>
@@ -225,7 +271,7 @@
         </details>
         <details>
           <summary>What does it collect?</summary>
-          <p>Nothing. There's no FutFox server. Your panel options are saved in your own browser. Read the <a href="/privacy">privacy policy</a>.</p>
+          <p>Nothing about you. There's no account and no tracking. Once a day FutFox downloads the public list of Gallery sets, sending nothing with the request. Your options, the cards it has seen and your picks stay in your own browser. Read the <a href="/privacy">privacy policy</a>.</p>
         </details>
       </div>
     </div>
