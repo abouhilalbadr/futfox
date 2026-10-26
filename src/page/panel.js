@@ -76,8 +76,8 @@
     .cat .chip { font-size: 12px; padding: 3px 8px; border: 1px solid #352E55; border-radius: 6px; background: #120F24; white-space: nowrap; }
     .cat .grades { display: grid; grid-template-columns: repeat(5, 1fr); justify-items: center; }
     .grade { display: grid; justify-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
-    .grade .dia, .step .dia { position: relative; z-index: 0; width: 26px; height: 26px; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
-    .grade .dia::before, .step .dia::before { content: ''; position: absolute; inset: 4px; transform: rotate(45deg); border: 1.5px solid currentColor; border-radius: 3px; background: #120F24; z-index: -1; }
+    .grade .dia, .step .dia, .aimg .dia { position: relative; z-index: 0; width: 26px; height: 26px; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+    .grade .dia::before, .step .dia::before, .aimg .dia::before { content: ''; position: absolute; inset: 4px; transform: rotate(45deg); border: 1.5px solid currentColor; border-radius: 3px; background: #120F24; z-index: -1; }
     .grade .n { font-size: 12px; color: #C9C3E0; }
     .grade.none { opacity: .35; }
     .cat-foot { display: flex; align-items: end; justify-content: space-between; gap: 8px; }
@@ -185,6 +185,19 @@
     .pick-score { display: grid; justify-items: end; font-variant-numeric: tabular-nums; font-size: 12px; }
     .pick-score strong { font-size: 15px; }
     button.link { border: 0; background: none; padding: 0; font-size: 11px; color: #C4B1FF; text-decoration: underline; text-underline-offset: 2px; }
+    /* Suggest: pick a grade (its diamond), and the cards that would reach it fill the empty slots. */
+    .suggest { display: grid; gap: 8px; margin-bottom: 12px; }
+    .suggest .aim { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .suggest .aim .label { font-size: 13px; color: #C9C3E0; margin-right: 4px; }
+    button.aimg { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: none; border-color: #2A2445; border-radius: 8px; }
+    button.aimg:hover, button.aimg:focus-visible { border-color: #8B5CF6; }
+    button.aimg[aria-pressed="true"] { border-color: #C6FF3D; background: #221D3D; }
+    .suggest .sum { font-size: 13px; color: #C9C3E0; font-variant-numeric: tabular-nums; }
+    .suggest .sum strong.reached { color: #C6FF3D; }
+    .slot.suggested .card { outline: 1.5px dashed #C6FF3D; outline-offset: 3px; border-radius: 4px; }
+    .slot .cap.sug { color: #C6FF3D; font-weight: 700; }
+    .slot .src { font-size: 10px; color: #C4B1FF; white-space: nowrap; }
+    .slot .src.club { color: #6FD29A; }
     button.link:hover { color: #fff; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .tags { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
@@ -518,6 +531,52 @@
         p.query = name;
         searchPicker(false);
       }, TYPE_PAUSE);
+    }
+
+    // "Suggest cards" on a set page: for each missing slot, the club's cards that fit and are not in
+    // the set, then the squad builder list's, one search per different slot, a moment apart. The
+    // plan itself (set-match planGrade) is worked out from these for whichever grade is chosen.
+    const SUGGEST_GAP = 400;
+    function aimFor(res, grade) {
+      if (!state.suggest || state.suggest.setId !== res.id) state.suggest = { setId: res.id, grade, options: null, loading: false, done: 0, total: 0, error: null };
+      else state.suggest.grade = grade;
+      render();
+    }
+
+    async function suggestCards(res, grade) {
+      const s = { setId: res.id, grade, options: null, loading: true, done: 0, total: 0, error: null };
+      state.suggest = s;
+      const inSet = new Set(res.slots.filter((e) => e.card).map((e) => e.card.id));
+      const club = H.fut.galleryCards().filter((c) => !inSet.has(c.id));
+      const missing = res.slots.map((e, index) => ({ ...e, index })).filter((e) => e.slot && !e.card && !e.done);
+      const options = {};
+      const groups = new Map();
+      for (const e of missing) {
+        options[e.index] = club.filter((c) => H.setMatch.fitsSlot(e.slot, c)).map((c) => ({ ...c, source: 'club' }));
+        if (!searchable(e.slot)) continue;
+        const key = JSON.stringify(e.slot);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(e);
+      }
+      s.total = groups.size;
+      render();
+      for (const group of groups.values()) {
+        if (s.done) await new Promise((r) => setTimeout(r, SUGGEST_GAP));
+        if (state.suggest !== s) return;
+        try {
+          const found = await H.fut.searchSlotCards(group[0].slot, {});
+          const fit = found.cards.filter((c) => H.setMatch.fitsSlot(group[0].slot, c)).map((c) => ({ ...c, source: 'search' }));
+          for (const e of group) options[e.index] = options[e.index].concat(fit);
+        } catch (e) {
+          s.error = e.message || String(e);
+        }
+        if (state.suggest !== s) return;
+        s.done += 1;
+        render();
+      }
+      s.options = options;
+      s.loading = false;
+      render();
     }
 
     function closePicker() {
@@ -890,7 +949,7 @@
 
     // One slot of the set: the card FutFox would use, or what is missing. A missing slot takes the card
     // that is in it in the game ("Pick player"); slots ticked done before picking existed can be undone.
-    function slotCell(res, entry) {
+    function slotCell(res, entry, suggestion) {
       const { slot, card } = entry;
       const line = slotLine(slot);
       const version = slot.rarityIds && slot.rarityIds.length ? slot.rarityIds[0] : slot.rarityId;
@@ -915,6 +974,18 @@
           about,
           miniCard({ rarityId: version, rating: slot.rating, label: '✓ Done in game' }),
           el('span', { class: 'acts' }, [pick('Pick'), link('Undo', 'Count this slot as missing again', () => toggleDone(res.id, entry.index))]),
+        ]);
+      }
+      if (suggestion) {
+        const c = suggestion.card;
+        const club = c.source === 'club';
+        const position = c.positions && c.positions.length ? H.fut.positionName(c.positions[0]) : null;
+        return el('div', { class: 'slot suggested', title: `Suggested for ${line.name}: ${c.name} ${c.rating}${c.foil ? ' Holographic' : ''}, ${coins(c.score || 0)} Item Score, ${club ? 'in your club' : 'from the squad builder list'}` }, [
+          about,
+          miniCard({ rarityId: c.rarityId, rating: c.rating, playerId: c.playerId, position, name: c.name, foil: c.foil, foilArt: c.foilArt }),
+          el('span', { class: 'cap sug', text: `+${coins(suggestion.gain)}` }),
+          el('span', { class: `src${club ? ' club' : ''}`, text: club ? 'In your club' : 'Squad builder' }),
+          pick('Pick player'),
         ]);
       }
       const exact = slot.kind === 'card';
@@ -983,9 +1054,48 @@
       ]);
     }
 
+    // Suggest: the set's grades from its current one up, as diamonds (a set only counts as complete
+    // with every slot filled, so even its current grade needs the empty slots). Pressing one finds
+    // cards for the empty slots (first press only) and shows the plan for that grade in the slots.
+    function suggestPlan(res) {
+      const s = state.suggest && state.suggest.setId === res.id ? state.suggest : null;
+      return s && s.options ? H.setMatch.planGrade(res, s.grade, s.options) : null;
+    }
+
+    function suggestBar(res, plan) {
+      const from = res.grade ? H.setMatch.GRADES.indexOf(res.grade) : 0;
+      const above = H.setMatch.GRADES.filter((g, i) => res.grades[g] != null && i >= from);
+      const missing = res.slots.filter((e) => e.slot && !e.card && !e.done).length;
+      if (!above.length || !missing) return null;
+      const s = state.suggest && state.suggest.setId === res.id ? state.suggest : null;
+      const press = (g) => (s && (s.options || s.loading) ? aimFor(res, g) : suggestCards(res, g));
+      const best = plan && !plan.reached ? H.setMatch.gradeFor(plan.score, res.grades) : null;
+      return el('div', { class: 'suggest' }, [
+        el('div', { class: 'aim', role: 'group', 'aria-label': 'Suggest cards for a grade' }, [
+          el('span', { class: 'label', text: 'Suggest cards for' }),
+          ...above.map((g) => el('button', {
+            type: 'button', class: `aimg g-${g}`, 'aria-pressed': String(Boolean(s) && s.grade === g), 'aria-label': `Grade ${g}`,
+            title: `Grade ${g}: ${coins(res.grades[g])} Item Score`, onclick: () => press(g),
+          }, [el('span', { class: 'dia', text: g })])),
+          s ? el('button', { type: 'button', class: 'link', text: 'Clear', onclick: () => { state.suggest = null; render(); } }) : null,
+        ]),
+        s && s.loading ? el('p', { class: 'muted', role: 'status', text: s.total ? `Searching the squad builder list… ${s.done} of ${s.total}` : 'Looking in your club…' }) : null,
+        s && s.error ? el('p', { class: 'error', text: `${s.error} Some slots may have no suggestion.` }) : null,
+        plan && !plan.adds.length ? el('p', { class: 'note', text: 'No card FutFox can find fits the empty slots.' }) : null,
+        plan && plan.adds.length ? el('p', { class: 'sum' }, [
+          `${plan.adds.length} of ${missing} empty slot${missing === 1 ? '' : 's'} filled: ${coins(plan.from)} → ${coins(plan.score)} Item Score${plan.bonus > res.bonus ? ' with bonus tags' : ''} · `,
+          plan.reached ? el('strong', { class: 'reached', text: `Grade ${plan.grade} ✓` }) : el('strong', { text: `Grade ${plan.grade} is out of reach${best ? `: grade ${best} at most` : ''}` }),
+        ]) : null,
+        plan && plan.adds.length && plan.unfilled ? el('p', { class: 'note', text: `${plan.unfilled} slot${plan.unfilled === 1 ? ' has' : 's have'} no card to suggest, and the set is only complete with all ${res.total} filled. Use Pick player on ${plan.unfilled === 1 ? 'it' : 'them'}.` }) : null,
+        plan ? el('p', { class: 'note', text: 'Suggestions only: place the cards in the game yourself, then use Pick player on their slots.' }) : null,
+      ]);
+    }
+
     function setPage(res) {
-      // Your cards first, then what is missing, then the slots ticked done in the game.
-      const order = (e) => (e.card ? 0 : e.done ? 2 : 1);
+      // Your cards first, then suggested cards, then what is missing, then the slots ticked done in the game.
+      const plan = suggestPlan(res);
+      const suggested = new Map(plan ? plan.adds.map((a) => [a.index, a]) : []);
+      const order = (e) => (e.card ? 0 : e.done ? 3 : suggested.has(e.index) ? 1 : 2);
       const entries = res.slots.map((e, index) => ({ ...e, index })).filter((e) => e.slot).sort((a, b) => order(a) - order(b) || a.index - b.index);
       const missing = entries.filter((e) => !e.card && !e.done).length;
       const active = res.tags.filter((t) => t.tier);
@@ -995,7 +1105,8 @@
         gradePanel(res),
         el('section', {}, [
           el('h3', { text: `Cards · ${res.have} of ${res.total}${missing ? ` · ${missing} missing` : ''}` }),
-          el('div', { class: 'cards' }, entries.map((e) => slotCell(res, e))),
+          suggestBar(res, plan),
+          el('div', { class: 'cards' }, entries.map((e) => slotCell(res, e, suggested.get(e.index)))),
         ]),
         active.length || close.length ? el('section', {}, [
           el('h3', { text: res.bonus ? `Bonus tags · +${coins(res.bonus)} Item Score` : 'Bonus tags' }),

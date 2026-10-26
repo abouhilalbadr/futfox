@@ -136,6 +136,71 @@ test('a picked card fills its slot with its own score and tags, and takes no clu
   assert.equal(res.have, 2);
 });
 
+const any = { kind: 'rule', label: 'Any card' };
+const offer = (source, ...cards) => cards.map((c) => ({ ...c, source }));
+
+test('a grade plan fills every empty slot, then swaps in the lowest card that reaches the grade', () => {
+  const res = M.matchSet({ id: 'g', name: 'Plan', grades: { D: 10, C: 40000 }, slots: [any, any, any] }, []);
+  const plan = M.planGrade(res, 'C', {
+    0: offer('search', card(1, 1, 30), card(5, 5, 9), card(2, 2, 5)),
+    1: offer('search', card(3, 3, 20)),
+    2: offer('search', card(4, 4, 12)),
+  });
+  assert.deepEqual(plan.adds.map((a) => [a.index, a.card.id]), [[0, 5], [1, 3], [2, 4]], '5,000 swapped for 9,000 rather than 30,000');
+  assert.equal(plan.score, 41000);
+  assert.equal(plan.reached, true);
+  assert.equal(plan.complete, true);
+});
+
+test('a grade plan uses club cards before squad builder cards', () => {
+  const res = M.matchSet({ id: 'g', name: 'Plan', grades: { C: 9000 }, slots: [any, any] }, []);
+  const plan = M.planGrade(res, 'C', {
+    0: offer('search', card(1, 1, 90)),
+    1: offer('club', card(2, 2, 6), card(3, 3, 4)).concat(offer('search', card(6, 6, 50))),
+  });
+  assert.deepEqual(plan.adds.map((a) => [a.card.id, a.card.source]), [[1, 'search'], [2, 'club']]);
+  assert.equal(plan.reached, true);
+});
+
+test('a grade plan skips cards already in the set and says when a grade is out of reach', () => {
+  const res = M.matchSet({ id: 'g', name: 'Plan', grades: { S: 500000 }, slots: [any, any] }, [card(1, 7, 80)]);
+  const plan = M.planGrade(res, 'S', { 1: offer('search', card(50, 7, 80), card(51, 8, 70)) });
+  assert.deepEqual(plan.adds.map((a) => a.card.id), [51], 'the same card as the one in the set is left out');
+  assert.equal(plan.reached, false);
+  assert.equal(plan.score, 150000);
+  assert.equal(M.planGrade(res, 'A', {}), null, 'a grade the set does not list');
+});
+
+test('a grade plan uses a card once but takes other versions of the same player', () => {
+  const neto = (id, defId, rarityId, over) => card(id, 9, 83, { defId, rarityId, ...over });
+  const res = M.matchSet({ id: 'g', name: 'Plan', grades: { D: 10 }, slots: [any, any, any, any] }, [neto(1, 900, 1)]);
+  const plan = M.planGrade(res, 'D', {
+    1: offer('search', neto(900, 900, 1), neto(901, 901, 3)),
+    2: offer('search', neto(901, 901, 3), neto(902, 902, 3)),
+    3: offer('search', neto(900, 900, 1, { foil: true })),
+  });
+  assert.deepEqual(plan.adds.map((a) => [a.index, a.card.defId, Boolean(a.card.foil)]), [[1, 901, false], [2, 902, false], [3, 900, true]],
+    'the gold card in the set is not offered again; two versions with the same rating and the holographic gold are');
+  assert.equal(plan.complete, true);
+});
+
+test('a grade plan says which slots it cannot fill', () => {
+  const res = M.matchSet({ id: 'g', name: 'Plan', grades: { D: 10 }, slots: [any, any, any] }, []);
+  const plan = M.planGrade(res, 'D', { 0: offer('search', card(1, 1, 80)), 2: [] });
+  assert.deepEqual(plan.adds.map((a) => a.index), [0]);
+  assert.equal(plan.reached, true);
+  assert.equal(plan.unfilled, 2);
+  assert.equal(plan.complete, false);
+});
+
+test('a grade plan counts the bonus tags its cards complete', () => {
+  const res = M.matchSet({ id: 'g', name: 'Plan', grades: { C: 21000 }, slots: [any, any] }, [card(1, 1, 10, { foil: true })]);
+  const plan = M.planGrade(res, 'C', { 1: offer('search', card(3, 3, 10), card(2, 2, 10, { foil: true })) });
+  assert.equal(plan.adds[0].card.id, 2, 'the second Holographic card wins the +8%');
+  assert.equal(plan.score, 21600);
+  assert.equal(plan.bonus, 1600);
+});
+
 test('a club rule takes cards from its clubs in its leagues only', () => {
   const arsenal = { kind: 'rule', label: 'Any Arsenal player (men or women)', clubIds: [1, 116009], leagueIds: [13, 2216] };
   const res = M.matchSet({ id: 'a', name: 'Arsenal', slots: [arsenal, arsenal, arsenal] }, [

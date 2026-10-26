@@ -254,6 +254,8 @@
       id: item.id,
       // EA's player id, the same id as in its players.json and in the Gallery sets.
       playerId: attempt(() => item.databaseId, null),
+      // EA's card id: one player in one version.
+      defId: item.definitionId,
       // EA's version number (3 = Team of the Week), matched against the sets' rarityId.
       rarityId: item.rareflag,
       name: attempt(() => item._staticData.name, null) || `#${item.definitionId}`,

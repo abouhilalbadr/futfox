@@ -225,6 +225,67 @@
     };
   }
 
+  // The cards for every empty slot, since a set is only complete with all its slots filled, chosen
+  // so it reaches `grade`. options: { [slot index]: cards that fit that slot }, each card with source
+  // 'club' (in the club, not in this set) or 'search' (the squad builder list). Each slot first gets
+  // its best club card, else the lowest-scoring card from the list; slots with fewer cards to offer
+  // choose first. While the score is short of the grade, cards are swapped for higher ones from the
+  // list (list cards before club cards): the lowest swap that reaches the grade, else the one that
+  // raises the score most (bonus tags included). A card goes in a set once, so a card already in the
+  // set or the plan is not offered again; other versions of the same player are. Slots with no card
+  // to offer stay empty (unfilled).
+  // The same card: EA's card id (defId) where both have one, else the same player, version and
+  // rating. A holographic card counts apart from the same card without the foil.
+  const sameCard = (a, b) => Boolean(a.foil) === Boolean(b.foil)
+    && (a.defId && b.defId ? a.defId === b.defId : a.playerId === b.playerId && a.rarityId === b.rarityId && a.rating === b.rating);
+  function planGrade(res, grade, options) {
+    const goal = res.grades && res.grades[grade];
+    if (goal == null) return null;
+    const scoreOf = (cards) => cards.reduce((sum, c) => sum + (c.score || 0), 0) + B.scoreTags(cards).bonus;
+    const fixed = res.slots.filter((e) => e.card).map((e) => e.card);
+    const taken = fixed.slice();
+    const isTaken = (c) => taken.some((t) => sameCard(t, c));
+    const open = res.slots.map((e, i) => i).filter((i) => res.slots[i].slot && !res.slots[i].card && !res.slots[i].done);
+    const free = (i) => (options[i] || []).filter((c) => !isTaken(c));
+    const picks = new Map();
+    for (const i of open.slice().sort((a, b) => free(a).length - free(b).length || a - b)) {
+      const cards = free(i);
+      const card = cards.filter((c) => c.source === 'club').sort(byScore)[0]
+        || cards.filter((c) => c.source === 'search').sort((a, b) => (a.score || 0) - (b.score || 0))[0];
+      if (!card) continue;
+      picks.set(i, card);
+      taken.push(card);
+    }
+    const all = () => fixed.concat([...picks.values()]);
+    let score = scoreOf(all());
+    for (const swappable of ['search', 'club']) {
+      while (score < goal) {
+        let best = null;
+        let finish = null;
+        for (const [index, now] of picks) {
+          if (now.source !== swappable) continue;
+          const others = all().filter((c) => c !== now);
+          for (const card of options[index]) {
+            if (card.source !== 'search' || isTaken(card)) continue;
+            const after = scoreOf(others.concat(card));
+            if (after <= score) continue;
+            if (!best || after > best.after) best = { index, card, after };
+            if (after >= goal && (!finish || after < finish.after)) finish = { index, card, after };
+          }
+        }
+        const step = finish || best;
+        if (!step) break;
+        taken.splice(taken.indexOf(picks.get(step.index)), 1, step.card);
+        picks.set(step.index, step.card);
+        score = step.after;
+      }
+    }
+    const cards = all();
+    const adds = [...picks].sort((a, b) => a[0] - b[0]).map(([index, card]) => ({ index, card, gain: score - scoreOf(cards.filter((c) => c !== card)) }));
+    const unfilled = open.length - picks.size;
+    return { grade, goal, from: res.score, score, bonus: B.scoreTags(cards).bonus, reached: score >= goal, adds, unfilled, complete: unfilled === 0 };
+  }
+
   // What picture stands for a set, or a whole category given all its sets' slots: the club when every
   // slot is for the same club, else its league logos when its slots name at most two leagues (men's
   // and women's, most used first), else the card of the first version when every slot names versions
@@ -256,7 +317,7 @@
       .sort((a, b) => b.have / (b.total || 1) - a.have / (a.total || 1) || a.name.localeCompare(b.name));
   }
 
-  const api = { SCHEMA, GRADES, fromValue, readGallery, fitsSlot, matchSet, matchAll, gradeFor, picture };
+  const api = { SCHEMA, GRADES, fromValue, readGallery, fitsSlot, matchSet, matchAll, gradeFor, planGrade, picture };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else (root.FutFox = root.FutFox || {}).setMatch = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
