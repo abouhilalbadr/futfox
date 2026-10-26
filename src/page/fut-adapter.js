@@ -266,11 +266,26 @@
       clubId: item.teamId,
       // Holographic cards carry a foil cosmetic (-1 means none); the Holographics set needs it.
       foil: attempt(() => item.getFoilSubtype() !== -1, false),
+      // The game's holographic shine for that card, so the panel can draw it the same way.
+      foilArt: foilArt(item),
       // Loan cards never count in the Gallery: loans counts a game loan's games left (-1 when it
       // isn't one); a loan for some days has loans -1 but is time-limited.
       loan: isLoan(item),
       ...bonusFields(item),
     };
+  }
+
+  // EA's two holographic layers for a foil card: a 27-frame sweep (FOIL_DYNAMIC) and a still
+  // version (FOIL_FALLBACK). Null for a card without them.
+  function foilArt(item) {
+    const types = root.ItemLayerType || { FOIL_FALLBACK: -4, FOIL_DYNAMIC: -3 };
+    const layers = attempt(() => item.getFoilCosmeticLayers(), null) || [];
+    const uri = (type) => {
+      const layer = layers.find((l) => l.type === type);
+      return layer ? attempt(() => root.AssetLocationUtils.getCosmeticLayerUri(layer), null) : null;
+    };
+    const art = { sheet: uri(types.FOIL_DYNAMIC), still: uri(types.FOIL_FALLBACK) };
+    return art.sheet || art.still ? art : null;
   }
 
   function galleryCards() {

@@ -152,6 +152,24 @@
     .card.missing .rt, .card.missing .nm { opacity: .6; }
     .slot .cap { font-size: 11px; white-space: nowrap; }
     .slot .acts { display: flex; gap: 8px; }
+    /* Holographic cards: EA's sweep plays across the card, 27 frames in a row; its still layer stands in when motion is off. */
+    .card .holo, .card .holo-still { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .card .holo { background-repeat: no-repeat; background-size: 2700% 100%; animation: futfox-holo 2.2s steps(27, jump-none) infinite; }
+    .card .holo-still { display: none; }
+    .card .holo-still.only { display: block; }
+    /* No EA art: a soft shine, cut to the card art's own outline. */
+    .card .holo.css {
+      -webkit-mask: var(--card-art) 0 0 / 100% 100% no-repeat; mask: var(--card-art) 0 0 / 100% 100% no-repeat;
+      background: linear-gradient(115deg, transparent 38%, rgba(214,200,255,.35) 48%, rgba(198,255,61,.15) 53%, transparent 62%) 0 0 / 300% 100% no-repeat;
+      animation: futfox-shine 3s linear infinite;
+    }
+    @keyframes futfox-holo { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+    @keyframes futfox-shine { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .card .holo { animation: none; }
+      .card .holo.has-still { display: none; }
+      .card .holo-still { display: block; }
+    }
     .card.small { width: 44px; flex: none; }
     .card.small .rt, .card.small .ps, .card.small .nm { display: none; }
     /* Pick player: the cards that fit a slot, one row each. */
@@ -816,7 +834,22 @@
 
     // A small card as the game draws it: the version's card, the player's face, rating, position and
     // name. A rule slot shows its version's blank card with what it asks for.
-    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small }) {
+    // EA's holographic layers over a foil card's art, under its text.
+    function holoLayers(art, bg) {
+      if (!art || (!art.sheet && !art.still)) {
+        if (!bg) return [];
+        const shine = el('span', { class: 'holo css' });
+        shine.style.setProperty('--card-art', `url("${bg}")`);
+        return [shine];
+      }
+      const still = art.still ? el('img', { class: `holo-still${art.sheet ? '' : ' only'}`, src: art.still, alt: '', onerror: (e) => e.target.remove() }) : null;
+      if (!art.sheet) return [still];
+      const sweep = el('span', { class: `holo${still ? ' has-still' : ''}` });
+      sweep.style.backgroundImage = `url("${art.sheet}")`;
+      return [sweep, still];
+    }
+
+    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small, foil, foilArt }) {
       const bg = rarityId != null && H.fut.cardImage ? H.fut.cardImage(rarityId, rating) : null;
       const face = playerId != null && H.fut.playerFace ? H.fut.playerFace(playerId) : null;
       const plain = bg && (rarityId === 0 || rarityId === 1);
@@ -824,6 +857,7 @@
       card.append(...[
         bg ? el('img', { class: 'bg', src: bg, alt: '', onerror: (e) => { e.target.remove(); card.classList.add('blank'); } }) : null,
         face ? el('img', { class: 'face', src: face, alt: '', onerror: (e) => e.target.remove() }) : null,
+        ...(foil ? holoLayers(foilArt, bg) : []),
         rating != null && !label ? el('span', { class: 'rt', text: String(rating) }) : null,
         position ? el('span', { class: 'ps', text: position }) : null,
         name ? el('span', { class: 'nm', text: name }) : null,
@@ -847,9 +881,9 @@
           : card.remembered ? { cls: 'ok', text: '✓ Seen earlier', hint: 'FutFox saw this card in your club before; it still counts in the Gallery' }
           : { cls: 'ok', text: '✓ In your club', hint: 'In your club' };
         const position = card.positions && card.positions.length ? H.fut.positionName(card.positions[0]) : null;
-        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYours: ${card.name} ${card.rating}, ${coins(card.score || 0)} Item Score. ${status.hint}` }, [
+        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYours: ${card.name} ${card.rating}${card.foil ? ' Holographic' : ''}, ${coins(card.score || 0)} Item Score. ${status.hint}` }, [
           about,
-          miniCard({ rarityId: card.rarityId, rating: card.rating, playerId: card.playerId, position, name: card.name }),
+          miniCard({ rarityId: card.rarityId, rating: card.rating, playerId: card.playerId, position, name: card.name, foil: card.foil, foilArt: card.foilArt }),
           el('span', { class: `cap ${status.cls}`, text: status.text }),
           entry.picked ? el('span', { class: 'acts' }, [pick('Change'), link('Remove', 'Count this slot as missing again', () => setPicked(res.id, entry.index, null))]) : null,
         ]);
@@ -877,10 +911,10 @@
       const row = (c) => {
         const version = H.fut.versionName ? H.fut.versionName(c.rarityId) : null;
         return el('button', { type: 'button', class: `pick${current && current.defId === c.defId ? ' chosen' : ''}`, onclick: () => { setPicked(p.setId, p.index, c); closePicker(); } }, [
-          miniCard({ rarityId: c.rarityId, rating: c.rating, playerId: c.playerId, small: true }),
+          miniCard({ rarityId: c.rarityId, rating: c.rating, playerId: c.playerId, small: true, foil: c.foil, foilArt: c.foilArt }),
           el('span', { class: 'pick-text' }, [
             el('span', { class: 'name', text: `${c.name} ${c.rating}` }),
-            el('span', { class: 'meta', text: [version, H.fut.leagueName(c.leagueId), H.fut.nationName(c.nationId)].filter(Boolean).join(' · ') }),
+            el('span', { class: 'meta', text: [version, c.foil ? 'Holographic' : null, H.fut.leagueName(c.leagueId), H.fut.nationName(c.nationId)].filter(Boolean).join(' · ') }),
           ]),
           el('span', { class: 'pick-score' }, [el('strong', {}, [scoreIcon(), coins(c.score || 0)]), el('span', { class: 'muted', text: 'Item Score' })]),
         ]);
