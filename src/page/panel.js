@@ -138,6 +138,11 @@
     .card .ps { position: absolute; left: 17%; top: 33%; font-size: 8px; font-weight: 700; }
     .card .nm { position: absolute; left: 8%; right: 8%; top: 66%; text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card .lbl { position: absolute; inset: 22% 10%; display: grid; place-items: center; text-align: center; font-size: 10px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+    /* Common and rare cards are drawn narrower than special ones (10% to 91% of the image across), with
+       dark text; their rating and position sit nearer the edge to clear the face. */
+    .card.plain { color: #2B2210; text-shadow: none; }
+    .card.plain .rt, .card.plain .ps { left: 13%; }
+    .card.plain .nm { left: 14%; right: 14%; }
     .card.missing .bg, .card.missing .face { opacity: .3; filter: grayscale(1); }
     .card.missing .rt, .card.missing .nm { opacity: .6; }
     .slot .cap { font-size: 11px; white-space: nowrap; }
@@ -731,7 +736,8 @@
     function miniCard({ rarityId, rating, playerId, position, name, label, missing }) {
       const bg = rarityId != null && H.fut.cardImage ? H.fut.cardImage(rarityId, rating) : null;
       const face = playerId != null && H.fut.playerFace ? H.fut.playerFace(playerId) : null;
-      const card = el('span', { class: `card${bg ? '' : ' blank'}${missing ? ' missing' : ''}`, 'aria-hidden': 'true' });
+      const plain = bg && (rarityId === 0 || rarityId === 1);
+      const card = el('span', { class: `card${bg ? '' : ' blank'}${plain ? ' plain' : ''}${missing ? ' missing' : ''}`, 'aria-hidden': 'true' });
       card.append(...[
         bg ? el('img', { class: 'bg', src: bg, alt: '', onerror: (e) => { e.target.remove(); card.classList.add('blank'); } }) : null,
         face ? el('img', { class: 'face', src: face, alt: '', onerror: (e) => e.target.remove() }) : null,
