@@ -280,7 +280,7 @@ code { background: var(--night); border: 1px solid var(--line); padding: 1px 6px
 }
 .faq details[open] summary::after { content: "\2212"; background: var(--violet); color: var(--text); }
 .faq summary:hover { color: var(--violet-soft); }
-.faq details p { margin: 0; padding: 0 48px 24px 0; color: var(--text-soft); font-size: 17px; max-width: 40em; }
+.faq details p { margin: 0; padding: 0 48px 24px 0; color: var(--text-soft); font-size: 17px; }
 
 .site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-block: 32px; color: var(--muted); font-size: 13px; }
 
