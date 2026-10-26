@@ -28,10 +28,15 @@ so use it at your own risk.
    league and nation set. The market screen has no rating filter, so look for the rating
    the panel shows. You press Search and Buy yourself.
 
-A **Gallery** view (each club card's Gallery Item Score, EA's collected mark and likely First
-Owner cards) is built but switched off with `GALLERY_ENABLED` in `src/page/fut-adapter.js`:
-without Gallery set data it can't say which cards a set needs. While it is off, FutFox doesn't
-watch club replies.
+The **Gallery** tab lists the Gallery sets published from the admin page (see "Gallery sets
+admin") and, for each set, which slots your club covers and which cards are missing. FutFox
+downloads the published sets once a day from FutFox's Firestore document, sending nothing with
+the request, and keeps a copy in the page's local storage (`futfox.gallerySets`). Exact-card
+slots match on EA's player id and the card's rating; rule slots match on league, nation and
+lowest rating, and are marked "?" when they name a version FutFox can't check.
+
+To test against the emulators, set `futfox.dev.setsUrl` in the page's local storage to
+`http://127.0.0.1:8080/v1/projects/futfox-gallery/databases/(default)/documents/public/gallery`.
 
 Options:
 
@@ -82,6 +87,37 @@ links. `vercel.json` turns on clean URLs so `/privacy` serves `privacy.html`.
 the step screenshots (made from the real panel by `scripts/capture-screens.sh`) into
 `store/futfox-site/assets`. The copies are committed; rerun the script and commit the result
 when any of them change.
+
+## Gallery sets admin
+
+Gallery sets are kept in Firebase (project `futfox-gallery`, Firestore in `eur3`) and edited at
+`/admin` on the website. `firebase/firestore.rules` lets anyone read the published sets
+(`public/gallery`, the document FutFox will download) and only admins (`admins/{uid}`) edit sets,
+publish, or read the player list. Admins sign in with email and password; accounts are added in
+the Firebase console and there is no sign-up form.
+
+The player search uses EA's own player list (`players.json`, loaded by the Web App), copied into
+`players/*` by `scripts/sync-players.mjs`. The address of that file contains a content folder id
+that can change when EA updates the Web App; pass the new one with `--content <id>`.
+
+Try it locally (the admin page talks to the emulators whenever it runs on localhost):
+
+```bash
+npm run emulators
+```
+
+Then, in a second terminal:
+
+```bash
+npm run sync-players && node scripts/seed-emulator.mjs
+```
+
+Serve `store/futfox-site` on localhost and open `/admin/`. The local admin account is in
+`scripts/seed-emulator.mjs`. The emulators need Java 21 or newer (`JAVA_HOME`). Open
+`/admin/?live` instead to edit the real project from localhost.
+
+For the real project, `scripts/sync-players.mjs --prod` and `scripts/make-admin.mjs <uid> --prod`
+write with an owner's access token in `GOOGLE_ACCESS_TOKEN`.
 
 ## Credits
 

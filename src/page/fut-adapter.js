@@ -3,9 +3,6 @@
 // club list, and only when the user presses "Load my club". It also reads, without
 // changing them, the club list replies the Web App receives, for their Gallery marks.
 // It never bids, buys, lists, saves or submits anything.
-//
-// The Gallery view is switched off (GALLERY_ENABLED) until FutFox has Gallery set data;
-// while it is off, club replies are not watched.
 (function (root) {
   'use strict';
 
@@ -194,8 +191,8 @@
 
   // ---- Gallery ----------------------------------------------------------------------
 
-  // Off until FutFox can show Gallery sets: card scores alone don't help plan a set.
-  const GALLERY_ENABLED = false;
+  // The Gallery tab matches the published Gallery sets (gallery-source.js) against these cards.
+  const GALLERY_ENABLED = true;
 
   // Club list replies carry an isCollected mark that the Web App drops while parsing them.
   // Watching the replies (the user's own Club pages and "Load my club") keeps it.
@@ -228,17 +225,72 @@
   }
   if (GALLERY_ENABLED) watchClubReplies();
 
+  // What the Gallery bonus tags look at. Icons and Heroes are told apart by EA's version name
+  // ("Base Icon", "Prime Hero"); EA's own hero check also covers Hall of FUT cards.
+  function bonusFields(item) {
+    const version = attempt(() => root.services.Localization.localize(`item.raretype${item.rareflag}`), '') || '';
+    const level = attempt(() => (item.isGoldRating() ? 'gold' : item.isSilverRating() ? 'silver' : item.isBronzeRating() ? 'bronze' : null), null);
+    return {
+      level: level || H.bonusTags.levelFor(item.rating),
+      icon: /\bicons?\b/i.test(version),
+      hero: /\bhero(es)?\b/i.test(version) || attempt(() => item.isLeagueHeroItem(), false),
+      totw: item.rareflag === 3 || /team of the week/i.test(version),
+      // The stored stars: getSkillMoves() gives goalkeepers a different number.
+      weakFoot: item._weakFoot,
+      skillMoves: item._skillMoves,
+      positions: attempt(() => item.getBasePossiblePositions(), null) || item.basePossiblePositions || [],
+    };
+  }
+
   function galleryCards() {
     const cards = knownClubItems().map((item) => ({
       id: item.id,
+      // EA's player id, the same id as in its players.json and in the Gallery sets.
+      playerId: attempt(() => item.databaseId, null),
+      // EA's version number (3 = Team of the Week), matched against the sets' rarityId.
+      rarityId: item.rareflag,
       name: attempt(() => item._staticData.name, null) || `#${item.definitionId}`,
       rating: item.rating,
       score: item.sbsScore || 0,
       owners: item.owners,
       leagueId: item.leagueId,
       nationId: item.nationId,
+      // EA's club id (teamId), matched against club sets' clubIds.
+      clubId: item.teamId,
+      // Holographic cards carry a foil cosmetic (-1 means none); the Holographics set needs it.
+      foil: attempt(() => item.getFoilSubtype() !== -1, false),
+      // Loan cards (loans counts the games left; -1 means not a loan) never count in the Gallery.
+      loan: item.loans != null && item.loans !== -1,
+      ...bonusFields(item),
     }));
-    return H.gallery.galleryRows(cards, { seen: gallerySeen, collected: galleryCollected });
+    return H.gallery.galleryRows(H.gallery.withRemembered(cards.filter((c) => !c.loan), rememberSeen(cards)), { seen: gallerySeen, collected: galleryCollected });
+  }
+
+  // Cards keep counting toward Gallery sets after they leave the club, so every card FutFox sees
+  // is kept in this browser, one list per EA account. Saved only when something changed.
+  let memoryCache = { key: null, memory: null };
+
+  // The remembered cards of the signed-in EA account, and that account's id.
+  function galleryMemory() {
+    const persona = attempt(() => root.services.User.getUser().selectedPersona, null) || 'default';
+    const key = `futfox.galleryMemory.${persona}`;
+    if (memoryCache.key !== key) memoryCache = { key, memory: attempt(() => JSON.parse(localStorage.getItem(key) || 'null'), null) || { cards: {} } };
+    return { persona, memory: memoryCache.memory };
+  }
+
+  function replaceGalleryMemory(memory) {
+    const { persona } = galleryMemory();
+    attempt(() => localStorage.setItem(`futfox.galleryMemory.${persona}`, JSON.stringify(memory)), null);
+    memoryCache.memory = memory;
+  }
+
+  function rememberSeen(cards) {
+    const before = galleryMemory().memory;
+    const changed = cards.some((c) => !c.loan && (!before.cards[c.id] || before.cards[c.id].score !== c.score));
+    if (!changed) return before;
+    const after = H.gallery.rememberCards(before, cards, Date.now());
+    replaceGalleryMemory(after);
+    return after;
   }
 
   // ---- Game settings ----------------------------------------------------------------
@@ -267,6 +319,20 @@
     if (!result) return null;
     return { total: result.chemistry, perPlayer: result.slots.map((s) => s.points) };
   }
+
+  // ---- Images -----------------------------------------------------------------------
+  // The Web App's own league logos, club badges, version cards and token art, from EA's servers.
+  // FutFox's panel is dark, so it uses the white "dark" logos the Web App shows on its own dark screens.
+
+  const darkImage = (uri) => (typeof uri === 'string' && uri ? uri.replace('/light/', '/dark/') : null);
+  const leagueLogo = (id) => (id > 0 ? darkImage(attempt(() => root.AssetLocationUtils.getLeagueImageUri(id), null)) : null);
+  const clubBadge = (id) => (id > 0 ? darkImage(attempt(() => root.AssetLocationUtils.getBadgeImageUri(id), null)) : null);
+  // The blank card of a version (3 = Team of the Week), as the Transfer Market's version filter shows it.
+  const rarityImage = (id) => (id >= 0 ? attempt(() => root.AssetLocationUtils.getFilterImage(root.AssetLocationUtils.FILTER.RARITY, id), null) : null);
+  // The Web App has no Gallery Token picture; this is the generic token its rewards use.
+  const tokenImage = () => attempt(() => new URL('images/rewards/meta/flat/generic_token.png', root.location.href).href, null);
+  // The coin the Web App shows beside your coin balance in its top bar.
+  const coinImage = () => attempt(() => new URL('images/coinIcon.png', root.location.href).href, null);
 
   // ---- Names ------------------------------------------------------------------------
 
@@ -309,7 +375,7 @@
 
   H.fut = {
     isReady, getChallenges, rulesFor, slotsFor, requiredSlotsFor,
-    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, ratingUsesFloat, chemThresholds, eaChemistry,
-    leagueName, nationName, positionName, openMarketSearch,
+    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
+    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, tokenImage, coinImage,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
