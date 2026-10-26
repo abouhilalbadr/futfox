@@ -1,6 +1,6 @@
 {
   "name": "futfox",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Read-only Chrome extension that suggests the cheapest way to complete EA FC Ultimate Team SBCs.",
   "license": "UNLICENSED",
