@@ -47,13 +47,14 @@
     td { padding: 7px 5px; border-bottom: 1px solid #241F3C; vertical-align: middle; }
     td.pos { color: #9A93B8; width: 48px; font-size: 13px; }
     td.r { width: 34px; font-weight: 700; }
+    td.card-cell { width: 44px; padding-block: 4px; }
     td.chem { width: 40px; color: #C6FF3D; letter-spacing: -1px; }
     .name { display: block; font-weight: 600; }
     .meta { display: block; font-size: 13px; color: #9A93B8; }
     .tag { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; }
     .tag.buy { background: #2A1F4D; color: #C4B1FF; }
     .tag.untr { background: #1d3327; color: #6fd29a; }
-    button.small { padding: 4px 10px; font-size: 13px; }
+    button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
     .tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
@@ -614,7 +615,7 @@
       const rows = res.squad.map((s, i) => {
         const p = s.player;
         if (!p) {
-          return el('tr', {}, [el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }), el('td', { colspan: '4', class: 'muted', text: 'Empty' })]);
+          return el('tr', {}, [el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }), el('td', { colspan: '5', class: 'muted', text: 'Empty' })]);
         }
         const isBuy = p.source === 'market';
         const name = isBuy ? `Buy a ${p.rating}-rated ${H.fut.positionName(s.typeId)}` : p.name;
@@ -622,8 +623,11 @@
         const tag = isBuy
           ? el('button', { class: 'small primary', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
           : el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.untradeable ? 'Untradeable' : 'Club' });
+        // A card to buy is no one yet, so it shows as an empty card.
+        const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
         return el('tr', {}, [
           el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }),
+          el('td', { class: 'card-cell' }, [card]),
           el('td', { class: 'r', text: String(p.rating) }),
           el('td', {}, [el('span', { class: 'name', text: name }), el('span', { class: 'meta', text: meta })]),
           el('td', { class: 'chem', title: `${perPlayer[i]} chemistry`, text: '◆'.repeat(perPlayer[i] || 0) || '–' }),

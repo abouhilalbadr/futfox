@@ -127,6 +127,8 @@
       key: `club:${item.id}`,
       id: item.id,
       defId: item.definitionId,
+      // EA's player id, for the player's face on the card.
+      playerId: attempt(() => item.databaseId, null),
       name: attempt(() => item._staticData.name, null) || `#${item.definitionId}`,
       rating: item.rating,
       quality,
