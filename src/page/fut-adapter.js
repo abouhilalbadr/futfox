@@ -63,6 +63,15 @@
     return formation.positions.map((p) => ({ typeId: p.typeId, name: p.name }));
   }
 
+  // The challenge whose squad screen is open in the app, or null on any other screen.
+  function openChallengeId() {
+    return attempt(() => {
+      const nav = root.getAppMain().getRootViewController().getPresentedViewController().getCurrentViewController();
+      const id = nav.getCurrentController()._challengeId;
+      return typeof id === 'number' ? id : null;
+    }, null);
+  }
+
   // Slots the user has to fill. Some SBCs pre-fill "brick" slots or need fewer players.
   function requiredSlotsFor(challenge) {
     const bricks = attempt(() => challenge.squad.getAllBrickIndices(), []) || [];
@@ -342,12 +351,16 @@
     return out;
   }
 
-  // EA's own chemistry for a squad made only of real club cards; null otherwise.
+  // EA's own chemistry for a squad of real club cards and empty positions; null when it has a card to buy.
   function eaChemistry(formationName, players) {
-    if (players.length !== 11 || players.some((p) => !p || !p.item)) return null;
+    // A card to buy is no card yet, so only the estimate can count it.
+    if (players.length !== 11 || players.some((p) => p && !p.item)) return null;
     const formation = attempt(() => root.repositories.Squad.getFormation(formationName), null);
     if (!formation) return null;
-    const result = attempt(() => calculator().calculate(formation, players.map((p) => p.item), []), null);
+    // An empty position (a locked one, or an SBC that needs fewer players) gets the empty card the
+    // game itself puts there.
+    const items = players.map((p) => (p ? p.item : new root.UTItemEntity()));
+    const result = attempt(() => calculator().calculate(formation, items, []), null);
     if (!result) return null;
     return { total: result.chemistry, perPlayer: result.slots.map((s) => s.points) };
   }
@@ -476,7 +489,7 @@
   }
 
   H.fut = {
-    isReady, getChallenges, rulesFor, slotsFor, requiredSlotsFor,
+    isReady, getChallenges, openChallengeId, rulesFor, slotsFor, requiredSlotsFor,
     knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
     leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
   };

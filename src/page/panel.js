@@ -22,7 +22,38 @@
       background: #120F24; color: #e7ebf2; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; box-shadow: -8px 0 24px rgba(0,0,0,.45); }
     .grip { position: absolute; top: 0; bottom: 0; left: -4px; width: 8px; cursor: ew-resize; touch-action: none; z-index: 1; }
     .grip:hover, .grip:focus-visible, .grip.dragging { background: linear-gradient(90deg, transparent 3px, #8B5CF6 3px, #8B5CF6 5px, transparent 5px); outline: none; }
-    .panel[hidden] { display: none; }
+    .panel[hidden], .toggle[hidden], .dock[hidden] { display: none; }
+    /* While one of them shrinks away, clicks go to what is under it. */
+    .leaving { pointer-events: none; }
+    /* Drag and drop: the button, the placing card and the panel's header pick them up. */
+    .toggle, .dock, header { touch-action: none; user-select: none; }
+    .dock, header { cursor: grab; }
+    .dragging, .dragging header { cursor: grabbing; }
+    .dragging { opacity: .92; }
+    /* Once moved, the panel floats: full height until it is resized from its bottom-right corner. */
+    .panel.moved { bottom: auto; height: 100vh; min-height: 280px; max-height: 100vh; border-radius: 10px; overflow: hidden; resize: both;
+      box-shadow: 0 0 0 1px #352E55, 0 12px 32px rgba(0,0,0,.5); }
+    .panel.moved .grip { display: none; }
+    /* The placing list, in the corner where the FutFox button sits: one line with the next player, or every player above it. */
+    .dock { position: fixed; right: 24px; bottom: 16px; z-index: 2147483000; width: 360px; max-height: calc(100vh - 32px); display: flex; flex-direction: column;
+      border-radius: 10px; background: #120F24; color: #e7ebf2; font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
+      box-shadow: 0 0 0 1px #8B5CF6, 0 8px 24px rgba(0,0,0,.45); overflow: hidden; }
+    .dock button { padding: 2px 8px; font-size: 12px; }
+    .dock-bar { display: flex; align-items: center; gap: 6px; padding: 5px 4px 5px 6px; }
+    .dock-list + .dock-bar { border-top: 1px solid #2A2445; }
+    .dock .fox-btn { border: 0; background: none; padding: 2px; display: grid; }
+    .dock .fox-btn .fox { width: 22px; height: 22px; }
+    .dock .close { font-size: 18px; padding: 0 6px; }
+    .dock-bar .count { font-variant-numeric: tabular-nums; }
+    .dock-list { list-style: none; margin: 0; padding: 4px 0; overflow-y: auto; }
+    .dock-list li, .dock-bar .next { display: grid; grid-template-columns: 16px 30px 22px minmax(0, 1fr) auto; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+    .dock-list li { padding: 3px 8px 3px 10px; }
+    .dock-bar .next { flex: 1; min-width: 0; }
+    .dock-bar .done { display: block; color: #6fd29a; }
+    .dock .pos { color: #9A93B8; font-size: 12px; }
+    .dock .r { font-weight: 700; }
+    .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dock-list li.placed .name, .dock-list li.placed .r { color: #6E6790; text-decoration: line-through; }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #2A2445; }
     h1 { margin: 0; font-size: 18px; font-weight: 700; }
     h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #9A93B8; }
@@ -39,6 +70,7 @@
     input[type=checkbox] { accent-color: #8B5CF6; }
     .muted { color: #9A93B8; }
     ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    ol.steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: #C9C3E0; }
     ul.rules li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; }
     .ok { color: #6fd29a; } .bad { color: #f08a7a; } .unknown { color: #e8c45a; }
     .summary { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; border-radius: 8px; background: #1B1733; font-variant-numeric: tabular-nums; }
@@ -349,6 +381,141 @@
     return grip;
   }
 
+  const EASE = 'cubic-bezier(.2, .8, .2, 1)';
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Container transform: the panel's visible shape eases from `box` (where the button or card is,
+  // with that corner radius) out to its full size, or back into the box when out is set. Its content
+  // fades in once the shape has opened, and out before it closes, so nothing is scaled or blurred.
+  function morph(node, box, radius, out) {
+    const own = node.getBoundingClientRect();
+    const w = Math.min(box.width, own.width);
+    const h = Math.min(box.height, own.height);
+    // Where the box would sit inside the panel; a box outside it is reached by moving the panel there.
+    const x = Math.min(Math.max(box.left, own.left), own.right - w);
+    const y = Math.min(Math.max(box.top, own.top), own.bottom - h);
+    const round = Math.min(radius, h / 2);
+    const small = {
+      clipPath: `inset(${y - own.top}px ${own.right - x - w}px ${own.bottom - y - h}px ${x - own.left}px round ${round}px)`,
+      transform: `translate(${box.left - x}px, ${box.top - y}px)`,
+    };
+    const full = {
+      clipPath: `inset(0px 0px 0px 0px round ${parseFloat(getComputedStyle(node).borderTopLeftRadius) || 0}px)`,
+      transform: 'translate(0px, 0px)',
+    };
+    for (const child of node.children) {
+      child.animate(out ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }],
+        out ? { duration: 110, fill: 'forwards' } : { duration: 200, delay: 120, fill: 'backwards' });
+    }
+    return node.animate(out ? [full, small] : [small, full],
+      { duration: out ? 280 : 360, easing: 'cubic-bezier(.3, 0, .1, 1)', fill: out ? 'forwards' : 'none' });
+  }
+
+  // Animates node's height from what it was before change() ran to what it is after.
+  function resizeHeight(node, change) {
+    const before = node.offsetHeight;
+    change();
+    const after = node.offsetHeight;
+    if (before && after && before !== after && !reducedMotion()) {
+      node.animate([{ height: `${before}px` }, { height: `${after}px` }], { duration: 260, easing: EASE });
+    }
+  }
+
+  // Shown, and not on its way out.
+  function isShown(node) {
+    return !node.hidden && !node.classList.contains('leaving');
+  }
+
+  // Drag and drop for the button, the placing card and the panel: grab(target) says which part of
+  // the element picks it up. Where it was dropped (and the panel's size) is kept in settings.places,
+  // pulled back on screen when the window shrinks; a double-click on the grabbed part puts it back.
+  // fromBottom keeps the element's bottom edge where it was dropped, so it grows upwards.
+  function movable(node, key, settings, grab, { fromBottom = false } = {}) {
+    const places = settings.places || (settings.places = {});
+    let start = null;
+    let dragged = false;
+    // Whether the last press was on the part that picks it up; the element holds the pointer from
+    // then on, so later events no longer say which part was pressed.
+    let grabbed = false;
+
+    function place() {
+      const at = places[key];
+      node.classList.toggle('moved', Boolean(at));
+      if (!at) {
+        for (const prop of ['left', 'top', 'right', 'bottom', 'width', 'height']) node.style[prop] = '';
+        return;
+      }
+      if (at.w) node.style.width = `${at.w}px`;
+      if (at.h) node.style.height = `${Math.min(at.h, window.innerHeight)}px`;
+      // Its layout size, not the box on screen, which is scaled while it animates in.
+      const r = { width: node.offsetWidth, height: node.offsetHeight };
+      const x = Math.max(0, Math.min(at.x, window.innerWidth - r.width));
+      const y = Math.max(0, Math.min(fromBottom ? window.innerHeight - at.b - r.height : at.y, window.innerHeight - r.height));
+      Object.assign(node.style, fromBottom
+        ? { left: `${Math.round(x)}px`, bottom: `${Math.round(window.innerHeight - y - r.height)}px`, right: 'auto', top: 'auto' }
+        : { left: `${Math.round(x)}px`, top: `${Math.round(y)}px`, right: 'auto', bottom: 'auto' });
+    }
+
+    function spot(left, top) {
+      return fromBottom ? { x: left, b: window.innerHeight - top - node.offsetHeight } : { x: left, y: top };
+    }
+
+    node.addEventListener('pointerdown', (e) => {
+      grabbed = e.button === 0 && grab(e.target);
+      if (!grabbed) return;
+      const r = node.getBoundingClientRect();
+      start = { id: e.pointerId, px: e.clientX, py: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top };
+      dragged = false;
+      // Follow the pointer even where it leaves the element on a quick drag.
+      node.setPointerCapture(e.pointerId);
+    });
+    node.addEventListener('pointermove', (e) => {
+      if (!start || e.pointerId !== start.id) return;
+      if (!dragged) {
+        if (Math.hypot(e.clientX - start.px, e.clientY - start.py) < 5) return;
+        dragged = true;
+        node.classList.add('dragging');
+        if (!places[key]) places[key] = {};
+      }
+      places[key] = { ...places[key], ...spot(e.clientX - start.dx, e.clientY - start.dy) };
+      place();
+    });
+    const drop = (e) => {
+      if (!start || e.pointerId !== start.id) return;
+      start = null;
+      if (!dragged) return;
+      node.classList.remove('dragging');
+      const r = node.getBoundingClientRect();
+      places[key] = { ...places[key], ...spot(Math.round(r.left), Math.round(r.top)) };
+      saveSettings(settings);
+    };
+    node.addEventListener('pointerup', drop);
+    node.addEventListener('pointercancel', drop);
+    // A drag is not a click: the button must not open or close the panel after one.
+    node.addEventListener('click', (e) => {
+      if (!dragged) return;
+      dragged = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+    node.addEventListener('dblclick', () => {
+      if (!grabbed || !places[key]) return;
+      delete places[key];
+      saveSettings(settings);
+      place();
+    });
+    window.addEventListener('resize', place);
+    place();
+
+    // Keeps the size the panel is resized to from its corner.
+    function keepSize(w, h) {
+      if (!places[key] || !w || !h) return;
+      places[key] = { ...places[key], w: Math.round(w), h: Math.round(h) };
+      saveSettings(settings);
+    }
+    return { place, keepSize };
+  }
+
   function create() {
     const host = el('div', { id: 'futfox-root' });
     const shadow = host.attachShadow({ mode: 'open' });
@@ -358,15 +525,157 @@
     const settings = loadSettings();
     const state = { challenges: [], selectedId: null, result: null, loading: false, error: null, solving: false, sets: { data: null, loading: false, error: null }, category: null, openSet: null, scrolls: {}, scrollTo: null };
 
-    const toggle = el('button', { class: 'toggle', type: 'button' }, [foxIcon(), 'FutFox']);
+    const toggle = el('button', { class: 'toggle', type: 'button', title: 'Drag to move. Double-click to put it back.' }, [foxIcon(), 'FutFox']);
+    const dock = el('aside', { class: 'dock', hidden: true, 'aria-label': 'Place the squad' });
     const panel = el('aside', { class: 'panel', hidden: true, 'aria-label': 'FutFox' });
-    shadow.append(toggle, panel);
+    shadow.append(toggle, dock, panel);
     const grip = resizeGrip(panel, settings);
 
-    toggle.addEventListener('click', () => {
-      panel.hidden = !panel.hidden;
-      if (!panel.hidden) refreshChallenges();
-    });
+    const free = (t) => !t.closest('button, input, select, a, .grip');
+    movable(toggle, 'toggle', settings, () => true);
+    const dockSpot = movable(dock, 'dock', settings, free, { fromBottom: true });
+    const panelSpot = movable(panel, 'panel', settings, (t) => Boolean(t.closest('header')) && free(t));
+    let resized = null;
+    new ResizeObserver(() => {
+      if (!open || !panel.classList.contains('moved')) return;
+      clearTimeout(resized);
+      resized = setTimeout(() => {
+        const r = panel.getBoundingClientRect();
+        panelSpot.keepSize(r.width, r.height);
+      }, 300);
+    }).observe(panel);
+
+    let open = false;
+
+    function openPanel() {
+      open = true;
+      refreshChallenges();
+      sync();
+    }
+
+    function hidePanel() {
+      open = false;
+      sync();
+    }
+
+    toggle.addEventListener('click', openPanel);
+
+    // A click anywhere in the game folds the panel away, so the game's own boxes on the right are free.
+    document.addEventListener('pointerdown', (e) => {
+      if (open && !e.composedPath().includes(host)) hidePanel();
+    }, true);
+
+    // The placing list shows instead of the FutFox button while the suggested squad's SBC is open,
+    // or after "Place it in the game", until it is closed.
+    function placingShown() {
+      const res = state.result;
+      if (!res || res.challengeId == null || state.dockClosed) return false;
+      return state.placing || H.fut.openChallengeId() === res.challengeId;
+    }
+
+    // One of the three shows at a time: the panel while open, else the placing card or the FutFox
+    // button. The panel opens out of the button or card and closes back into it; the button and the
+    // card swap with a quick fade.
+    function sync() {
+      const want = open ? panel : placingShown() ? dock : toggle;
+      const was = [panel, dock, toggle].find(isShown);
+      if (want === was) return;
+      const from = was ? was.getBoundingClientRect() : null;
+      for (const node of [panel, dock, toggle]) if (node !== want && node !== was) node.hidden = true;
+      if (was) was.classList.add('leaving');
+      for (const node of [want, was]) if (node) node.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+      want.classList.remove('leaving');
+      want.hidden = false;
+      if (want === panel) panelSpot.place();
+      if (want === dock) {
+        dock.replaceChildren(...placingList());
+        dockSpot.place();
+      }
+      if (!was) return;
+      const hide = () => {
+        if (!was.classList.contains('leaving')) return;
+        was.classList.remove('leaving');
+        was.hidden = true;
+      };
+      if (reducedMotion()) return hide();
+      const radius = (node) => parseFloat(getComputedStyle(node).borderTopLeftRadius) || 0;
+      const done = (anim, node) => anim.finished.then(() => {
+        hide();
+        node.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+      }, () => {});
+      if (want === panel) {
+        // The panel lies over the button or card and opens out of its shape.
+        hide();
+        morph(panel, from, radius(was), false);
+      } else if (was === panel) {
+        // The panel closes into the button or card, which shows as it arrives.
+        want.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, delay: 170, fill: 'backwards' });
+        done(morph(panel, want.getBoundingClientRect(), radius(want), true), panel);
+      } else {
+        want.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: EASE });
+        done(was.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }), was);
+      }
+    }
+
+    // Draws the placing card again, its height easing to the new size.
+    function renderDock() {
+      if (!isShown(dock)) return sync();
+      resizeHeight(dock, () => {
+        dock.replaceChildren(...placingList());
+        dockSpot.place();
+      });
+    }
+
+    // The app changes screens without telling the page, so check now and then while the panel is folded.
+    setInterval(() => { if (!open && state.result) sync(); }, 1000);
+
+    function copyName(name, button) {
+      const done = () => { button.textContent = 'Copied'; setTimeout(() => { button.textContent = 'Copy'; }, 1200); };
+      navigator.clipboard.writeText(name).then(done, () => {});
+    }
+
+    // One player's line: placed tick, position, rating, name, and Copy (or Market for a card to buy).
+    function placingRow(s, i, tick) {
+      const p = s.player;
+      const pos = H.fut.positionName(s.typeId);
+      const isBuy = p.source === 'market';
+      const name = isBuy ? `Buy a ${p.rating} ${pos}` : p.name;
+      return [
+        el('input', { type: 'checkbox', checked: state.placed.has(i), 'aria-label': `${name} placed`, onchange: () => tick(i) }),
+        el('span', { class: 'pos', text: pos }),
+        el('span', { class: 'r', text: String(p.rating) }),
+        el('span', { class: 'name', title: name, text: name }),
+        isBuy
+          ? el('button', { type: 'button', text: 'Market', onclick: () => H.fut.openMarketSearch(p.search) })
+          : el('button', { type: 'button', title: 'Copy the name to search your club', text: 'Copy', onclick: (e) => copyName(p.name, e.currentTarget) }),
+      ];
+    }
+
+    // Folded, it is one line with the next player to place, small enough to sit under the game's
+    // right-hand column; unfolded, every player shows above that line.
+    function placingList() {
+      const res = state.result;
+      const rows = res.squad.map((s, i) => ({ s, i })).filter(({ s }) => s.player);
+      const done = rows.filter(({ i }) => state.placed.has(i)).length;
+      const next = rows.find(({ i }) => !state.placed.has(i));
+      const tick = (i) => {
+        if (state.placed.has(i)) state.placed.delete(i);
+        else state.placed.add(i);
+        renderDock();
+      };
+      return [
+        state.dockOpen
+          ? el('ul', { class: 'dock-list' }, rows.map(({ s, i }) => el('li', { class: state.placed.has(i) ? 'placed' : null }, placingRow(s, i, tick))))
+          : null,
+        el('div', { class: 'dock-bar' }, [
+          el('button', { class: 'fox-btn', type: 'button', title: 'Open FutFox', 'aria-label': 'Open FutFox', onclick: () => { state.showSquad = true; state.scrollTo = 0; openPanel(); } }, [foxIcon()]),
+          next ? el('div', { class: 'next' }, placingRow(next.s, next.i, tick)) : el('span', { class: 'next done', text: 'All placed: check it and submit' }),
+          el('span', { class: 'muted count', title: `${done} of ${rows.length} placed`, text: `${done}/${rows.length}` }),
+          el('button', { type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), title: state.dockOpen ? 'Hide the list' : 'Show every player', text: state.dockOpen ? '▾' : '▴', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }),
+          el('button', { class: 'close', type: 'button', 'aria-label': 'Close the list', title: 'Close the list', text: '×', onclick: () => { state.placing = false; state.dockClosed = true; sync(); } }),
+        ]),
+      ].filter(Boolean);
+    }
 
     function refreshChallenges() {
       state.challenges = H.fut.getChallenges();
@@ -402,6 +711,8 @@
     function solve() {
       const entry = selected();
       if (!entry) return;
+      const body = panel.querySelector('.body');
+      state.setupScroll = body ? body.scrollTop : 0;
       state.solving = true;
       state.error = null;
       render();
@@ -427,7 +738,14 @@
           result.eaChem = H.fut.eaChemistry(c.formation, players);
           result.rules = rules;
           result.poolSize = pool.length;
+          result.challengeId = entry.id;
           state.result = result;
+          state.placed = new Set();
+          state.placing = false;
+          state.dockClosed = false;
+          // The squad opens on its own page, from the top; the challenge page is one step back.
+          state.showSquad = true;
+          state.scrollTo = 0;
         } catch (e) {
           state.error = e.message;
         }
@@ -595,6 +913,33 @@
       return r.shortfall === 0 ? { icon: '✓', cls: 'ok', hint: '' } : { icon: '✗', cls: 'bad', hint: `Short by ${r.shortfall}` };
     }
 
+    // The suggested squad on its own page, like a Gallery set: the challenge's options are one step back.
+    function squadPage(entry) {
+      const back = () => { state.showSquad = false; state.scrollTo = state.setupScroll || 0; render(); };
+      return [
+        crumbs([[entry.setName || 'Challenge', back], [entry.name]], 'SBC'),
+        renderResult(),
+        placeSteps(),
+      ];
+    }
+
+    // FutFox never changes a squad, so the player places the suggestion in the game.
+    function placeSteps() {
+      return el('section', {}, [
+        el('h2', { text: 'Place it in the game' }),
+        el('ol', { class: 'steps' }, [
+          el('li', { text: 'Press the button below, or click anywhere in the game: FutFox folds into a small list in the corner while this SBC is open.' }),
+          el('li', { text: 'Click a position on the pitch, search your club for that player (Copy puts the name on your clipboard), then tick the player in the list.' }),
+          el('li', { text: 'For a card to buy, press Search market (Market in the list), buy one with the rating shown, then place it the same way.' }),
+          el('li', { text: 'When every position is filled, check the rating and chemistry in the SBC screen, then submit it yourself.' }),
+        ]),
+        el('p', { class: 'note', text: 'In the way? Drag the list, the FutFox button or this panel by its top bar anywhere on the screen. A double-click puts it back.' }),
+        el('div', { class: 'row' }, [
+          el('button', { class: 'primary', type: 'button', text: 'Place it in the game', onclick: () => { state.placing = true; state.dockClosed = false; hidePanel(); } }),
+        ]),
+      ]);
+    }
+
     function renderResult() {
       const res = state.result;
       if (!res) return null;
@@ -642,7 +987,9 @@
         buys.length
           ? el('p', { class: 'note', text: `${buys.length} card${buys.length > 1 ? 's' : ''} to buy. "Search market" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.` })
           : null,
-        res.eaChem ? null : el('p', { class: 'note', text: "Chemistry is estimated because the squad includes cards to buy. Check it in the squad builder." }),
+        res.eaChem ? null : el('p', { class: 'note', text: buys.length
+          ? 'Chemistry is estimated because the squad includes cards to buy. Check it in the squad builder.'
+          : "Chemistry is estimated because the game's own count wasn't available. Check it in the squad builder." }),
         el('p', { class: 'note', text: `Picked from ${res.poolSize} club players. Nothing has been placed in your squad.` }),
       ]);
     }
@@ -805,13 +1152,13 @@
       render();
     }
 
-    function crumbs(parts) {
+    function crumbs(parts, label = 'Gallery') {
       const items = [];
       parts.forEach(([text, onclick], i) => {
         if (i) items.push(el('span', { class: 'sep', 'aria-hidden': 'true', text: '›' }));
         items.push(onclick ? el('button', { type: 'button', class: 'small', text: i ? text : `← ${text}`, onclick }) : el('span', { class: 'current', 'aria-current': 'page', text }));
       });
-      return el('nav', { class: 'crumbs', 'aria-label': 'Gallery' }, items);
+      return el('nav', { class: 'crumbs', 'aria-label': label }, items);
     }
 
     // Gallery Tokens a set gives: every grade's token reward, and the ones of the grades your cards reach
@@ -1192,9 +1539,11 @@
       const tab = (name, label) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(view === name), onclick: () => setView(name) }, [tabIcon(name), label]);
       panel.replaceChildren(...[
         grip,
-        el('header', {}, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: () => (panel.hidden = true) })]),
+        el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: hidePanel })]),
         H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery')]) : null,
-        view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known)) : el('div', { class: 'body' }, [
+        view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
+        : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
+        : el('div', { class: 'body' }, [
           el('section', {}, [
             el('h2', { text: 'Challenge' }),
             state.challenges.length
@@ -1224,9 +1573,9 @@
           ]),
           el('div', { class: 'row' }, [
             el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),
+            state.result ? el('button', { type: 'button', text: 'Show the last squad', onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
           ]),
           state.error ? el('p', { class: 'error', text: state.error }) : null,
-          renderResult(),
         ]),
         el('footer', { text: 'Read-only: FutFox never buys, bids, lists or submits. Not affiliated with EA.' }),
       ].filter(Boolean));

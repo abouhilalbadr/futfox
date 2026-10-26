@@ -65,6 +65,7 @@
     isReady: () => true,
     // Shows the SBC and Gallery tabs, as in the Web App.
     galleryEnabled: true,
+    openChallengeId: () => null,
     getChallenges: () => [{ id: 1, setName: 'League and Nation Hybrid', name: '3 Leagues & 2 Nations', status: 'OPEN', challenge: {} }],
     rulesFor: () => RULES,
     slotsFor: () => [0, 3, 5, 5, 7, 14, 14, 14, 23, 25, 27].map((typeId) => ({ typeId })),
@@ -112,8 +113,8 @@
     button('Find cheapest squad').click();
     setTimeout(() => {
       Date.now = origNow;
-      if (step === '#step-4') heading('Suggested squad').scrollIntoView();
-      else [...shadow.querySelectorAll('button')].find((b) => b.textContent === 'Search market').closest('tr').scrollIntoView({ block: 'center' });
+      // Step 4 is the squad page from its top; step 5 centres the card to buy.
+      if (step === '#step-5') [...shadow.querySelectorAll('button')].find((b) => b.textContent === 'Search market').closest('tr').scrollIntoView({ block: 'center' });
     }, 400);
   }
 })();
