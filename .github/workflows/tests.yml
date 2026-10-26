@@ -1,6 +1,7 @@
 # Runs the test suite on every push and pull request. It includes
 # test/read-only.test.js, which fails if any source file calls an
-# account-changing Web App method (bid, buy, list, move, save, submit).
+# account-changing Web App method (bid, buy, list, move, save, submit), and
+# test/properties.test.js, which fuzzes the rating, chemistry and solver code.
 name: Tests
 
 on:
@@ -19,4 +20,5 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+      - run: npm ci
       - run: npm test

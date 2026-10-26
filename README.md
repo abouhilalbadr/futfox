@@ -76,10 +76,12 @@ number), use untradeables only, and turn off buy suggestions.
 ## Develop
 
 ```bash
+npm install
 npm test
 ```
 
-No dependencies or build step. How the code fits together, the Gallery admin and the website
+No runtime dependencies or build step; `npm install` only fetches
+[fast-check](https://fast-check.dev) for the property tests. How the code fits together, the Gallery admin and the website
 are covered in [docs/DEVELOPING.md](docs/DEVELOPING.md).
 
 ## Credits and license
