@@ -99,3 +99,16 @@ them, so browsers fetch the new files.
   once a week; findings appear under the repository's Security tab.
 - **Scorecard** (`.github/workflows/scorecard.yml`) publishes the OpenSSF Scorecard score shown
   in the README.
+
+## Releases
+
+Bump `version` in `manifest.json`, merge it, then push a matching tag from `main`:
+
+```bash
+git tag v0.4.0
+git push origin v0.4.0
+```
+
+`.github/workflows/release.yml` checks the tag matches the manifest, zips `manifest.json`,
+`icons`, `src` and `LICENSE`, signs the zip with Sigstore and publishes both files as a GitHub
+Release. The workflow file explains how to verify a download with `cosign verify-blob`.
