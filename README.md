@@ -14,6 +14,7 @@
   <a href="https://github.com/abouhilalbadr/futfox/actions/workflows/tests.yml"><img src="https://github.com/abouhilalbadr/futfox/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <a href="https://github.com/abouhilalbadr/futfox/actions/workflows/codeql.yml"><img src="https://github.com/abouhilalbadr/futfox/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/abouhilalbadr/futfox"><img src="https://api.scorecard.dev/projects/github.com/abouhilalbadr/futfox/badge" alt="OpenSSF Scorecard"></a>
+  <a href="https://www.bestpractices.dev/projects/15955"><img src="https://www.bestpractices.dev/projects/15955/badge" alt="OpenSSF Best Practices"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/abouhilalbadr/futfox" alt="License: MIT"></a>
   <a href="manifest.json"><img src="https://img.shields.io/badge/Chrome-Manifest_V3-8b5cf6" alt="Manifest V3"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/runtime_dependencies-0-brightgreen" alt="No runtime dependencies"></a>
@@ -45,7 +46,8 @@ submits an SBC; every coin you spend is your own click.
 
 `test/read-only.test.js` fails if any source file calls an account-changing Web App method, and
 the Tests badge runs it on every push. CodeQL scans the code for known security issues and
-Scorecard rates how the repository is run. A passing scan means nothing known was found, not a
+Scorecard rates how the repository is run. The Best Practices badge is the OpenSSF passing
+level, self-certified with a public justification for each criterion. A passing scan means nothing known was found, not a
 guarantee.
 
 Not affiliated with or endorsed by EA. Third-party tools are against EA's user agreement, so
