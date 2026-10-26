@@ -115,7 +115,11 @@
     .grade.big .dia { width: 60px; height: 60px; font-size: 22px; }
     .grade.big .dia::before { inset: 9px; border-width: 2px; border-radius: 5px; background: #221D3D; }
     .grade-text { display: grid; gap: 2px; min-width: 0; font-size: 13px; }
+    .grade-text .score { display: flex; align-items: center; gap: 6px; }
     .grade-text .score strong { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .grade-text .score .score-icon { width: 18px; height: 18px; }
+    .pick-score strong { display: inline-flex; align-items: center; gap: 5px; }
+    .pick-score .score-icon { width: 13px; height: 13px; }
     .to-next { display: grid; gap: 6px; }
     .to-next .bar > span { background: #E8C45A; }
     .ladder { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
@@ -126,18 +130,19 @@
     .ladder .gives img { width: 13px; height: 13px; }
     .step.none { opacity: .45; }
     .g-D .dia, .g-C .dia { color: #C9C3E0; } .g-B .dia, .g-A .dia { color: #E8C45A; } .g-S .dia { color: #A78BFA; }
-    /* Cards drawn like the game's, at the size of its small cards; as many per row as fit. */
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px 8px; }
+    /* Cards drawn like the game's: five per row, growing with the panel, and one more per row each
+       time a card would pass 160px wide. Their text scales with the card (cqw: % of its width). */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(84px, min(160px, calc((100% - 32px) / 5))), 1fr)); gap: 12px 8px; }
     .slot { display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; }
-    .card { position: relative; width: 84px; aspect-ratio: 576 / 800; display: block; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85); }
+    .card { position: relative; width: 100%; max-width: 160px; aspect-ratio: 576 / 800; display: block; container-type: inline-size; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85); }
     .card.blank { clip-path: polygon(50% 0, 63% 3.5%, 100% 5%, 100% 90%, 50% 100%, 0 90%, 0 5%, 37% 3.5%); background: #221D3D; }
     .card .bg { position: absolute; inset: 0; width: 100%; height: 100%; }
     /* The face stands on the card's divider line, 64% of the way down, above the name. */
     .card .face { position: absolute; left: 28%; bottom: 36.3%; width: 66%; }
-    .card .rt { position: absolute; left: 17%; top: 21%; font-size: 14px; font-weight: 800; line-height: 1; }
-    .card .ps { position: absolute; left: 17%; top: 33%; font-size: 8px; font-weight: 700; }
-    .card .nm { position: absolute; left: 8%; right: 8%; top: 66%; text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card .lbl { position: absolute; inset: 22% 10%; display: grid; place-items: center; text-align: center; font-size: 10px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+    .card .rt { position: absolute; left: 17%; top: 21%; font-size: 16.7cqw; font-weight: 800; line-height: 1; }
+    .card .ps { position: absolute; left: 17%; top: 33%; font-size: 9.5cqw; font-weight: 700; }
+    .card .nm { position: absolute; left: 8%; right: 8%; top: 66%; text-align: center; font-size: 11.9cqw; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .lbl { position: absolute; inset: 22% 10%; display: grid; place-items: center; text-align: center; font-size: min(11.9cqw, 13px); font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
     /* Common and rare cards are drawn narrower than special ones (10% to 91% of the image across), with
        dark text; their rating and position sit nearer the edge to clear the face. */
     .card.plain { color: #2B2210; text-shadow: none; }
@@ -146,6 +151,21 @@
     .card.missing .bg, .card.missing .face { opacity: .3; filter: grayscale(1); }
     .card.missing .rt, .card.missing .nm { opacity: .6; }
     .slot .cap { font-size: 11px; white-space: nowrap; }
+    .slot .acts { display: flex; gap: 8px; }
+    .card.small { width: 44px; flex: none; }
+    .card.small .rt, .card.small .ps, .card.small .nm { display: none; }
+    /* Pick player: the cards that fit a slot, one row each. */
+    .picker { display: grid; gap: 12px; }
+    .picker-head { display: grid; gap: 2px; }
+    .picker-head .name { font-weight: 700; font-size: 16px; }
+    .picker form input { flex: 1; min-width: 0; background: #1B1733; color: inherit; border: 1px solid #352E55; border-radius: 6px; padding: 7px 8px; font: inherit; }
+    .picks { display: grid; gap: 6px; }
+    button.pick { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 6px 12px 6px 8px; border-color: #2A2445; }
+    button.pick:hover, button.pick:focus-visible { border-color: #8B5CF6; }
+    button.pick.chosen { border-color: #C6FF3D; }
+    .pick-text { flex: 1; min-width: 0; }
+    .pick-score { display: grid; justify-items: end; font-variant-numeric: tabular-nums; font-size: 12px; }
+    .pick-score strong { font-size: 15px; }
     button.link { border: 0; background: none; padding: 0; font-size: 11px; color: #C4B1FF; text-decoration: underline; text-underline-offset: 2px; }
     button.link:hover { color: #fff; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -395,10 +415,11 @@
     function gallerySetResults(data) {
       const cards = H.fut.galleryCards();
       const done = settings.galleryDone || {};
+      const picked = settings.galleryPicked || {};
       let sum = 0;
       for (const c of cards) sum = (sum * 31 + Number(c.id) + (c.score || 0) * 7) % 2147483647;
-      const key = [data.publishedAt, data.sets.length, cards.length, sum, JSON.stringify(done)].join('|');
-      if (lastResults.key !== key) lastResults = { key, results: H.setMatch.matchAll(data.sets, cards, done) };
+      const key = [data.publishedAt, data.sets.length, cards.length, sum, JSON.stringify(done), JSON.stringify(picked)].join('|');
+      if (lastResults.key !== key) lastResults = { key, results: H.setMatch.matchAll(data.sets, cards, done, picked) };
       return lastResults.results;
     }
 
@@ -409,6 +430,60 @@
       if (list.has(index)) list.delete(index); else list.add(index);
       if (list.size) all[setId] = Array.from(list).sort((a, b) => a - b); else delete all[setId];
       setSetting('galleryDone', all);
+      render();
+    }
+
+    // Cards the player picked for slots filled in the game, per set: { [setId]: { [slot index]: card } }.
+    // A pick replaces the slot's done tick.
+    function setPicked(setId, index, card) {
+      const all = { ...(settings.galleryPicked || {}) };
+      const slots = { ...(all[setId] || {}) };
+      if (card) slots[index] = card; else delete slots[index];
+      if (Object.keys(slots).length) all[setId] = slots; else delete all[setId];
+      setSetting('galleryPicked', all);
+      const done = (settings.galleryDone || {})[setId] || [];
+      if (card && done.includes(index)) toggleDone(setId, index);
+      else render();
+    }
+
+    // "Pick player": the cards that fit a slot, from the squad builder's search, a page at a time.
+    // A slot with nothing to search by (any foil card) waits for a name.
+    const searchable = (slot) => slot.kind === 'card' || [slot.clubIds, slot.leagueIds, slot.rarityIds].some((l) => l && l.length)
+      || [slot.leagueId, slot.nationId, slot.rarityId, slot.minRating].some((v) => v != null);
+    function openPicker(res, entry) {
+      const body = panel.querySelector('.body');
+      state.scrolls.set = body ? body.scrollTop : 0;
+      state.picker = { setId: res.id, index: entry.index, slot: entry.slot, query: '', page: 0, cards: [], more: false, loading: false, error: null };
+      state.scrollTo = 0;
+      if (searchable(entry.slot)) searchPicker(false); else render();
+    }
+
+    async function searchPicker(more) {
+      const p = state.picker;
+      if (!p) return;
+      if (!more) { p.page = 0; p.cards = []; p.more = false; }
+      if (!p.query && !searchable(p.slot)) return render();
+      p.loading = true;
+      p.error = null;
+      render();
+      try {
+        const found = await H.fut.searchSlotCards(p.slot, { name: p.query, page: p.page });
+        if (state.picker !== p) return;
+        const seen = new Set(p.cards.map((c) => c.defId));
+        p.cards = p.cards.concat(found.cards.filter((c) => !seen.has(c.defId) && H.setMatch.fitsSlot(p.slot, c)));
+        p.more = found.more;
+        p.page += 1;
+      } catch (e) {
+        if (state.picker !== p) return;
+        p.error = e.message || String(e);
+      }
+      p.loading = false;
+      render();
+    }
+
+    function closePicker() {
+      state.picker = null;
+      state.scrollTo = state.scrolls.set || 0;
       render();
     }
 
@@ -476,30 +551,32 @@
       const { memory } = H.fut.galleryMemory();
       const cards = Object.keys(memory.cards).length;
       const ticks = Object.values(settings.galleryDone || {}).reduce((n, list) => n + list.length, 0);
+      const picks = Object.values(settings.galleryPicked || {}).reduce((n, slots) => n + Object.keys(slots).length, 0);
       const msg = state.dataMessage;
       return el('section', {}, [
         el('h2', { text: 'Saved in this browser' }),
-        el('p', { class: 'muted', text: `${cards} ${cards === 1 ? 'card' : 'cards'} remembered · ${ticks} ${ticks === 1 ? 'slot' : 'slots'} ticked done in game` }),
+        el('p', { class: 'muted', text: [`${cards} ${cards === 1 ? 'card' : 'cards'} remembered`, `${picks} ${picks === 1 ? 'card' : 'cards'} picked`, ticks ? `${ticks} ${ticks === 1 ? 'slot' : 'slots'} ticked done in game` : null].filter(Boolean).join(' · ') }),
         el('div', { class: 'row' }, [
-          el('button', { type: 'button', text: 'Export', disabled: !cards && !ticks, onclick: exportGalleryData }),
+          el('button', { type: 'button', text: 'Export', disabled: !cards && !ticks && !picks, onclick: exportGalleryData }),
           el('label', { class: 'file' }, [
             el('input', { type: 'file', accept: '.json,application/json', 'aria-label': 'Import a FutFox Gallery data file', onchange: (e) => importGalleryData(e.target.files[0]) }),
             el('span', { text: 'Import' }),
           ]),
         ]),
         msg ? el('p', { class: msg.kind === 'bad' ? 'error' : 'note', role: 'status', text: msg.text }) : null,
-        el('p', { class: 'note', text: 'Only this browser keeps these. Export a copy to move them to another browser or keep them safe; importing adds to what is here.' }),
+        el('p', { class: 'note', text: 'Only this browser keeps these. Export a copy to move them to another browser or keep them safe; importing adds to what is here and keeps your picks.' }),
       ]);
     }
 
     function exportGalleryData() {
       const { memory, persona } = H.fut.galleryMemory();
-      const data = H.gallery.exportData({ memory, done: settings.galleryDone || {}, persona, now: Date.now() });
+      const data = H.gallery.exportData({ memory, done: settings.galleryDone || {}, picked: settings.galleryPicked || {}, persona, now: Date.now() });
       const url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
       const link = el('a', { href: url, download: `futfox-gallery-${new Date().toISOString().slice(0, 10)}.json` });
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      state.dataMessage = { kind: 'ok', text: `Exported ${data.cards.length} cards and ${Object.values(data.done).reduce((n, l) => n + l.length, 0)} ticked slots.` };
+      const picks = Object.values(data.picked).reduce((n, slots) => n + Object.keys(slots).length, 0);
+      state.dataMessage = { kind: 'ok', text: `Exported ${data.cards.length} cards, ${picks} picked cards and ${Object.values(data.done).reduce((n, l) => n + l.length, 0)} ticked slots.` };
       render();
     }
 
@@ -515,15 +592,19 @@
       const { memory, persona } = H.fut.galleryMemory();
       const merged = H.gallery.mergeMemory(memory, read.memory);
       const done = H.gallery.mergeDone(settings.galleryDone, read.done);
+      const picked = H.gallery.mergePicked(settings.galleryPicked, read.picked);
       // Only what the file added: cards and ticks already here aren't counted again.
       const tickCount = (d) => Object.values(d || {}).reduce((n, l) => n + l.length, 0);
       const cards = Object.keys(merged.cards).length - Object.keys((memory && memory.cards) || {}).length;
       const ticks = tickCount(done) - tickCount(settings.galleryDone);
+      const pickCount = (p) => Object.values(p || {}).reduce((n, slots) => n + Object.keys(slots).length, 0);
+      const picks = pickCount(picked) - pickCount(settings.galleryPicked);
       H.fut.replaceGalleryMemory(merged);
       setSetting('galleryDone', done);
+      setSetting('galleryPicked', picked);
       const other = read.persona && String(read.persona) !== String(persona) ? ' The file comes from another EA account; its cards now count for this one.' : '';
-      const added = cards || ticks
-        ? `Added ${cards} ${cards === 1 ? 'card' : 'cards'} and ${ticks} ticked ${ticks === 1 ? 'slot' : 'slots'}.`
+      const added = cards || ticks || picks
+        ? `Added ${cards} ${cards === 1 ? 'card' : 'cards'}, ${picks} picked ${picks === 1 ? 'card' : 'cards'} and ${ticks} ticked ${ticks === 1 ? 'slot' : 'slots'}.`
         : 'Nothing new: everything in the file was already here.';
       state.dataMessage = { kind: 'ok', text: `${added}${other}` };
       render();
@@ -571,6 +652,8 @@
     const ART = H.art || {};
     // The Gallery Token: art/token.png, else the generic token the Web App's rewards use.
     const tokenSrc = () => ART.token || (H.fut.tokenImage && H.fut.tokenImage());
+    // Item Score (the cards' SBC score) is marked with the SBC icon, art/sbc.webp.
+    const scoreIcon = () => (ART.sbc ? el('img', { class: 'score-icon', src: ART.sbc, alt: '' }) : null);
     const slug = (name) => String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const urlsOf = (found) => (!found ? []
       : found.club != null ? [H.fut.clubBadge && H.fut.clubBadge(found.club)]
@@ -719,7 +802,7 @@
           el('span', { class: `grade big g-${res.grade || 'D'}${res.grade ? '' : ' none'}`, 'aria-hidden': 'true' }, [el('span', { class: 'dia', text: res.grade || '–' })]),
           el('div', { class: 'grade-text' }, [
             el('span', { class: 'muted', text: [`${res.name} · ${res.have} of ${res.total} cards`, res.unsure ? `${res.unsure} to check` : null].filter(Boolean).join(' · ') }),
-            el('span', { class: 'score', title: scoreHint }, [el('strong', { text: coins(res.score) }), el('span', { class: 'muted', text: ' Item Score' })]),
+            el('span', { class: 'score', title: scoreHint }, [scoreIcon(), el('strong', { text: coins(res.score) }), el('span', { class: 'muted', text: ' Item Score' })]),
             el('span', { text: res.grade ? `Grade ${res.grade}${tokens.earned ? ` · ${coins(tokens.earned)} tokens earned` : ''}` : graded.length ? 'No grade yet' : 'This set has no grades listed' }),
           ]),
         ]),
@@ -733,11 +816,11 @@
 
     // A small card as the game draws it: the version's card, the player's face, rating, position and
     // name. A rule slot shows its version's blank card with what it asks for.
-    function miniCard({ rarityId, rating, playerId, position, name, label, missing }) {
+    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small }) {
       const bg = rarityId != null && H.fut.cardImage ? H.fut.cardImage(rarityId, rating) : null;
       const face = playerId != null && H.fut.playerFace ? H.fut.playerFace(playerId) : null;
       const plain = bg && (rarityId === 0 || rarityId === 1);
-      const card = el('span', { class: `card${bg ? '' : ' blank'}${plain ? ' plain' : ''}${missing ? ' missing' : ''}`, 'aria-hidden': 'true' });
+      const card = el('span', { class: `card${bg ? '' : ' blank'}${plain ? ' plain' : ''}${missing ? ' missing' : ''}${small ? ' small' : ''}`, 'aria-hidden': 'true' });
       card.append(...[
         bg ? el('img', { class: 'bg', src: bg, alt: '', onerror: (e) => { e.target.remove(); card.classList.add('blank'); } }) : null,
         face ? el('img', { class: 'face', src: face, alt: '', onerror: (e) => e.target.remove() }) : null,
@@ -749,38 +832,80 @@
       return card;
     }
 
-    // One slot of the set: the card FutFox would use, or what is missing. A missing slot can be ticked
-    // when the card is already in the game's Gallery; a ticked one can be undone.
+    // One slot of the set: the card FutFox would use, or what is missing. A missing slot takes the card
+    // that is in it in the game ("Pick player"); slots ticked done before picking existed can be undone.
     function slotCell(res, entry) {
       const { slot, card } = entry;
       const line = slotLine(slot);
       const version = slot.rarityIds && slot.rarityIds.length ? slot.rarityIds[0] : slot.rarityId;
       const about = el('span', { class: 'sr', text: [line.name, line.meta].join(', ') });
-      const tick = (done) => el('button', { type: 'button', class: 'link', text: done ? 'Undo' : 'Done in game',
-        title: done ? 'Count this slot as missing again' : 'Already in this set in the game: count it as filled', onclick: () => toggleDone(res.id, entry.index) });
+      const link = (text, title, onclick) => el('button', { type: 'button', class: 'link', text, title, onclick });
+      const pick = (text) => link(text, 'Choose the card that is in this slot in the game, so it counts with its Item Score', () => openPicker(res, entry));
       if (card) {
-        const status = entry.unsure ? { cls: 'unknown', text: '? Check in game', hint: "This slot's version has no number yet, so FutFox can't check it: check this card in the game" }
+        const status = entry.picked ? { cls: 'ok', text: '✓ Picked', hint: 'You picked this card as the one in this slot in the game' }
+          : entry.unsure ? { cls: 'unknown', text: '? Check in game', hint: "This slot's version has no number yet, so FutFox can't check it: check this card in the game" }
           : card.remembered ? { cls: 'ok', text: '✓ Seen earlier', hint: 'FutFox saw this card in your club before; it still counts in the Gallery' }
           : { cls: 'ok', text: '✓ In your club', hint: 'In your club' };
         const position = card.positions && card.positions.length ? H.fut.positionName(card.positions[0]) : null;
-        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYours: ${card.name} ${card.rating}. ${status.hint}` }, [
+        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYours: ${card.name} ${card.rating}, ${coins(card.score || 0)} Item Score. ${status.hint}` }, [
           about,
           miniCard({ rarityId: card.rarityId, rating: card.rating, playerId: card.playerId, position, name: card.name }),
           el('span', { class: `cap ${status.cls}`, text: status.text }),
+          entry.picked ? el('span', { class: 'acts' }, [pick('Change'), link('Remove', 'Count this slot as missing again', () => setPicked(res.id, entry.index, null))]) : null,
         ]);
       }
       if (entry.done) {
         return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYou marked this slot as done in the game` }, [
           about,
           miniCard({ rarityId: version, rating: slot.rating, label: '✓ Done in game' }),
-          tick(true),
+          el('span', { class: 'acts' }, [pick('Pick'), link('Undo', 'Count this slot as missing again', () => toggleDone(res.id, entry.index))]),
         ]);
       }
       const exact = slot.kind === 'card';
       return el('div', { class: 'slot', title: `Missing: ${line.name} · ${line.meta}` }, [
         about,
         miniCard({ rarityId: version, rating: exact ? slot.rating : slot.minRating, playerId: exact ? slot.playerId : null, name: exact ? line.name : null, label: exact ? null : line.name, missing: true }),
-        tick(false),
+        pick('Pick player'),
+      ]);
+    }
+
+    // The cards that fit one slot, to pick the one that is in it in the game. A name narrows the list.
+    function pickerView(res) {
+      const p = state.picker;
+      const line = slotLine(p.slot);
+      const current = res.slots[p.index] && res.slots[p.index].picked ? res.slots[p.index].card : null;
+      const row = (c) => {
+        const version = H.fut.versionName ? H.fut.versionName(c.rarityId) : null;
+        return el('button', { type: 'button', class: `pick${current && current.defId === c.defId ? ' chosen' : ''}`, onclick: () => { setPicked(p.setId, p.index, c); closePicker(); } }, [
+          miniCard({ rarityId: c.rarityId, rating: c.rating, playerId: c.playerId, small: true }),
+          el('span', { class: 'pick-text' }, [
+            el('span', { class: 'name', text: `${c.name} ${c.rating}` }),
+            el('span', { class: 'meta', text: [version, H.fut.leagueName(c.leagueId), H.fut.nationName(c.nationId)].filter(Boolean).join(' · ') }),
+          ]),
+          el('span', { class: 'pick-score' }, [el('strong', {}, [scoreIcon(), coins(c.score || 0)]), el('span', { class: 'muted', text: 'Item Score' })]),
+        ]);
+      };
+      const submit = (e) => {
+        e.preventDefault();
+        p.query = e.target.elements.name.value.trim();
+        searchPicker(false);
+      };
+      return el('div', { class: 'picker' }, [
+        el('div', { class: 'picker-head' }, [
+          el('span', { class: 'name', text: `Slot ${p.index + 1}: ${line.name}` }),
+          el('span', { class: 'meta', text: line.meta }),
+          el('span', { class: 'note', text: 'Pick the card that is in this slot in the game. Its Item Score and bonus tags then count for the set. Same card twice? Pick the one with the Item Score the game shows.' }),
+        ]),
+        el('form', { class: 'row', onsubmit: submit }, [
+          el('input', { type: 'search', name: 'name', value: p.query, placeholder: 'Player name', 'aria-label': 'Player name', autocomplete: 'off' }),
+          el('button', { type: 'submit', text: 'Search', disabled: p.loading }),
+        ]),
+        p.error ? el('p', { class: 'error', text: p.error }) : null,
+        p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row)) : null,
+        p.loading ? el('p', { class: 'muted', role: 'status', text: 'Searching EA…' })
+          : !p.cards.length ? el('p', { class: 'muted', text: !p.query && !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.' : p.query ? `No card fits this slot for "${p.query}".` : 'No card fits this slot.' })
+            : p.more ? el('button', { type: 'button', class: 'small', text: 'Show more', onclick: () => searchPicker(true) }) : null,
+        el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Cancel', onclick: closePicker })]),
       ]);
     }
 
@@ -822,6 +947,13 @@
       const { data, loading, error } = state.sets;
       const results = data ? gallerySetResults(data) : [];
       const open = state.openSet != null && results.find((r) => r.id === state.openSet);
+      if (open && state.picker && state.picker.setId === open.id) {
+        const category = categoryOf(open);
+        return [el('section', {}, [
+          crumbs([['Categories', () => { state.picker = null; go(null, null); }], [category, () => { state.picker = null; go(category, null); }], [open.name, closePicker], ['Pick player']]),
+          pickerView(open),
+        ])];
+      }
       if (open) {
         const category = categoryOf(open);
         return [el('section', {}, [
@@ -852,7 +984,7 @@
           error ? el('p', { class: 'error', text: error }) : null,
           known ? null : el('p', { class: 'note', text: 'Press Load my club so FutFox can check which cards you have.' }),
           results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name)))) : null,
-          results.length ? el('p', { class: 'note', text: 'Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Done in game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.' }) : null,
+          results.length ? el('p', { class: 'note', text: 'Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Pick player to choose the card that is in the slot in the game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.' }) : null,
         ]),
         clubSection(known),
         savedDataSection(),

@@ -52,6 +52,11 @@
     return true;
   }
 
+  // Whether a card can go in a slot: the slot's exact card, or one its rule takes.
+  const fitsSlot = (slot, card) => (slot.kind === 'card'
+    ? card.playerId === slot.playerId && (slot.rating == null || card.rating === slot.rating) && fitsVersion(slot, card)
+    : fitsRule(slot, card));
+
   const byScore = (a, b) => (b.score || 0) - (a.score || 0) || b.rating - a.rating;
 
   const totalOf = (cards) => cards.reduce((sum, c) => sum + (c.score || 0), 0) + B.scoreTags(cards).bonus;
@@ -92,7 +97,8 @@
     return out;
   }
 
-  function bestCards(entries, fits, used) {
+  // fixed: cards already in the set that FutFox doesn't choose (picked ones); they count toward the tags.
+  function bestCards(entries, fits, used, fixed) {
     const shortlist = new Map();
     for (const entry of entries) {
       const perKey = new Map();
@@ -110,11 +116,12 @@
     // Exact-card slots first, then the slots with the fewest cards that fit.
     const order = entries.slice().sort((a, b) => (a.slot.kind === 'card' ? 0 : 1) - (b.slot.kind === 'card' ? 0 : 1) || shortlist.get(a).length - shortlist.get(b).length);
     const pool = Array.from(new Map(entries.flatMap((e) => shortlist.get(e)).map((c) => [c.id, c])).values());
-    let current = totalOf(placed());
+    const totalWith = (cards) => totalOf(fixed.concat(cards));
+    let current = totalWith(placed());
     for (const prefer of seeds(pool)) {
       const picks = fill(order, shortlist, prefer);
       const cards = Array.from(picks.values()).filter(Boolean);
-      const total = totalOf(cards);
+      const total = totalWith(cards);
       // A start must fill as many slots as the current pick: an empty slot is never worth a bonus.
       if (cards.length >= placed().length && total > current) {
         for (const e of entries) { if (e.card) used.delete(e.card.id); }
@@ -133,7 +140,7 @@
           if (++tries > MAX_TRIES) break;
           const was = entry.card;
           entry.card = c;
-          const total = totalOf(placed());
+          const total = totalWith(placed());
           if (total > current) {
             used.delete(was.id);
             used.add(c.id);
@@ -162,10 +169,16 @@
   // number (saved before the admin had EA's version list) can't be checked, so it is "unsure".
   // done: indexes of slots the player ticked as filled in the game (with a card FutFox can't see,
   // like one used in an SBC before FutFox remembered it). They count as filled and take no card.
-  function matchSet(set, cards, done) {
+  // picked: { [slot index]: card } the player picked for slots filled in the game with a card FutFox
+  // never saw; each fills its slot with its own Item Score and bonus tags, and takes no club card.
+  function matchSet(set, cards, done, picked) {
     const used = new Set();
     const ticked = new Set(done || []);
-    const slots = set.slots.map((slot, i) => ({ slot, card: null, unsure: false, done: Boolean(slot) && ticked.has(i) }));
+    const chosen = picked || {};
+    const slots = set.slots.map((slot, i) => {
+      const card = slot && chosen[i] ? chosen[i] : null;
+      return { slot, card, unsure: false, picked: Boolean(card), done: Boolean(slot) && !card && ticked.has(i) };
+    });
     const take = (entry, candidates) => {
       const card = candidates.filter((c) => !used.has(c.id)).sort(byScore)[0];
       if (!card) return;
@@ -174,20 +187,18 @@
     };
     for (const entry of slots) {
       const s = entry.slot;
-      if (s && s.kind === 'card' && !entry.done) take(entry, cards.filter((c) => c.playerId === s.playerId && (s.rating == null || c.rating === s.rating) && fitsVersion(s, c)));
+      if (s && s.kind === 'card' && !entry.done && !entry.picked) take(entry, cards.filter((c) => fitsSlot(s, c)));
     }
     const fits = new Map();
     for (const entry of slots) {
       const s = entry.slot;
-      if (!s || entry.done) continue;
-      const candidates = s.kind === 'card'
-        ? cards.filter((c) => c.playerId === s.playerId && (s.rating == null || c.rating === s.rating) && fitsVersion(s, c))
-        : cards.filter((c) => fitsRule(s, c));
+      if (!s || entry.done || entry.picked) continue;
+      const candidates = cards.filter((c) => fitsSlot(s, c));
       fits.set(entry, candidates);
       if (s.kind === 'rule') take(entry, candidates);
     }
-    bestCards(slots.filter((e) => fits.has(e)), fits, used);
-    for (const entry of slots) entry.unsure = Boolean(entry.card && entry.slot.version && !knowsVersion(entry.slot));
+    bestCards(slots.filter((e) => fits.has(e)), fits, used, slots.filter((e) => e.picked).map((e) => e.card));
+    for (const entry of slots) entry.unsure = Boolean(entry.card && !entry.picked && entry.slot.version && !knowsVersion(entry.slot));
     const open = slots.filter((e) => e.slot);
     const have = open.filter((e) => e.card || e.done).length;
     const baseScore = open.reduce((sum, e) => sum + (e.card ? e.card.score || 0 : 0), 0);
@@ -237,14 +248,15 @@
   }
 
   // Every set, closest to complete first.
-  // doneBySet: { [setId]: [slot indexes] } ticked as done in the game.
-  function matchAll(sets, cards, doneBySet) {
+  // doneBySet: { [setId]: [slot indexes] } ticked as done in the game; pickedBySet: { [setId]:
+  // { [slot index]: card } } picked for slots filled in the game.
+  function matchAll(sets, cards, doneBySet, pickedBySet) {
     return sets
-      .map((s) => matchSet(s, cards, doneBySet && doneBySet[s.id]))
+      .map((s) => matchSet(s, cards, doneBySet && doneBySet[s.id], pickedBySet && pickedBySet[s.id]))
       .sort((a, b) => b.have / (b.total || 1) - a.have / (a.total || 1) || a.name.localeCompare(b.name));
   }
 
-  const api = { SCHEMA, GRADES, fromValue, readGallery, matchSet, matchAll, gradeFor, picture };
+  const api = { SCHEMA, GRADES, fromValue, readGallery, fitsSlot, matchSet, matchAll, gradeFor, picture };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else (root.FutFox = root.FutFox || {}).setMatch = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -1,7 +1,8 @@
 // Everything that touches the EA FC Web App lives here. It reads the app's in-memory
-// objects (services, repositories) and makes exactly one kind of request: the paged
-// club list, and only when the user presses "Load my club". It also reads, without
-// changing them, the club list replies the Web App receives, for their Gallery marks.
+// objects (services, repositories) and makes two kinds of request, both only when the user
+// asks: the paged club list ("Load my club") and the squad builder's search for cards the
+// user doesn't own ("Pick player" on a Gallery slot). It also reads, without changing them,
+// the club list replies the Web App receives, for their Gallery marks.
 // It never bids, buys, lists, saves or submits anything.
 (function (root) {
   'use strict';
@@ -154,13 +155,13 @@
     return Array.from(loadedItems.values());
   }
 
-  function observe(observable) {
+  function observe(observable, doing) {
     return new Promise((resolve, reject) => {
       const owner = {};
       observable.observe(owner, (obs, result) => {
         obs.unobserve(owner);
         if (result && result.success) resolve(result);
-        else reject(new Error(`EA answered ${result ? result.status : 'nothing'} while loading the club.`));
+        else reject(new Error(`EA answered ${result ? result.status : 'nothing'} while ${doing}.`));
       });
     });
   }
@@ -174,7 +175,7 @@
       criteria.type = root.SearchType.PLAYER;
       criteria.count = CLUB_PAGE_SIZE;
       criteria.offset = page * CLUB_PAGE_SIZE;
-      const result = await observe(root.services.Club.search(criteria));
+      const result = await observe(root.services.Club.search(criteria), 'loading the club');
       const items = (result.response && result.response.items) || [];
       for (const item of items) loadedItems.set(item.id, item);
       onProgress(loadedItems.size);
@@ -247,8 +248,9 @@
     };
   }
 
-  function galleryCards() {
-    const cards = knownClubItems().map((item) => ({
+  // A card as the Gallery matcher sees it (src/core/set-match.js).
+  function galleryCard(item) {
+    return {
       id: item.id,
       // EA's player id, the same id as in its players.json and in the Gallery sets.
       playerId: attempt(() => item.databaseId, null),
@@ -268,7 +270,11 @@
       // isn't one); a loan for some days has loans -1 but is time-limited.
       loan: isLoan(item),
       ...bonusFields(item),
-    }));
+    };
+  }
+
+  function galleryCards() {
+    const cards = knownClubItems().map(galleryCard);
     return H.gallery.galleryRows(H.gallery.withRemembered(cards.filter((c) => !c.loan), rememberSeen(cards)), { seen: gallerySeen, collected: galleryCollected });
   }
 
@@ -327,6 +333,68 @@
   }
 
   // ---- Images -----------------------------------------------------------------------
+  // ---- Gallery: picking a card FutFox never saw ---------------------------------------
+
+  // A slot filled in the game with a card that left the club before FutFox saw it. The squad
+  // builder's search for cards you don't own (concept cards) lists every card that fits, each
+  // with its Item Score; one page per request, only when the user opens or pages the list.
+  const PICK_PAGE_SIZE = 20;
+  const fold = (text) => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  // EA's player ids whose name contains the text, best rated first, from the Web App's own
+  // player list (the one its Transfer Market name search uses).
+  function playersNamed(text, limit = 20) {
+    const wanted = fold(text).trim();
+    if (wanted.length < 2) return [];
+    const players = listOf(attempt(() => root.repositories.Item.getStaticData(), null));
+    return players
+      .filter((p) => [p.commonName, `${p.firstName} ${p.lastName}`].some((name) => name && fold(name).includes(wanted)))
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, limit)
+      .map((p) => p.id);
+  }
+
+  // One page of the cards for a slot, by the slot's club, league, nation, version and lowest rating
+  // (a slot naming several clubs or leagues is one search each), or only players whose name contains
+  // `name`. EA refuses a search by player with a club or league (it answers 500) and ignores the
+  // rating there, so a search by player only keeps the version: the caller keeps the cards that fit.
+  // Resolves to { cards, more } with cards shaped like galleryCards().
+  async function searchSlotCards(slot, { name = '', page = 0 } = {}) {
+    const ids = slot.kind === 'card' ? [slot.playerId] : name ? playersNamed(name) : null;
+    if (ids && !ids.length) return { cards: [], more: false };
+    const versions = slot.rarityIds && slot.rarityIds.length ? slot.rarityIds : slot.rarityId != null ? [slot.rarityId] : [];
+    const each = ids ? [{}]
+      : slot.clubIds && slot.clubIds.length ? slot.clubIds.map((club) => ({ club }))
+        : slot.leagueIds && slot.leagueIds.length ? slot.leagueIds.map((league) => ({ league }))
+          : [{}];
+    const cards = [];
+    let more = false;
+    for (const scope of each) {
+      const criteria = new root.UTSearchCriteriaDTO();
+      criteria.type = root.SearchType.PLAYER;
+      criteria.count = PICK_PAGE_SIZE + 1;
+      criteria.offset = page * PICK_PAGE_SIZE;
+      if (versions.length) criteria.rarities = versions;
+      if (ids) criteria.defId = ids;
+      else {
+        if (scope.club != null) criteria.club = scope.club;
+        if (scope.league != null) criteria.league = scope.league;
+        else if (slot.leagueId != null) criteria.league = slot.leagueId;
+        if (slot.nationId != null) criteria.nation = slot.nationId;
+        if (slot.minRating != null) criteria.ovrMin = slot.minRating;
+      }
+      const result = await observe(root.services.Item.searchConceptItems(criteria), 'searching for cards');
+      const items = (result.response && result.response.items) || [];
+      if (items.length > PICK_PAGE_SIZE) more = true;
+      // A concept card has no owner, so First Owner can't be told; id is its definition id.
+      for (const item of items.slice(0, PICK_PAGE_SIZE)) cards.push({ ...galleryCard(item), id: item.definitionId, defId: item.definitionId, owners: null, loan: false });
+    }
+    return { cards: cards.sort((a, b) => b.rating - a.rating || (b.score || 0) - (a.score || 0)), more };
+  }
+
+  // The name of a version (3 = "TOTW"), as the Web App shows it.
+  const versionName = (id) => attempt(() => root.services.Localization.localize(`item.raretype${id}`), null);
+
   // The Web App's own league logos, club badges, version cards and token art, from EA's servers.
   // FutFox's panel is dark, so it uses the white "dark" logos the Web App shows on its own dark screens.
 
@@ -390,6 +458,6 @@
   H.fut = {
     isReady, getChallenges, rulesFor, slotsFor, requiredSlotsFor,
     knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
-    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage,
+    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

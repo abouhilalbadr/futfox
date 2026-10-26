@@ -124,6 +124,18 @@ test('slots ticked as done in the game count as filled and take no card', () => 
   assert.equal(res.missing.length, 0);
 });
 
+test('a picked card fills its slot with its own score and tags, and takes no club card', () => {
+  const rule = { kind: 'rule', label: 'Any card' };
+  const picked = card(50547923, 300, 80, { score: 338, totw: true });
+  const res = M.matchSet({ id: 'p', name: 'Picked', slots: [rule, rule] }, [card(1, 5, 84)], [0], { 0: picked });
+  assert.equal(res.slots[0].picked, true);
+  assert.equal(res.slots[0].done, false, 'a pick replaces the done tick');
+  assert.equal(res.slots[0].card, picked);
+  assert.equal(res.slots[1].card.id, 1, 'the club card goes to the next slot');
+  assert.equal(res.baseScore, 338 + 84000);
+  assert.equal(res.have, 2);
+});
+
 test('a club rule takes cards from its clubs in its leagues only', () => {
   const arsenal = { kind: 'rule', label: 'Any Arsenal player (men or women)', clubIds: [1, 116009], leagueIds: [13, 2216] };
   const res = M.matchSet({ id: 'a', name: 'Arsenal', slots: [arsenal, arsenal, arsenal] }, [

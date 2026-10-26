@@ -99,15 +99,25 @@
     return out;
   }
 
+  // Cards picked for slots in either list ({ [setId]: { [slot index]: card } }); a slot picked in
+  // both keeps the first list's card, so importing never replaces a pick.
+  function mergePicked(a, b) {
+    const out = {};
+    for (const list of [b || {}, a || {}]) {
+      for (const [setId, slots] of Object.entries(list)) out[setId] = { ...(out[setId] || {}), ...slots };
+    }
+    return out;
+  }
+
   // The file FutFox exports: what this browser keeps for the Gallery, to move it to another
   // browser or keep a copy.
   const EXPORT_KIND = 'futfox-gallery-data';
 
-  function exportData({ memory, done, persona, now }) {
-    return { kind: EXPORT_KIND, version: 1, exportedAt: now, persona: persona == null ? null : String(persona), cards: Object.values((memory && memory.cards) || {}), done: done || {} };
+  function exportData({ memory, done, picked, persona, now }) {
+    return { kind: EXPORT_KIND, version: 1, exportedAt: now, persona: persona == null ? null : String(persona), cards: Object.values((memory && memory.cards) || {}), done: done || {}, picked: picked || {} };
   }
 
-  // The memory and ticks in an exported file, or an error that says why it can't be used.
+  // The memory, ticks and picks in an exported file, or an error that says why it can't be used.
   function readExport(json) {
     if (!json || json.kind !== EXPORT_KIND) return { error: "This isn't a FutFox Gallery data file." };
     if (json.version !== 1) return { error: 'This file comes from a newer FutFox. Update FutFox, then import it again.' };
@@ -119,10 +129,16 @@
     for (const [setId, slots] of Object.entries(json.done && typeof json.done === 'object' ? json.done : {})) {
       if (Array.isArray(slots)) done[setId] = slots.filter(Number.isInteger);
     }
-    return { memory: { cards }, done, persona: json.persona || null };
+    const picked = {};
+    for (const [setId, slots] of Object.entries(json.picked && typeof json.picked === 'object' ? json.picked : {})) {
+      for (const [index, card] of Object.entries(slots && typeof slots === 'object' ? slots : {})) {
+        if (/^\d+$/.test(index) && card && card.id != null) (picked[setId] = picked[setId] || {})[index] = card;
+      }
+    }
+    return { memory: { cards }, done, picked, persona: json.persona || null };
   }
 
-  const api = { readClubReply, galleryRows, filterRows, countByFilter, FILTERS, rememberCards, withRemembered, MEMORY_LIMIT, mergeMemory, mergeDone, exportData, readExport };
+  const api = { readClubReply, galleryRows, filterRows, countByFilter, FILTERS, rememberCards, withRemembered, MEMORY_LIMIT, mergeMemory, mergeDone, mergePicked, exportData, readExport };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else (root.FutFox = root.FutFox || {}).gallery = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

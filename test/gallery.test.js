@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { readClubReply, galleryRows, filterRows, countByFilter, rememberCards, withRemembered, mergeMemory, mergeDone, exportData, readExport } = require('../src/core/gallery');
+const { readClubReply, galleryRows, filterRows, countByFilter, rememberCards, withRemembered, mergeMemory, mergeDone, mergePicked, exportData, readExport } = require('../src/core/gallery');
 
 test('a club reply gives every card id and the ones EA marks as collected', () => {
   const reply = { itemData: [{ id: 1, isCollected: true }, { id: 2 }, { id: 3, isCollected: false }, { rating: 80 }] };
@@ -65,13 +65,16 @@ test('the memory keeps the most recently seen cards', () => {
   assert.equal(memory.cards[0], undefined, 'the oldest go first');
 });
 
-test('an export file brings the remembered cards and ticked slots back', () => {
+test('an export file brings the remembered cards, ticked slots and picked cards back', () => {
   const memory = { cards: { 1: { id: 1, name: 'Corona', score: 300, seenAt: 5 } } };
-  const file = JSON.parse(JSON.stringify(exportData({ memory, done: { set1: [0, 3] }, persona: 1005603132559, now: 9 })));
+  const picked = { set1: { 1: { id: 50547923, name: 'Mwene', score: 338 } } };
+  const file = JSON.parse(JSON.stringify(exportData({ memory, done: { set1: [0, 3] }, picked, persona: 1005603132559, now: 9 })));
   assert.equal(file.persona, '1005603132559');
   const read = readExport(file);
   assert.deepEqual(read.memory, memory);
   assert.deepEqual(read.done, { set1: [0, 3] });
+  assert.deepEqual(read.picked, picked);
+  assert.deepEqual(readExport({ ...file, picked: { set1: { x: { id: 1 }, 2: null } } }).picked, {}, 'odd slots are dropped');
   assert.match(readExport({ sets: [] }).error, /isn't a FutFox Gallery data file/);
   assert.match(readExport({ ...file, version: 2 }).error, /newer FutFox/);
 });
@@ -84,4 +87,6 @@ test('importing adds to what is saved; the latest sighting of a card wins', () =
   assert.equal(merged.cards[2].score, 250);
   assert.equal(mergeMemory(file, here).cards[2].score, 250, 'the older sighting never wins');
   assert.deepEqual(mergeDone({ a: [2, 0] }, { a: [0, 5], b: [1] }), { a: [0, 2, 5], b: [1] });
+  assert.deepEqual(mergePicked({ a: { 0: { id: 1 } } }, { a: { 0: { id: 2 }, 1: { id: 3 } }, b: { 2: { id: 4 } } }),
+    { a: { 0: { id: 1 }, 1: { id: 3 } }, b: { 2: { id: 4 } } }, 'a pick already here is kept');
 });
