@@ -8,5 +8,8 @@
     "test": "node --test \"test/*.test.js\"",
     "emulators": "npx -y firebase-tools@15.32.1 emulators:start --project futfox-gallery --config firebase/firebase.json",
     "sync-players": "node scripts/sync-players.mjs"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2"
   }
 }

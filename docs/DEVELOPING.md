@@ -3,10 +3,13 @@
 ## Tests
 
 ```bash
+npm install
 npm test
 ```
 
-No dependencies or build step. The core files run in Node for tests and in the page as
+No runtime dependencies or build step. The only dev dependency is
+[fast-check](https://fast-check.dev), which `test/properties.test.js` uses to fuzz the rating,
+chemistry and solver code with thousands of random squads. The core files run in Node for tests and in the page as
 plain scripts (they attach to `window.FutFox`). `test/read-only.test.js` fails if any source
 file calls an account-changing Web App method.
 
