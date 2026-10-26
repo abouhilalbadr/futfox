@@ -34,7 +34,15 @@ jobs:
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Sign the zip
         run: cosign sign-blob --yes --bundle "futfox-$VERSION.zip.sigstore.json" "futfox-$VERSION.zip"
+      # The same zip under a fixed name, so releases/latest/download/futfox.zip always gets the
+      # newest version. The signature covers the bytes, so the same bundle verifies both names.
+      - name: Add copies with a fixed name
+        run: |
+          cp "futfox-$VERSION.zip" futfox.zip
+          cp "futfox-$VERSION.zip.sigstore.json" futfox.zip.sigstore.json
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "futfox-$VERSION.zip" "futfox-$VERSION.zip.sigstore.json" --repo "$GITHUB_REPOSITORY" --title "FutFox $VERSION" --generate-notes
+        run: >-
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "FutFox $VERSION" --generate-notes
+          "futfox-$VERSION.zip" "futfox-$VERSION.zip.sigstore.json" futfox.zip futfox.zip.sigstore.json

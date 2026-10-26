@@ -53,12 +53,15 @@ use it at your own risk.
 
 ## Install
 
-1. [Download the code](https://github.com/abouhilalbadr/futfox/archive/refs/heads/main.zip) and
-   unzip it.
+1. [Download futfox.zip](https://github.com/abouhilalbadr/futfox/releases/latest/download/futfox.zip) from the latest
+   [release](https://github.com/abouhilalbadr/futfox/releases/latest) and unzip it.
 2. Open `chrome://extensions`, switch on **Developer mode** and click **Load unpacked**.
-3. Pick the `futfox-main` folder, then open the
+3. Pick the unzipped `futfox` folder, then open the
    [Web App](https://www.ea.com/ea-sports-fc/ultimate-team/web-app/). The **FutFox** button
    appears at the bottom right.
+
+Each release zip is signed; [docs/DEVELOPING.md](docs/DEVELOPING.md#releases) shows how to
+check it.
 
 The Chrome Web Store listing is coming soon.
 
