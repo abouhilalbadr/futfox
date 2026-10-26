@@ -471,7 +471,8 @@
     function openPicker(res, entry) {
       const body = panel.querySelector('.body');
       state.scrolls.set = body ? body.scrollTop : 0;
-      state.picker = { setId: res.id, index: entry.index, slot: entry.slot, query: '', page: 0, cards: [], more: false, loading: false, error: null };
+      // text: what is in the name box; query: the name of the search on screen; seq: the newest search.
+      state.picker = { setId: res.id, index: entry.index, slot: entry.slot, text: '', query: '', page: 0, cards: [], more: false, loading: false, error: null, cleared: false, seq: 0, timer: null };
       state.scrollTo = 0;
       if (searchable(entry.slot)) searchPicker(false); else render();
     }
@@ -481,25 +482,46 @@
       if (!p) return;
       if (!more) { p.page = 0; p.cards = []; p.more = false; }
       if (!p.query && !searchable(p.slot)) return render();
+      const seq = ++p.seq;
       p.loading = true;
       p.error = null;
       render();
       try {
         const found = await H.fut.searchSlotCards(p.slot, { name: p.query, page: p.page });
-        if (state.picker !== p) return;
+        // A newer search, or an emptied name box, replaces this one.
+        if (state.picker !== p || p.seq !== seq) return;
         const seen = new Set(p.cards.map((c) => c.defId));
         p.cards = p.cards.concat(found.cards.filter((c) => !seen.has(c.defId) && H.setMatch.fitsSlot(p.slot, c)));
         p.more = found.more;
         p.page += 1;
       } catch (e) {
-        if (state.picker !== p) return;
+        if (state.picker !== p || p.seq !== seq) return;
         p.error = e.message || String(e);
       }
       p.loading = false;
       render();
     }
 
+    // Typing searches once the name has 3 letters and the typing pauses; an empty box clears the list.
+    const TYPE_PAUSE = 350;
+    function typePicker(value) {
+      const p = state.picker;
+      p.text = value;
+      clearTimeout(p.timer);
+      const name = value.trim();
+      if (!name) {
+        Object.assign(p, { query: '', page: 0, cards: [], more: false, loading: false, error: null, cleared: true, seq: p.seq + 1 });
+        return render();
+      }
+      if (name.length < 3 || name === p.query) return;
+      p.timer = setTimeout(() => {
+        p.query = name;
+        searchPicker(false);
+      }, TYPE_PAUSE);
+    }
+
     function closePicker() {
+      if (state.picker) clearTimeout(state.picker.timer);
       state.picker = null;
       state.scrollTo = state.scrolls.set || 0;
       render();
@@ -919,9 +941,13 @@
           el('span', { class: 'pick-score' }, [el('strong', {}, [scoreIcon(), coins(c.score || 0)]), el('span', { class: 'muted', text: 'Item Score' })]),
         ]);
       };
+      // Enter searches at once, even a name shorter than 3 letters.
       const submit = (e) => {
         e.preventDefault();
-        p.query = e.target.elements.name.value.trim();
+        clearTimeout(p.timer);
+        const name = e.target.elements.name.value.trim();
+        if (!name) return typePicker('');
+        p.query = name;
         searchPicker(false);
       };
       return el('div', { class: 'picker' }, [
@@ -930,14 +956,15 @@
           el('span', { class: 'meta', text: line.meta }),
           el('span', { class: 'note', text: 'Pick the card that is in this slot in the game. Its Item Score and bonus tags then count for the set. Same card twice? Pick the one with the Item Score the game shows.' }),
         ]),
-        el('form', { class: 'row', onsubmit: submit }, [
-          el('input', { type: 'search', name: 'name', value: p.query, placeholder: 'Player name', 'aria-label': 'Player name', autocomplete: 'off' }),
-          el('button', { type: 'submit', text: 'Search', disabled: p.loading }),
+        el('form', { class: 'row', role: 'search', onsubmit: submit }, [
+          el('input', { type: 'search', name: 'name', value: p.text, placeholder: 'Player name, 3 letters or more', 'aria-label': 'Player name', autocomplete: 'off', oninput: (e) => typePicker(e.target.value) }),
         ]),
         p.error ? el('p', { class: 'error', text: p.error }) : null,
         p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row)) : null,
         p.loading ? el('p', { class: 'muted', role: 'status', text: 'Searching EA…' })
-          : !p.cards.length ? el('p', { class: 'muted', text: !p.query && !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.' : p.query ? `No card fits this slot for "${p.query}".` : 'No card fits this slot.' })
+          : !p.cards.length ? el('p', { class: 'muted', text: p.query ? `No card fits this slot for "${p.query}".`
+            : !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.'
+              : p.cleared ? 'Type 3 letters or more of a player name.' : 'No card fits this slot.' })
             : p.more ? el('button', { type: 'button', class: 'small', text: 'Show more', onclick: () => searchPicker(true) }) : null,
         el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Cancel', onclick: closePicker })]),
       ]);
@@ -1036,6 +1063,9 @@
       const before = panel.querySelector('.body');
       const scroll = state.scrollTo != null ? state.scrollTo : before ? before.scrollTop : 0;
       state.scrollTo = null;
+      // Keep typing in the name box while the panel rebuilds around it.
+      const focused = panel.getRootNode().activeElement;
+      const typing = focused && focused.matches('.picker input') ? [focused.selectionStart, focused.selectionEnd] : null;
       const entry = selected();
       const known = H.fut.knownClubItems().length;
       const view = H.fut.galleryEnabled ? settings.view : 'sbc';
@@ -1087,6 +1117,11 @@
       ].filter(Boolean));
       const body = panel.querySelector('.body');
       if (body) body.scrollTop = scroll;
+      const box = typing && panel.querySelector('.picker input');
+      if (box) {
+        box.focus({ preventScroll: true });
+        box.setSelectionRange(...typing);
+      }
     }
 
     if (H.fut.galleryEnabled && settings.view === 'gallery') loadSets(false);
