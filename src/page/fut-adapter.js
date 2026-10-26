@@ -1,7 +1,8 @@
 // Everything that touches the EA FC Web App lives here. It reads the app's in-memory
 // objects (services, repositories) and makes two kinds of request, both only when the user
 // asks: the paged club list ("Load my club") and the squad builder's search for cards the
-// user doesn't own ("Pick player" on a Gallery slot). It also reads, without changing them,
+// user doesn't own ("Pick player" on a Gallery slot, or "Suggest cards" on a Gallery set, one
+// search per different empty slot). It also reads, without changing them,
 // the club list replies the Web App receives, for their Gallery marks.
 // It never bids, buys, lists, saves or submits anything.
 (function (root) {
