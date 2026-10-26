@@ -50,6 +50,13 @@ test('cards FutFox has seen keep counting after they leave the club; loans are n
   assert.equal('seenAt' in cards[1], false);
 });
 
+test('a card remembered before FutFox knew it was a loan is forgotten once it is seen as one', () => {
+  let memory = rememberCards({ cards: {} }, [{ id: 7, name: 'Lukeba', score: 4000 }], 1);
+  memory = rememberCards(memory, [{ id: 7, name: 'Lukeba', score: 4000, loan: true }], 2);
+  assert.deepEqual(memory.cards, {});
+  assert.deepEqual(withRemembered([], memory), []);
+});
+
 test('the memory keeps the most recently seen cards', () => {
   const many = Array.from({ length: 5002 }, (_, i) => ({ id: i, score: 1 }));
   let memory = rememberCards({ cards: {} }, many.slice(0, 2), 1);

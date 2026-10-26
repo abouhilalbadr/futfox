@@ -56,7 +56,8 @@
   function rememberCards(memory, cards, now) {
     const kept = { ...((memory && memory.cards) || {}) };
     for (const card of cards) {
-      if (card.loan) continue;
+      // A loan never counts; one remembered before FutFox could tell it was a loan is dropped.
+      if (card.loan) { delete kept[card.id]; continue; }
       const { collected, firstOwner, remembered, ...row } = card;
       kept[card.id] = { ...row, seenAt: now };
     }

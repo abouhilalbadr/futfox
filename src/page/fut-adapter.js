@@ -104,6 +104,11 @@
     return attempt(() => (typeof item.isTradeable === 'function' ? !item.isTradeable() : !!item.untradeable), false);
   }
 
+  // A loan for some games (loans counts the games left, -1 otherwise) or for some days (time-limited).
+  function isLoan(item) {
+    return attempt(() => (item.loans != null && item.loans !== -1) || item.isLimitedUse() || item.isTimeLimited(), false);
+  }
+
   // Loans, timed cards and cards in a running evolution can't go into an SBC.
   function isUsable(item) {
     return !attempt(() => item.isLimitedUse() || item.isTimeLimited() || item.isActiveInTimedEvolution() || item.loans >= 0, false);
@@ -259,8 +264,9 @@
       clubId: item.teamId,
       // Holographic cards carry a foil cosmetic (-1 means none); the Holographics set needs it.
       foil: attempt(() => item.getFoilSubtype() !== -1, false),
-      // Loan cards (loans counts the games left; -1 means not a loan) never count in the Gallery.
-      loan: item.loans != null && item.loans !== -1,
+      // Loan cards never count in the Gallery: loans counts a game loan's games left (-1 when it
+      // isn't one); a loan for some days has loans -1 but is time-limited.
+      loan: isLoan(item),
       ...bonusFields(item),
     }));
     return H.gallery.galleryRows(H.gallery.withRemembered(cards.filter((c) => !c.loan), rememberSeen(cards)), { seen: gallerySeen, collected: galleryCollected });
@@ -286,7 +292,7 @@
 
   function rememberSeen(cards) {
     const before = galleryMemory().memory;
-    const changed = cards.some((c) => !c.loan && (!before.cards[c.id] || before.cards[c.id].score !== c.score));
+    const changed = cards.some((c) => (c.loan ? Boolean(before.cards[c.id]) : !before.cards[c.id] || before.cards[c.id].score !== c.score));
     if (!changed) return before;
     const after = H.gallery.rememberCards(before, cards, Date.now());
     replaceGalleryMemory(after);
