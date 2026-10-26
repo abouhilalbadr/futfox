@@ -10,6 +10,10 @@
 <style>
   html, body { margin: 0; height: 100%; background: #1d2330; }
 </style>
+<script>
+  // Open on the SBC tab, whatever the Gallery capture left in this browser.
+  localStorage.setItem('futfox.settings', JSON.stringify({ view: 'sbc' }));
+</script>
 <script src="../../src/core/requirements.js"></script>
 <script src="../../src/core/rating.js"></script>
 <script src="../../src/core/chemistry.js"></script>
@@ -59,6 +63,8 @@
   let loading = null;
   FutFox.fut = {
     isReady: () => true,
+    // Shows the SBC and Gallery tabs, as in the Web App.
+    galleryEnabled: true,
     getChallenges: () => [{ id: 1, setName: 'League and Nation Hybrid', name: '3 Leagues & 2 Nations', status: 'OPEN', challenge: {} }],
     rulesFor: () => RULES,
     slotsFor: () => [0, 3, 5, 5, 7, 14, 14, 14, 23, 25, 27].map((typeId) => ({ typeId })),
@@ -76,6 +82,7 @@
   };
 })();
 </script>
+<script src="../../src/page/art.js"></script>
 <script src="../../src/page/panel.js"></script>
 <script>
 (function () {
