@@ -1,0 +1,98 @@
+<!doctype html>
+<!--
+  Renders the real FutFox Gallery set page (src/) with an example club and set, for the website's
+  Gallery image. Only the Web App layer (FutFox.fut) is replaced; the panel and set matching are the
+  shipped code. Every card is drawn on EA's Team of the Week card frame; the players are made up, so
+  they have no faces. Use: scripts/capture-screens.sh.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; height: 100%; background: #1d2330; }
+</style>
+<script>
+  // An example set, stored as the downloaded set list so the panel opens it without a request.
+  const rule = { kind: 'rule', label: 'Any Riverside FC player (men or women)', clubIds: [900], leagueIds: [13] };
+  localStorage.setItem('futfox.gallerySets', JSON.stringify({
+    publishedAt: 1, fetchedAt: Date.now(),
+    sets: [{
+      id: 'riverside', name: 'Riverside FC', group: 'Example League', tokens: 0,
+      grades: { D: 10, C: 100000, B: 150000, A: 250000, S: 400000 },
+      rewards: { D: 'Riverside FC Badge', C: 'Riverside FC Kit', B: '50 Gallery Tokens', A: '70 Gallery Tokens', S: '100 Gallery Tokens' },
+      slots: new Array(10).fill(rule),
+    }],
+  }));
+  localStorage.setItem('futfox.settings', JSON.stringify({ view: 'gallery' }));
+</script>
+<script src="../../src/core/requirements.js"></script>
+<script src="../../src/core/rating.js"></script>
+<script src="../../src/core/chemistry.js"></script>
+<script src="../../src/core/solver.js"></script>
+<script src="../../src/core/gallery.js"></script>
+<script src="../../src/core/bonus-tags.js"></script>
+<script src="../../src/core/set-match.js"></script>
+</head>
+<body>
+<script>
+(function () {
+  const FRAME = 'https://www.ea.com/ea-sports-fc/ultimate-team/web-app/content/27A3C9F1-6B2E-4D7A-8C1F-2E9B5A4D6C7E/2027/fut/items/images/backgrounds/itemBGs/39536884-f4a8-4ac1-8962-09ad897ee4ea/cards_bg_e_1_3_3.png';
+  const POS = { 0: 'GK', 3: 'RB', 5: 'CB', 7: 'LB', 10: 'CDM', 14: 'CM', 18: 'CAM', 23: 'RW', 25: 'ST', 27: 'LW' };
+  const card = ([id, name, rating, position, score, rarityId, foil]) => ({
+    id, defId: 5000 + id, playerId: 5000 + id, name, rating, rarityId, score, foil: Boolean(foil),
+    leagueId: 13, nationId: 14, clubId: 900, owners: 1, level: 'gold', positions: [position], loan: false,
+  });
+  // The example club: [id, name, rating, position id, Item Score, version, holographic]. Every card
+  // is a Team of the Week (version 3) so they all suit the one card frame drawn behind them.
+  const club = [
+    [1, 'R. Okafor', 85, 0, 9100, 3], [2, 'T. Walsh', 84, 3, 8200, 3], [3, 'L. Becker', 86, 5, 10400, 3, true],
+    [4, 'A. Fletcher', 84, 14, 8200, 3], [6, 'B. Schulz', 87, 25, 11600, 3],
+  ].map(card);
+  // What the squad builder list offers for the empty slots.
+  const list = [
+    [20, 'K. Doyle', 80, 7, 5400, 3], [21, 'P. Ruiz', 81, 10, 6000, 3], [22, 'I. Vidal', 82, 27, 6600, 3],
+    [23, 'H. Laurent', 83, 25, 7300, 3], [24, 'O. Brandt', 84, 14, 8100, 3], [25, 'C. Moreno', 85, 5, 9000, 3],
+    [26, 'M. Ibáñez', 86, 3, 10000, 3], [27, 'G. Rossi', 87, 23, 11500, 3, true], [28, 'Y. Diallo', 88, 27, 13000, 3],
+  ].map(card).map((c) => ({ ...c, id: c.defId, owners: null }));
+  FutFox.fut = {
+    galleryEnabled: true,
+    knownClubItems: () => club,
+    galleryCards: () => club,
+    leagueLogo: () => null,
+    clubBadge: () => null,
+    cardImage: () => FRAME,
+    playerFace: () => null,
+    positionName: (id) => POS[id] || String(id),
+    tokenImage: () => null,
+    galleryMemory: () => ({ persona: 'example', memory: { cards: {} } }),
+    replaceGalleryMemory: () => {},
+    leagueName: () => 'Example League',
+    nationName: () => 'England',
+    versionName: () => null,
+    getChallenges: () => [],
+    rulesFor: () => [],
+    searchSlotCards: async () => ({ more: false, cards: list }),
+  };
+})();
+</script>
+<script src="../../src/page/gallery-source.js"></script>
+<script src="../../src/page/art.js"></script>
+<script src="../../src/page/panel.js"></script>
+<script>
+(async function () {
+  FutFox.panel.create();
+  const shadow = document.getElementById('futfox-root').shadowRoot;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const button = (text) => [...shadow.querySelectorAll('button')].find((b) => b.textContent.includes(text));
+  shadow.querySelector('.toggle').click();
+  await wait(200);
+  button('Example League').click();
+  await wait(200);
+  button('Riverside FC').click();
+  await wait(200);
+  shadow.querySelector('button.aimg.g-B').click();
+  await wait(600);
+})();
+</script>
+</body>
+</html>

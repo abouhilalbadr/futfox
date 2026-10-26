@@ -30,8 +30,8 @@
   <symbol id="click" viewBox="0 0 24 24"><path d="M6 3.5l12.5 7.2-5.6 1.5 3.4 5.9-2.6 1.5-3.4-5.9-4.3 3.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
   <symbol id="grade" viewBox="0 0 24 24"><path d="M12 2.5 21.5 12 12 21.5 2.5 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="cards" viewBox="0 0 24 24"><path d="M9 4.5h10v15H9zM5 7v13.5h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="suggest" viewBox="0 0 24 24"><path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
   <symbol id="pick" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
-  <symbol id="player" viewBox="0 0 40 40"><circle cx="20" cy="13" r="8"/><path d="M4 40c1-10 7.5-15 16-15s15 5 16 15z"/></symbol>
 </svg>
 <a class="skip" href="#main">Skip to content</a>
 
@@ -142,46 +142,15 @@
           <h2>Know your grade before you place a card.</h2>
           <p class="section-lede">Press FutFox, then <strong>Gallery</strong>, and open any set. FutFox picks the best cards from your club for each slot, adds up the Item Score they reach and shows the grade and tokens you'd earn.</p>
           <ul class="gallery-points">
-            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#grade"/></svg></span><div><h3>Your grade and tokens</h3><p>The Item Score your cards reach, the grade it gives and how far the next grade is.</p></div></li>
-            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#cards"/></svg></span><div><h3>Every slot, card by card</h3><p>Each slot shows the card FutFox would use from your club, or the card that's still missing.</p></div></li>
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#grade"/></svg></span><div><h3>Your grade and tokens</h3><p>The Item Score your cards reach with their bonus tags, the grade and tokens it gives, and how much more you need for the next grade.</p></div></li>
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#cards"/></svg></span><div><h3>Every slot, card by card</h3><p>Each slot shows the card FutFox would use from your club, a card you placed before it left your club, or the card that's still missing.</p></div></li>
+            <li><span class="gp-icon"><svg aria-hidden="true"><use href="#suggest"/></svg></span><div><h3>Suggest cards</h3><p>Choose the grade you want and FutFox fills every empty slot: cards from your club first, then the squad builder list, with the Item Score each one adds.</p></div></li>
             <li><span class="gp-icon"><svg aria-hidden="true"><use href="#pick"/></svg></span><div><h3>Pick player</h3><p>Already placed a card that left your club? Pick it from the squad builder list and its real Item Score counts.</p></div></li>
           </ul>
         </div>
 
-        <figure class="panel set-panel" aria-label="The FutFox Gallery page for one set">
-          <div class="panel-head">
-            <span class="title"><svg aria-hidden="true"><use href="#fox"/></svg>FutFox</span>
-            <span class="close" aria-hidden="true">×</span>
-          </div>
-          <div class="panel-body">
-            <p class="crumbs">Categories › Season 1 › <strong>Season 1 Heroes</strong></p>
-            <div class="summary">
-              <span><strong>8</strong> of 10 cards</span>
-              <span><strong>71,240</strong> Item Score</span>
-              <span class="good">Grade C · 6 tokens earned</span>
-            </div>
-            <ol class="ladder" aria-label="Grades">
-              <li class="is-done"><strong>D</strong><span>10</span></li>
-              <li class="is-done"><strong>C</strong><span>45,000</span></li>
-              <li class="is-next"><strong>B</strong><span>92,565</span></li>
-              <li><strong>A</strong><span>140,000</span></li>
-              <li><strong>S</strong><span>210,000</span></li>
-            </ol>
-            <ul class="set-cards">
-              <li><span class="fc fc-gold"><span class="rt">85</span><span class="ps">ST</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc"><span class="rt">86</span><span class="ps">CAM</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc"><span class="rt">85</span><span class="ps">CB</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc fc-totw"><span class="rt">84</span><span class="ps">RW</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ Picked</span></li>
-              <li><span class="fc fc-gold"><span class="rt">84</span><span class="ps">CM</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc"><span class="rt">83</span><span class="ps">LB</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc fc-gold"><span class="rt">83</span><span class="ps">GK</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc"><span class="rt">82</span><span class="ps">CDM</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap">✓ In your club</span></li>
-              <li><span class="fc fc-missing"><span class="rt">86</span><span class="ps">LW</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap cap-pick">Pick player</span></li>
-              <li><span class="fc fc-gold fc-missing"><span class="rt">84</span><span class="ps">RB</span><svg aria-hidden="true"><use href="#player"/></svg></span><span class="cap cap-pick">Pick player</span></li>
-            </ul>
-            <p class="set-foot"><span>2 cards missing</span><span class="next">21,325 more for grade B</span></p>
-          </div>
-          <figcaption class="panel-note" style="padding: 0 18px 16px">Example set. In the Web App each slot shows the real card art.</figcaption>
+        <figure class="gallery-shot">
+          <img src="/assets/gallery/set-page.png" width="500" height="1040" loading="lazy" alt="The FutFox Gallery page for one set: 5 of 10 cards, 120,650 Item Score and grade C, with five suggested cards from the squad builder list that reach grade B">
         </figure>
       </div>
     </div>

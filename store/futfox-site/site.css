@@ -191,45 +191,10 @@ html:not(.js) .how-stage { height: auto; gap: 16px; }
 .gallery-points h3 { margin: 0; font-size: 17px; }
 .gallery-points p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
 
-.set-panel { flex: 1 1 500px; }
-.crumbs { margin: 0; color: var(--muted); font-size: 12px; }
-.crumbs strong { color: var(--text); }
-.ladder { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-.ladder li {
-  display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border: 1px solid var(--line); border-radius: 10px;
-  color: var(--muted); font-variant-numeric: tabular-nums;
-}
-.ladder strong { font-size: 16px; line-height: 1.2; }
-.ladder span { font-size: 10px; }
-.ladder .is-done { border-color: var(--ok); color: var(--ok); background: var(--ok-bg); }
-.ladder .is-next { border-color: var(--lime); color: var(--lime); }
-
-.set-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px 8px; }
-.set-cards li { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-/* A card in the game's shape; the line at 63% is where the game draws its divider. */
-.fc {
-  position: relative; display: block; width: 100%; aspect-ratio: 576 / 800; container-type: inline-size;
-  clip-path: polygon(50% 0, 63% 3.5%, 100% 5%, 100% 90%, 50% 100%, 0 90%, 0 5%, 37% 3.5%);
-  background: linear-gradient(160deg, #6e4bd8, #241a4d); color: var(--text);
-}
-.fc-gold { background: linear-gradient(160deg, #f3d77a, #c9a64a); color: #2b2210; }
-.fc-totw { background: linear-gradient(160deg, #3b3553, #121019); color: #e8c45a; }
-.fc::after { content: ""; position: absolute; left: 16%; right: 16%; top: 63.4%; height: 1px; background: currentColor; opacity: 0.35; }
-.fc .rt { position: absolute; left: 15%; top: 17%; font-size: 24cqw; font-weight: 800; line-height: 1; }
-.fc .ps { position: absolute; left: 15%; top: 36%; font-size: 12cqw; font-weight: 700; }
-.fc svg { position: absolute; right: 6%; bottom: 36.6%; width: 56%; height: auto; aspect-ratio: 1; fill: currentColor; opacity: 0.3; }
-.fc-missing { filter: grayscale(1); opacity: 0.4; }
-.cap { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--ok); }
-.cap-pick { color: var(--violet-soft); font-weight: 700; }
-.set-foot { margin: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); }
-.set-foot .next { color: var(--lime); font-weight: 600; }
-@media (max-width: 520px) {
-  .set-cards { gap: 10px 6px; }
-  .cap:not(.cap-pick) { display: none; }
-  .cap-pick { font-size: 9px; white-space: normal; text-align: center; line-height: 1.2; }
-  .ladder { gap: 4px; }
-  .ladder li { padding: 6px 0; }
-  .ladder span { font-size: 8.5px; }
+.gallery-shot { flex: 1 1 360px; max-width: 400px; margin: 0 auto; }
+.gallery-shot img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 24px 60px rgba(139, 92, 246, 0.16);
 }
 
 /* Safety: what FutFox does next to what only you do */
