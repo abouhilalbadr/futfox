@@ -19,7 +19,7 @@ shot() {
 shot 1 300 150
 shot 2 500 470
 shot 3 500 360
-shot 4 500 640
+shot 4 500 780
 shot 5 500 330
 # The Gallery set page (store/screens/gallery.html), the panel's full 500 px width.
 out="$(pwd)/store/screens/gallery.png"
