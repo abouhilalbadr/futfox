@@ -110,5 +110,13 @@ git push origin v0.4.0
 ```
 
 `.github/workflows/release.yml` checks the tag matches the manifest, zips `manifest.json`,
-`icons`, `src` and `LICENSE`, signs the zip with Sigstore and publishes both files as a GitHub
-Release. The workflow file explains how to verify a download with `cosign verify-blob`.
+`icons`, `src` and `LICENSE`, signs the zip with Sigstore and publishes it as a GitHub Release,
+both as `futfox-<version>.zip` and as `futfox.zip`, each with its `.sigstore.json` signature.
+The website and README link to `releases/latest/download/futfox.zip`, so they always serve the
+newest release. Check a download with:
+
+```bash
+cosign verify-blob futfox.zip --bundle futfox.zip.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/abouhilalbadr/futfox/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
