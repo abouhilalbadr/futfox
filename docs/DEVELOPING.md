@@ -55,6 +55,10 @@ Gallery sets are kept in Firebase (project `futfox-gallery`, Firestore in `eur3`
 publish, or read the player list. Admins sign in with email and password; accounts are added in
 the Firebase console and there is no sign-up form.
 
+The web API key in `admin/admin.js` is public by design. In Google Cloud it only accepts requests
+from the website, `futfox-gallery.firebaseapp.com`, `localhost` and `127.0.0.1`, so a new domain
+for the admin page has to be added to the key's website restrictions first.
+
 The player search uses EA's own player list (`players.json`, loaded by the Web App), copied into
 `players/*` by `scripts/sync-players.mjs`. The address of that file contains a content folder id
 that can change when EA updates the Web App; pass the new one with `--content <id>`.

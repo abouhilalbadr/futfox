@@ -24,7 +24,8 @@ async function signIn() {
   const password = await ask('Password (not shown): ', true);
   const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // The key only accepts requests from the admin site's address, and Node sends none by itself.
+    headers: { 'Content-Type': 'application/json', Referer: 'https://futfox-site.vercel.app/' },
     body: JSON.stringify({ email, password, returnSecureToken: true }),
   });
   const data = await res.json();
