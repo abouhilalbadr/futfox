@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy – FutFox</title>
-<meta name="description" content="FutFox has no server, account, analytics or ads. Here is exactly what it reads and where your settings are stored.">
+<meta name="description" content="FutFox has no account, analytics or ads. Here is exactly what it reads, what it downloads and what it keeps in your browser.">
 <meta name="theme-color" content="#0e0b1f">
 <link rel="icon" href="/assets/favicon.ico" sizes="any">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
@@ -36,6 +36,7 @@
       <ol>
         <li><a href="#runs">Where FutFox runs</a></li>
         <li><a href="#reads">What it reads</a></li>
+        <li><a href="#sets">Gallery sets</a></li>
         <li><a href="#stores">What it stores</a></li>
         <li><a href="#never">What it never does</a></li>
         <li><a href="#site">This website</a></li>
@@ -45,9 +46,9 @@
     <article class="doc">
     <p class="eyebrow">Privacy</p>
     <h1>Privacy policy</h1>
-    <p class="doc-date">Last updated 25 October 2026</p>
+    <p class="doc-date">Last updated 26 October 2026</p>
     <div class="callout">
-      <p><strong>The short version:</strong> FutFox is a Chrome extension for the EA SPORTS FC 27 Ultimate Team Web App. It has no account, no server, no analytics and no ads. It does not collect, sell or share any personal data.</p>
+      <p><strong>The short version:</strong> FutFox is a Chrome extension for the EA SPORTS FC 27 Ultimate Team Web App. It has no account, no analytics and no ads. Apart from a once-a-day download of the public list of Gallery sets, it talks only to EA, the way the Web App does. It does not collect, sell or share any personal data.</p>
     </div>
 
     <h2 id="runs">Where FutFox runs</h2>
@@ -57,11 +58,21 @@
     <ul>
       <li>The SBCs and requirements the Web App has already loaded.</li>
       <li>Your club list, only when you press <strong>Load my club</strong>. FutFox asks the Web App for it the same way the Club screen does, one page every few seconds. That request goes to EA, like everything else the Web App does.</li>
+      <li>The squad builder's player list, only when you press <strong>Pick player</strong> on a Gallery slot. This search also goes to EA, the same way the Web App's squad builder does.</li>
     </ul>
-    <p>This information stays in the page while it's open. FutFox never sends it anywhere else.</p>
+    <p>This information stays in your browser. FutFox never sends it anywhere else.</p>
+
+    <h2 id="sets">Gallery sets</h2>
+    <p>The Web App doesn't share Gallery data, so FutFox publishes the list of Gallery sets itself, as a public file on Google Firebase. Once a day the extension downloads that file from <code>firestore.googleapis.com</code>. The request carries no cookies and nothing about you or your club. Like any website, Google sees your IP address when the file is downloaded.</p>
 
     <h2 id="stores">What it stores</h2>
-    <p>Your panel options (for example "Keep players rated 87 and above") are saved in your browser's local storage for the Web App, under the key <code>futfox.settings</code>. Nothing else is stored. Clearing your browser's site data for ea.com removes it.</p>
+    <p>FutFox keeps these in your browser's local storage for the Web App. None of it leaves your computer:</p>
+    <ul>
+      <li><code>futfox.settings</code>: your panel options (for example "Keep players rated 87 and above"), the Gallery slots you marked as done in the game and the cards you picked.</li>
+      <li><code>futfox.galleryMemory.…</code>: the Gallery cards FutFox has seen in your club (player, rating, version, club, league, nation and Item Score), one list per Ultimate Team account, so cards you've placed in a set still count.</li>
+      <li><code>futfox.gallerySets</code>: a copy of the Gallery sets list, so it's downloaded only once a day.</li>
+    </ul>
+    <p>Clearing your browser's site data for ea.com removes all of it. If you use <strong>Export</strong> in the panel, FutFox saves a file with your seen cards, done slots and picks to your computer; it doesn't send it anywhere.</p>
 
     <h2 id="never">What it never does</h2>
     <p>FutFox never buys, bids, lists cards, moves players, saves squads or submits SBCs. It doesn't read your EA password or payment details.</p>
