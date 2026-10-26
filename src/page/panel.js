@@ -18,9 +18,9 @@
     .toggle:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #C6FF3D; outline-offset: 2px; }
     /* Never narrower than the default, never wider than the screen; the grip on the left edge resizes it. */
     .panel { position: fixed; top: 0; right: 0; bottom: 0; width: var(--futfox-width, 520px); min-width: min(520px, 100vw); max-width: 100vw;
-      z-index: 2147483001; display: flex; flex-direction: column;
+      z-index: 2147483001; display: flex; flex-direction: column; overflow: hidden;
       background: #120F24; color: #e7ebf2; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; box-shadow: -8px 0 24px rgba(0,0,0,.45); }
-    .grip { position: absolute; top: 0; bottom: 0; left: -4px; width: 8px; cursor: ew-resize; touch-action: none; z-index: 1; }
+    .grip { position: absolute; top: 0; bottom: 0; left: 0; width: 8px; cursor: ew-resize; touch-action: none; z-index: 1; }
     .grip:hover, .grip:focus-visible, .grip.dragging { background: linear-gradient(90deg, transparent 3px, #8B5CF6 3px, #8B5CF6 5px, transparent 5px); outline: none; }
     .panel[hidden], .toggle[hidden], .dock[hidden] { display: none; }
     /* While one of them shrinks away, clicks go to what is under it. */
@@ -89,9 +89,11 @@
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
-    .tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
+    .tabs { position: relative; display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
+    /* The selected tab's underline, one bar that slides from tab to tab. */
+    .tabs .ink { position: absolute; left: 0; bottom: -1px; width: 1px; height: 2px; background: #8B5CF6; transform-origin: left; pointer-events: none; }
     .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: #9A93B8; padding: 8px 10px; font-weight: 600; }
-    .tabs button[aria-selected="true"] { color: #fff; border-bottom-color: #8B5CF6; }
+    .tabs button[aria-selected="true"] { color: #fff; }
     /* Categories, then a category's sets, as cards: one column at the panel's usual width, one more each
        time it is dragged about 370px wider, never more than four (each column is at least a quarter of the
        row), and every card in a row the same height. */
@@ -586,7 +588,10 @@
       for (const node of [want, was]) if (node) node.getAnimations({ subtree: true }).forEach((a) => a.cancel());
       want.classList.remove('leaving');
       want.hidden = false;
-      if (want === panel) panelSpot.place();
+      if (want === panel) {
+        panelSpot.place();
+        placeInk();
+      }
       if (want === dock) {
         dock.replaceChildren(...placingList());
         dockSpot.place();
@@ -1520,9 +1525,44 @@
       else render();
     }
 
+    // Where the panel is: its tab, and how deep in it (the challenge, then its squad; the Gallery's
+    // categories, a category, a set, then picking a player).
+    function pageNow(view, entry) {
+      if (view === 'gallery') return state.picker && state.openSet != null ? 3 : state.openSet != null ? 2 : state.category != null ? 1 : 0;
+      return state.result && state.showSquad && entry ? 1 : 0;
+    }
+
+    // Moving to another page: the old page slides out and fades as the new one slides in from the
+    // side it is reached from (going deeper, or to the tab on the right, comes from the right).
+    function slidePages(old, next, dir, oldScroll) {
+      Object.assign(old.style, { position: 'absolute', left: '0', right: '0', top: `${next.offsetTop}px`, height: `${next.offsetHeight}px`, pointerEvents: 'none' });
+      panel.append(old);
+      old.scrollTop = oldScroll;
+      const dx = 36 * dir;
+      old.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-dx}px)` }],
+        { duration: 170, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
+      next.animate([{ opacity: 0, transform: `translateX(${dx}px)` }, { opacity: 1, transform: 'none' }],
+        { duration: 280, delay: 70, easing: EASE, fill: 'backwards' });
+    }
+
+    // Puts the tab underline under the selected tab, sliding it there from the last one.
+    function placeInk() {
+      const ink = panel.querySelector('.tabs .ink');
+      const tab = panel.querySelector('.tabs [aria-selected="true"]');
+      // A folded panel has no layout to measure; it is placed again as it opens.
+      if (!ink || !tab || !tab.offsetWidth) return;
+      const to = `translateX(${tab.offsetLeft}px) scaleX(${tab.offsetWidth})`;
+      ink.style.transform = to;
+      if (state.ink && state.ink !== to && isShown(panel) && !reducedMotion()) {
+        ink.animate([{ transform: state.ink }, { transform: to }], { duration: 280, easing: EASE });
+      }
+      state.ink = to;
+    }
+
     function render() {
       // Rebuilding the panel keeps the scroll position, unless a set was just opened or closed.
       const before = panel.querySelector('.body');
+      const oldScroll = before ? before.scrollTop : 0;
       const scroll = state.scrollTo != null ? state.scrollTo : before ? before.scrollTop : 0;
       state.scrollTo = null;
       // Keep typing in the name box while the panel rebuilds around it.
@@ -1537,10 +1577,13 @@
         return src ? el('img', { src, alt: '' }) : null;
       };
       const tab = (name, label) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(view === name), onclick: () => setView(name) }, [tabIcon(name), label]);
+      const page = { view, depth: pageNow(view, entry) };
+      const last = state.page;
+      state.page = page;
       panel.replaceChildren(...[
         grip,
         el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: hidePanel })]),
-        H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery')]) : null,
+        H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery'), el('span', { class: 'ink', 'aria-hidden': 'true' })]) : null,
         view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
         : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
         : el('div', { class: 'body' }, [
@@ -1581,6 +1624,9 @@
       ].filter(Boolean));
       const body = panel.querySelector('.body');
       if (body) body.scrollTop = scroll;
+      placeInk();
+      const dir = !last ? 0 : last.view !== view ? (view === 'gallery' ? 1 : -1) : Math.sign(page.depth - last.depth);
+      if (dir && before && body && isShown(panel) && !reducedMotion()) slidePages(before, body, dir, oldScroll);
       const box = typing && panel.querySelector('.picker input');
       if (box) {
         box.focus({ preventScroll: true });
