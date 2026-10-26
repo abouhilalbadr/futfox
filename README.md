@@ -85,7 +85,8 @@ npm test
 
 No runtime dependencies or build step; `npm install` only fetches
 [fast-check](https://fast-check.dev) for the property tests. How the code fits together, the Gallery admin and the website
-are covered in [docs/DEVELOPING.md](docs/DEVELOPING.md).
+are covered in [docs/DEVELOPING.md](docs/DEVELOPING.md). To contribute, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Credits and license
 
