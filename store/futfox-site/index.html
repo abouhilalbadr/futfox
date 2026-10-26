@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FutFox – Finish SBCs for less</title>
 <meta name="description" content="A free, read-only Chrome extension for the EA SPORTS FC 27 Web App. It finds the cheapest squad for an SBC from your own club, pre-fills market searches for the rest and shows your grade in every Gallery set.">
-<meta name="theme-color" content="#0e0b1f">
+<meta name="theme-color" content="#0b0918">
 <meta property="og:title" content="FutFox – Finish SBCs for less">
 <meta property="og:description" content="Finish SBCs and Gallery sets with the players you already own. Free and read-only.">
 <meta property="og:image" content="https://futfox-site.vercel.app/assets/og.png">
@@ -17,11 +17,12 @@
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="manifest" href="/assets/site.webmanifest">
 <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/site.css?v=4">
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
   <symbol id="fox" viewBox="0 0 256 256">
     <path fill="#C6FF3D" d="M56 140L110.1 154.5L105.4 171.9L68.7 162.1ZM200 140L145.9 154.5L150.6 171.9L187.3 162.1Z"/>
     <path fill="#8B5CF6" fill-rule="evenodd" d="M128 102L101.59 86.75L63.59 20.93L39 112.7L11.2 160.85L60.82 189.5L100.62 200.16L128 227.54L155.38 200.16L195.18 189.5L244.8 160.85L217 112.7L192.41 20.93L154.41 86.75ZM66.51 62.54L81.27 88.1L55.71 102.86ZM189.49 62.54L174.73 88.1L200.29 102.86ZM56 140L110.1 154.5L105.4 171.9L68.7 162.1ZM200 140L145.9 154.5L150.6 171.9L187.3 162.1Z"/>
@@ -35,6 +36,7 @@
   <symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#E8C45A"/><circle cx="12" cy="12" r="7" fill="none" stroke="#B8902F" stroke-width="1.6"/><path d="M14.6 9.4a3.6 3.6 0 1 0 0 5.2" fill="none" stroke="#7A5A14" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-4.2-4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="store" viewBox="0 0 24 24"><path d="M5 8.5h14l-1.2 11.1a1.6 1.6 0 0 1-1.6 1.4H7.8a1.6 1.6 0 0 1-1.6-1.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 11V7a3 3 0 0 1 6 0v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="pick" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
 </svg>
 <a class="skip" href="#main">Skip to content</a>
@@ -47,9 +49,9 @@
       <a href="#how">How it works</a>
       <a href="#safety">Safety</a>
       <a href="#faq">FAQ</a>
-      <a href="https://github.com/abouhilalbadr/futfox">GitHub</a>
       <a class="nav-install" href="#install">Install</a>
     </nav>
+    <a class="gh-link" href="https://github.com/abouhilalbadr/futfox" aria-label="FutFox on GitHub"><svg aria-hidden="true"><use href="#github"/></svg></a>
   </div>
 </header>
 
@@ -160,23 +162,23 @@
         <ol class="how-steps">
           <li class="how-step is-active">
             <h3><button type="button" class="how-btn" aria-expanded="true" aria-controls="how-text-1" data-step="1"><span class="how-no" aria-hidden="true">1</span>Open the Web App</button></h3>
-            <p id="how-text-1">Sign in to the EA SPORTS FC 27 Web App in Chrome. The FutFox button appears in the bottom-right corner.</p>
+            <div class="how-more"><p id="how-text-1">Sign in to the EA SPORTS FC 27 Web App in Chrome. The FutFox button appears in the bottom-right corner.</p></div>
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-2" data-step="2"><span class="how-no" aria-hidden="true">2</span>Open an SBC and pick the challenge</button></h3>
-            <p id="how-text-2">Open an SBC set so the Web App loads its requirements, then press <strong>FutFox</strong>. Pick the challenge and check its rules under Requirements.</p>
+            <div class="how-more"><p id="how-text-2">Open an SBC set so the Web App loads its requirements, then press <strong>FutFox</strong>. Pick the challenge and check its rules under Requirements.</p></div>
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-3" data-step="3"><span class="how-no" aria-hidden="true">3</span>Load your club</button></h3>
-            <p id="how-text-3">Press <strong>Load my club</strong> once per session. FutFox reads your club list the way the Club screen does, one page every few seconds.</p>
+            <div class="how-more"><p id="how-text-3">Press <strong>Load my club</strong> once per session. FutFox reads your club list the way the Club screen does, one page every few seconds.</p></div>
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-4" data-step="4"><span class="how-no" aria-hidden="true">4</span>Find the cheapest squad</button></h3>
-            <p id="how-text-4">Press <strong>Find cheapest squad</strong>. The squad opens on its own page: the rating, chemistry and estimated coins, and every player with their card, marked Untradeable or Club.</p>
+            <div class="how-more"><p id="how-text-4">Press <strong>Find cheapest squad</strong>. The squad opens on its own page: the rating, chemistry and estimated coins, and every player with their card, marked Untradeable or Club.</p></div>
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-5" data-step="5"><span class="how-no" aria-hidden="true">5</span>Buy what's missing, then submit yourself</button></h3>
-            <p id="how-text-5"><strong>Search market</strong> opens the Transfer Market with quality, position, league and nation already set; look for the rating FutFox shows. Then place each player in the SBC screen, following the steps under the squad, and submit it yourself.</p>
+            <div class="how-more"><p id="how-text-5"><strong>Search market</strong> opens the Transfer Market with quality, position, league and nation already set; look for the rating FutFox shows. Then place each player in the SBC screen, following the steps under the squad, and submit it yourself.</p></div>
           </li>
         </ol>
         <div class="how-stage">
@@ -225,24 +227,35 @@
 
   <section id="install" class="section">
     <div class="wrap">
-      <div class="tile install">
-        <div class="install-copy">
-          <p class="eyebrow">Get FutFox</p>
-          <h2>Install it in two minutes.</h2>
-          <p>Free, with no account. <span class="soon">Chrome Web Store: coming soon</span></p>
-          <!-- TODO: link the store listing here once the extension is published. -->
-        </div>
-        <ol class="get-steps">
-          <li><a href="https://github.com/abouhilalbadr/futfox/archive/refs/heads/main.zip">Download the code</a> and unzip it.</li>
-          <li>Open <code>chrome://extensions</code> and turn on <strong>Developer mode</strong>.</li>
-          <li>Choose <strong>Load unpacked</strong>, pick the <code>futfox-main</code> folder and open the Web App.</li>
-        </ol>
+      <div class="section-head">
+        <p class="eyebrow">Get FutFox</p>
+        <h2>Install it in two minutes.</h2>
+        <p class="section-lede">Free, with no account.</p>
+      </div>
+      <div class="install">
+        <article class="tile install-card">
+          <span class="pill pill-ok">Available now</span>
+          <h3>Install it yourself</h3>
+          <ol class="get-steps">
+            <li><a href="https://github.com/abouhilalbadr/futfox/archive/refs/heads/main.zip">Download the code</a> and unzip it.</li>
+            <li>Open <code>chrome://extensions</code> and turn on <strong>Developer mode</strong>.</li>
+            <li>Choose <strong>Load unpacked</strong>, pick the <code>futfox-main</code> folder and open the Web App.</li>
+          </ol>
+        </article>
+        <article class="tile install-card install-store">
+          <span class="pill">Coming soon</span>
+          <svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#store"/></svg>
+          <h3>Chrome Web Store</h3>
+          <p>FutFox is on its way to the Chrome Web Store. From there it installs in one click and keeps itself up to date.</p>
+          <!-- TODO: swap this for a link to the store listing once the extension is published. -->
+          <span class="btn btn-ghost btn-soon" aria-disabled="true">Add to Chrome · soon</span>
+        </article>
       </div>
     </div>
   </section>
 
   <section id="faq" class="section">
-    <div class="wrap wrap-narrow">
+    <div class="wrap">
       <div class="section-head section-head-center">
         <p class="eyebrow">FAQ</p>
         <h2>Questions</h2>
@@ -296,7 +309,7 @@
     </div>
   </section>
 </main>
-<script src="/site.js" defer></script>
+<script src="/site.js?v=4" defer></script>
 
 <footer class="site-footer">
   <div class="wrap">

@@ -63,7 +63,7 @@ h1, h2, h3 { text-wrap: balance; }
 .brand { flex: none; display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
 .brand svg { width: 34px; height: 34px; flex: none; }
 .site-nav {
-  display: flex; align-items: center; gap: 2px; padding: 5px; min-width: 0; overflow-x: auto; scrollbar-width: none;
+  margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 5px; min-width: 0; overflow-x: auto; scrollbar-width: none;
   background: var(--tile); border: 1px solid var(--tile-line); border-radius: 999px; font-size: 14px; font-weight: 500;
 }
 .site-nav::-webkit-scrollbar { display: none; }
@@ -71,6 +71,12 @@ h1, h2, h3 { text-wrap: balance; }
 .site-nav a:hover { color: var(--text); background: var(--surface); }
 .site-nav .nav-install { background: var(--lime); color: var(--night); font-weight: 700; }
 .site-nav .nav-install:hover { background: #d4ff6b; color: var(--night); }
+.gh-link {
+  flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+  background: var(--tile); border: 1px solid var(--tile-line); color: var(--text-soft);
+}
+.gh-link:hover { color: var(--text); border-color: var(--violet); }
+.gh-link svg { width: 20px; height: 20px; }
 
 /* Buttons */
 .btn {
@@ -86,9 +92,11 @@ h1, h2, h3 { text-wrap: balance; }
 .hero .wrap { display: flex; flex-direction: column; align-items: center; gap: 22px; padding-block: 72px 80px; text-align: center; }
 .eyebrow { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lime); }
 .hero h1 { margin: 0; max-width: 13em; font-size: clamp(42px, 7.4vw, 80px); line-height: 1.07; font-weight: 800; letter-spacing: -0.045em; }
+/* Inter has far more room above its letters than below, so a plain inline highlight sits low.
+   A tighter line box plus extra bottom padding centres the lime band on the actual letters. */
 .hero mark {
-  background: var(--lime); color: var(--night); padding: 0 0.12em; border-radius: 0.14em;
-  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  display: inline-block; line-height: 0.9; padding: 0.01em 0.12em 0.22em; margin-bottom: -0.16em;
+  background: var(--lime); color: var(--night); border-radius: 0.14em;
 }
 .lede { margin: 0; font-size: 19px; color: var(--text-soft); max-width: 36em; }
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 6px; }
@@ -154,38 +162,62 @@ h1, h2, h3 { text-wrap: balance; }
 .section-head { display: flex; flex-direction: column; gap: 12px; max-width: 40em; }
 .section-head-center { align-items: center; text-align: center; margin-inline: auto; }
 .section-lede { margin: 0; color: var(--text-soft); font-size: 18px; }
-.wrap-narrow { max-width: 880px; }
 
 /* How it works: a stepper on the left, the matching panel screenshot on the right */
 .how { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); gap: 32px 56px; align-items: center; }
 .how-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.how-step { border: 1px solid transparent; border-radius: 18px; padding: 14px 18px; transition: background-color 0.2s, border-color 0.2s; }
+.how-step {
+  position: relative; overflow: hidden; display: grid; grid-template-rows: auto 0fr;
+  border: 1px solid transparent; border-radius: 18px; padding: 14px 18px;
+  transition: grid-template-rows 0.4s cubic-bezier(0.3, 0, 0.1, 1), background-color 0.3s, border-color 0.3s;
+}
 .how-step h3 { margin: 0; font-size: 19px; }
 .how-btn {
   all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; align-items: center; gap: 14px;
-  color: var(--muted);
+  color: var(--muted); transition: color 0.2s;
 }
 .how-btn:hover { color: var(--text); }
 .how-btn:focus-visible { outline: 2px solid var(--lime); outline-offset: 6px; border-radius: 8px; }
 .how-no {
   flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px;
   background: var(--surface); border: 1px solid var(--tile-line); color: var(--text-soft); font-weight: 800; font-size: 15px;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s, transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
-.how-step p { margin: 10px 0 0 50px; color: var(--text-soft); font-size: 16px; max-width: 34em; }
-.how-step.is-active { background: var(--night); border-color: var(--tile-line); }
+.how-more { min-height: 0; overflow: hidden; }
+.how-step p {
+  margin: 10px 0 0 50px; color: var(--text-soft); font-size: 16px; max-width: 34em;
+  opacity: 0; transform: translateY(-6px); transition: opacity 0.25s, transform 0.4s cubic-bezier(0.3, 0, 0.1, 1);
+}
+.how-step.is-active { grid-template-rows: auto 1fr; background: var(--night); border-color: var(--tile-line); }
 .how-step.is-active .how-btn { color: var(--text); }
-.how-step.is-active .how-no { background: var(--lime); border-color: var(--lime); color: var(--night); }
-.js .how-step:not(.is-active) p { display: none; }
+.how-step.is-active .how-no { background: var(--lime); border-color: var(--lime); color: var(--night); transform: scale(1.08); }
+.how-step.is-active p { opacity: 1; transform: none; transition-delay: 0.12s; }
+html:not(.js) .how-step { grid-template-rows: auto 1fr; }
+html:not(.js) .how-step p { opacity: 1; transform: none; }
+/* While the steps play on their own, a lime line fills under the active one. */
+.how-step::after {
+  content: ""; position: absolute; left: 18px; right: 18px; bottom: 0; height: 2px; border-radius: 2px;
+  background: var(--lime); transform: scaleX(0); transform-origin: left; opacity: 0;
+}
+.how.is-playing .how-step.is-active::after { opacity: 1; animation: how-fill 6s linear both; }
+@keyframes how-fill { to { transform: scaleX(1); } }
 
 .how-stage { position: relative; height: 540px; display: grid; place-items: center; }
 .shot {
   display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
   border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 24px 60px rgba(139, 92, 246, 0.16);
 }
-.js .shot { position: absolute; inset: 0; margin: auto; opacity: 0; transition: opacity 0.25s; }
-.js .shot.is-active { opacity: 1; }
+.js .shot {
+  position: absolute; inset: 0; margin: auto; opacity: 0; transform: translateY(24px) scale(0.96);
+  transition: opacity 0.35s, transform 0.55s cubic-bezier(0.3, 0, 0.1, 1);
+}
+.js .shot.is-active { opacity: 1; transform: none; transition-delay: 0.08s; }
+.js .shot.is-leaving { transform: translateY(-24px) scale(0.96); transition-delay: 0s; }
 html:not(.js) .how-stage { height: auto; gap: 16px; }
-@media (prefers-reduced-motion: reduce) { .js .shot, .how-step { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .js .shot, .how-step, .how-step p, .how-no { transition: none; }
+  .js .shot, .js .shot.is-leaving, .how-step p, .how-step.is-active .how-no { transform: none; }
+}
 
 /* Safety: what FutFox does next to what only you do */
 .who { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; }
@@ -198,14 +230,19 @@ html:not(.js) .how-stage { height: auto; gap: 16px; }
 .who svg { flex: none; width: 22px; height: 22px; margin-top: 1px; color: var(--lime); }
 .who-you svg { color: var(--text); }
 
-/* Install */
-.install { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px 56px; align-items: center; padding: 48px; }
-.install-copy { display: flex; flex-direction: column; gap: 14px; }
-.install-copy p { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.soon {
+/* Install: do it yourself now, or the store once it's listed */
+.install { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+.install-card { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.install-card .get-steps { align-self: stretch; }
+.install-store .tile-icon { margin-top: 4px; }
+.install-store p { flex: 1; }
+.pill {
   font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--tile-line); color: var(--text-soft);
 }
+.pill-ok { background: var(--ok-bg); border-color: var(--ok-bg); color: var(--ok); }
+.btn-soon { opacity: 0.6; cursor: default; }
+.btn-soon:hover { border-color: var(--tile-line); }
 .get-steps { margin: 0; padding: 0; list-style: none; counter-reset: get; display: flex; flex-direction: column; gap: 10px; color: var(--text-soft); }
 .get-steps li {
   counter-increment: get; position: relative; padding: 16px 18px 16px 62px;
@@ -222,20 +259,30 @@ code { background: var(--surface); border: 1px solid var(--line); padding: 1px 6
 
 /* FAQ: each question is its own tile */
 .faq { display: flex; flex-direction: column; gap: 10px; }
-.faq details { background: var(--tile); border: 1px solid var(--tile-line); border-radius: 20px; }
-.faq details[open] { border-color: var(--line-strong); }
+.faq details { background: var(--tile); border: 1px solid var(--tile-line); border-radius: 20px; transition: border-color 0.3s, background-color 0.3s; }
+.faq details:hover { border-color: var(--line-strong); }
+.faq details[open]:not(.is-closing) { border-color: var(--line-strong); background: #18142f; }
 .faq summary {
   list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px;
-  padding: 20px 24px; font-size: 18px; font-weight: 700; border-radius: 20px;
+  padding: 20px 24px; font-size: 18px; font-weight: 700; border-radius: 20px; transition: color 0.2s;
 }
 .faq summary::-webkit-details-marker { display: none; }
+/* A plus drawn from two bars: the upright one shrinks away to leave a minus. */
 .faq summary::after {
-  content: "+"; flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
-  background: var(--surface); color: var(--violet-soft); font-size: 22px; font-weight: 500; line-height: 1;
+  content: ""; flex: none; width: 32px; height: 32px; border-radius: 50%;
+  background-color: var(--surface); background-repeat: no-repeat; background-position: center;
+  background-image: linear-gradient(var(--violet-soft), var(--violet-soft)), linear-gradient(var(--violet-soft), var(--violet-soft));
+  background-size: 12px 2px, 2px 12px;
+  transition: background-color 0.3s, background-size 0.3s cubic-bezier(0.3, 0, 0.1, 1), transform 0.4s cubic-bezier(0.3, 0, 0.1, 1);
 }
-.faq details[open] summary::after { content: "\2212"; background: var(--lime); color: var(--night); }
+.faq details[open]:not(.is-closing) summary::after {
+  background-color: var(--lime); transform: rotate(180deg);
+  background-image: linear-gradient(var(--night), var(--night)), linear-gradient(var(--night), var(--night));
+  background-size: 12px 2px, 2px 0;
+}
 .faq summary:hover { color: var(--violet-soft); }
 .faq details p { margin: 0; padding: 0 72px 22px 24px; color: var(--text-soft); font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .faq details, .faq summary, .faq summary::after { transition: none; } }
 
 .site-footer { border-top: 1px solid var(--tile-line); }
 .site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-block: 32px; color: var(--muted); font-size: 13px; }
@@ -247,7 +294,7 @@ code { background: var(--surface); border: 1px solid var(--line); padding: 1px 6
 }
 @media (max-width: 640px) {
   .site-header .wrap { flex-wrap: wrap; }
-  .site-nav { width: 100%; }
+  .site-nav { order: 1; width: 100%; }
   .hero .wrap { padding-block: 40px 56px; gap: 18px; }
   .lede { font-size: 17px; }
   .tile { padding: 24px; border-radius: 22px; }
@@ -262,7 +309,6 @@ code { background: var(--surface); border: 1px solid var(--line); padding: 1px 6
   .how-step h3 { font-size: 17px; }
   .how-step p { margin-left: 0; }
   .how-stage { height: 380px; }
-  .install { padding: 24px; }
   .faq summary { padding: 18px 20px; font-size: 17px; }
   .faq details p { padding: 0 20px 20px; }
 }
@@ -318,6 +364,10 @@ code { background: var(--surface); border: 1px solid var(--line); padding: 1px 6
   .squad li { grid-template-columns: 26px 26px 22px minmax(0, 1fr) auto; row-gap: 6px; }
   .fc { width: 26px; }
   .squad li > :last-child { grid-column: 4 / -1; justify-self: start; }
+}
+
+@media (min-width: 1600px) {
+  :root { --wrap: 1400px; }
 }
 
 /* Privacy page: "On this page" list on the left, the policy beside it (like Worldlet's) */
