@@ -334,7 +334,15 @@
   const leagueLogo = (id) => (id > 0 ? darkImage(attempt(() => root.AssetLocationUtils.getLeagueImageUri(id), null)) : null);
   const clubBadge = (id) => (id > 0 ? darkImage(attempt(() => root.AssetLocationUtils.getBadgeImageUri(id), null)) : null);
   // The blank card of a version (3 = Team of the Week), as the Transfer Market's version filter shows it.
-  const rarityImage = (id) => (id >= 0 ? attempt(() => root.AssetLocationUtils.getFilterImage(root.AssetLocationUtils.FILTER.RARITY, id), null) : null);
+  const rarityImage = (id) => (id != null && id >= 0 ? attempt(() => root.AssetLocationUtils.getFilterImage(root.AssetLocationUtils.FILTER.RARITY, id), null) : null);
+  // The same blank card for a card of this rating: common, rare and Team of the Week cards come in
+  // bronze, silver and gold (their file names end _1, _2 and _3); other versions have one card (_0).
+  const cardImage = (id, rating) => {
+    const uri = rarityImage(id);
+    return uri && rating != null ? uri.replace(/_3\.png$/, `_${rating >= 75 ? 3 : rating >= 65 ? 2 : 1}.png`) : uri;
+  };
+  // The player's face, by EA's player id (databaseId); the same on every version of their card.
+  const playerFace = (playerId) => (playerId > 0 ? attempt(() => root.AssetLocationUtils.getPortraitImageUri(playerId), null) : null);
   // The Web App has no Gallery Token picture; this is the generic token its rewards use.
   const tokenImage = () => attempt(() => new URL('images/rewards/meta/flat/generic_token.png', root.location.href).href, null);
   // The coin the Web App shows beside your coin balance in its top bar.
@@ -382,6 +390,6 @@
   H.fut = {
     isReady, getChallenges, rulesFor, slotsFor, requiredSlotsFor,
     knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
-    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, tokenImage, coinImage,
+    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -76,10 +76,9 @@
     .cat .chip { font-size: 12px; padding: 3px 8px; border: 1px solid #352E55; border-radius: 6px; background: #120F24; white-space: nowrap; }
     .cat .grades { display: grid; grid-template-columns: repeat(5, 1fr); justify-items: center; }
     .grade { display: grid; justify-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
-    .grade .dia { position: relative; z-index: 0; width: 26px; height: 26px; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
-    .grade .dia::before { content: ''; position: absolute; inset: 4px; transform: rotate(45deg); border: 1.5px solid currentColor; border-radius: 3px; background: #120F24; z-index: -1; }
+    .grade .dia, .step .dia { position: relative; z-index: 0; width: 26px; height: 26px; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+    .grade .dia::before, .step .dia::before { content: ''; position: absolute; inset: 4px; transform: rotate(45deg); border: 1.5px solid currentColor; border-radius: 3px; background: #120F24; z-index: -1; }
     .grade .n { font-size: 12px; color: #C9C3E0; }
-    .g-D .dia, .g-C .dia { color: #C9C3E0; } .g-B .dia, .g-A .dia { color: #E8C45A; } .g-S .dia { color: #A78BFA; }
     .grade.none { opacity: .35; }
     .cat-foot { display: flex; align-items: end; justify-content: space-between; gap: 8px; }
     .cat-name { display: block; font-weight: 700; font-size: 16px; }
@@ -89,7 +88,6 @@
     .set { display: grid; border: 1px solid #2A2445; border-radius: 8px; background: #1B1733; min-width: 0; }
     button.set-head:hover { background: #221D3D; border-radius: 8px; }
     .set-head { align-content: start; }
-    .set.open .set-head .name { -webkit-line-clamp: unset; font-size: 16px; font-weight: 700; }
     .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 13px; }
     .crumbs button { padding: 4px 8px; font-size: 13px; }
     .crumbs .sep { color: #6E6790; }
@@ -102,17 +100,57 @@
     .pic .letter { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #2A2445; color: #C9C3E0; font-weight: 700; font-size: 16px; }
     .tabs button { display: inline-flex; align-items: center; gap: 6px; }
     .tabs img, .tabs svg { width: 16px; height: 16px; }
-    td .token { width: 18px; height: 18px; vertical-align: -4px; margin-right: 6px; }
     .summary .coin { width: 18px; height: 18px; vertical-align: -3px; margin-right: 5px; }
     .set-head .name { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
     .set-head .count { font-weight: 700; font-variant-numeric: tabular-nums; }
     .set-head .meta, .set-head .bar { grid-column: 2 / -1; }
     .bar { height: 4px; border-radius: 2px; background: #2A2445; overflow: hidden; }
     .bar > span { display: block; height: 100%; background: #C6FF3D; }
-    .set-body { padding: 0 12px 10px; display: grid; gap: 6px; }
     h3 { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: #C9C3E0; }
-    td.mark { width: 22px; font-weight: 700; }
-    td.act { width: 1%; white-space: nowrap; text-align: right; }
+    /* One set: its grade and ladder, its cards, its bonus tags. */
+    .set-page { display: grid; gap: 18px; }
+    .set-page h3 { margin: 0 0 10px; text-transform: uppercase; letter-spacing: .06em; }
+    .grade-panel { gap: 14px; padding: 16px; border: 1px solid #2A2445; border-radius: 12px; background: #1B1733; }
+    .grade-top { display: flex; align-items: center; gap: 16px; }
+    .grade.big .dia { width: 60px; height: 60px; font-size: 22px; }
+    .grade.big .dia::before { inset: 9px; border-width: 2px; border-radius: 5px; background: #221D3D; }
+    .grade-text { display: grid; gap: 2px; min-width: 0; font-size: 13px; }
+    .grade-text .score strong { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .to-next { display: grid; gap: 6px; }
+    .to-next .bar > span { background: #E8C45A; }
+    .ladder { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .ladder .step { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+    .ladder .step.current { background: #221D3D; box-shadow: inset 0 -2px 0 #C6FF3D; }
+    .ladder .n { font-size: 12px; font-weight: 700; color: inherit; }
+    .ladder .gives { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #9A93B8; }
+    .ladder .gives img { width: 13px; height: 13px; }
+    .step.none { opacity: .45; }
+    .g-D .dia, .g-C .dia { color: #C9C3E0; } .g-B .dia, .g-A .dia { color: #E8C45A; } .g-S .dia { color: #A78BFA; }
+    /* Cards drawn like the game's, at the size of its small cards; as many per row as fit. */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px 8px; }
+    .slot { display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; }
+    .card { position: relative; width: 84px; aspect-ratio: 576 / 800; display: block; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85); }
+    .card.blank { clip-path: polygon(50% 0, 63% 3.5%, 100% 5%, 100% 90%, 50% 100%, 0 90%, 0 5%, 37% 3.5%); background: #221D3D; }
+    .card .bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    /* The face stands on the card's divider line, 64% of the way down, above the name. */
+    .card .face { position: absolute; left: 28%; bottom: 36.3%; width: 66%; }
+    .card .rt { position: absolute; left: 17%; top: 21%; font-size: 14px; font-weight: 800; line-height: 1; }
+    .card .ps { position: absolute; left: 17%; top: 33%; font-size: 8px; font-weight: 700; }
+    .card .nm { position: absolute; left: 8%; right: 8%; top: 66%; text-align: center; font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card .lbl { position: absolute; inset: 22% 10%; display: grid; place-items: center; text-align: center; font-size: 10px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+    .card.missing .bg, .card.missing .face { opacity: .3; filter: grayscale(1); }
+    .card.missing .rt, .card.missing .nm { opacity: .6; }
+    .slot .cap { font-size: 11px; white-space: nowrap; }
+    button.link { border: 0; background: none; padding: 0; font-size: 11px; color: #C4B1FF; text-decoration: underline; text-underline-offset: 2px; }
+    button.link:hover { color: #fff; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .tags { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+    .tagc { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #2A2445; border-radius: 10px; background: #1B1733; }
+    .tagc.near { border-style: dashed; border-color: #352E55; background: none; }
+    .tagc.near strong { color: #C9C3E0; }
+    .tagc strong { display: block; font-size: 14px; }
+    .tagc .meta { font-size: 12px; }
+    .tag-icon { width: 26px; height: 26px; flex: none; }
     label.file { position: relative; display: inline-block; border-radius: 6px; border: 1px solid #352E55; background: #1B1733; padding: 7px 12px; cursor: pointer; }
     label.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
     label.file:focus-within { outline: 2px solid #8B5CF6; }
@@ -167,6 +205,52 @@
       path.setAttribute('d', d);
       path.setAttribute('fill', fill);
       if (rule) path.setAttribute('fill-rule', rule);
+      svg.append(path);
+    }
+    return svg;
+  }
+
+  // One line icon per bonus tag, on a 24px grid, drawn with DOM calls like the fox.
+  const circle = (x, y, r) => `M${x - r} ${y}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
+  const roundRect = (x, y, w, h, r) => `M${x + r} ${y}h${w - 2 * r}a${r} ${r} 0 0 1 ${r} ${r}v${h - 2 * r}a${r} ${r} 0 0 1 ${-r} ${r}`
+    + `h${-(w - 2 * r)}a${r} ${r} 0 0 1 ${-r} ${-r}v${-(h - 2 * r)}a${r} ${r} 0 0 1 ${r} ${-r}z`;
+  const MEDAL = [circle(12, 14.5, 5.5), 'M8.5 3.5l2.2 5.6', 'M15.5 3.5l-2.2 5.6'];
+  const TAG_ICONS = {
+    'Same Nation': ['M6 21V4', 'M6 4h11l-2 3.5L17 11H6'],
+    'Different Nation': ['M5 21V4h9l-1.5 3L14 10H5', 'M12 21v-8h7l-1.2 2.5L19 18h-7'],
+    'Same Club': ['M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z'],
+    'Different Club': ['M9 3.5l5.5 2.2v4c0 3.4-2.3 6-5.5 7-3.2-1-5.5-3.6-5.5-7v-4z', 'M17 9l3.5 1.4v3.3c0 3-2 5.4-5 6.3-1.3-.4-2.4-1.1-3.2-2'],
+    'Same League': ['M8 4h8v5a4 4 0 0 1-8 0z', 'M8 6H5.5a2.5 2.5 0 0 0 2.7 3.9', 'M16 6h2.5a2.5 2.5 0 0 1-2.7 3.9', 'M12 13v3.5', 'M10 16.5h4v4h-4z'],
+    'Different League': ['M12 3l9 5-9 5-9-5z', 'M3 12.5l9 5 9-5', 'M3 17l9 5 9-5'],
+    Bronze: MEDAL,
+    Silver: MEDAL,
+    Golden: MEDAL,
+    Holographic: ['M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z', 'M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z'],
+    Iconic: [circle(12, 12, 9.5), 'M12 6.5l1.7 3.5 3.8.5-2.8 2.7.7 3.8L12 15.2 8.6 17l.7-3.8-2.8-2.7 3.8-.5z'],
+    Heroic: ['M13 2.5L5 13.5h6l-1 8 8-11h-6z'],
+    TOTW: [roundRect(3.5, 5, 17, 15, 2.5), 'M3.5 9.5h17M8 3v4M16 3v4', 'M12 11.6l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z'],
+    'First Owner': [circle(8, 15.5, 4.5), 'M11.3 12.2L20 3.5', 'M17 6.5l2.5 2.5', 'M14.5 9l2 2'],
+    'Hands Only': ['M7 11V6.5a1.5 1.5 0 0 1 3 0V11M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-.5A6.5 6.5 0 0 1 5 14.5V13a2 2 0 0 1 2-2'],
+    'Multiples!': [roundRect(4, 7, 11, 14, 2), 'M9 7V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3'],
+    Ambidextrous: ['M8 3.5c1.7 0 2.5 2 2.5 4.5S9.5 13 8 13s-2.5-2.5-2.5-5S6.3 3.5 8 3.5z', 'M6.3 15.5h3.4v2.2a1.7 1.7 0 0 1-3.4 0z',
+      'M16 7c1.7 0 2.5 2 2.5 4.5S17.5 16.5 16 16.5s-2.5-2.5-2.5-5S14.3 7 16 7z', 'M14.3 19h3.4v.5a1.7 1.7 0 0 1-3.4 0z'],
+    Skilled: ['M19.5 12a7.5 7.5 0 1 1-2.2-5.3', 'M20 4v4.5h-4.5', circle(12, 12, 1.5)],
+    'Defensive Wall': [roundRect(3, 5, 18, 14, 1), 'M3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19'],
+    'Midfield Control': [circle(12, 12, 8.5), circle(12, 12, 3), 'M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'],
+    'All out Attack': ['M3 19V7h18v12', 'M7 16l6-5.5', 'M9.5 10.5H13V14'],
+  };
+  // Lime when the tag is active, grey when not; the medals keep their metal.
+  const METAL = { Bronze: '#C8834A', Silver: '#D5DAE3', Golden: '#E8C45A' };
+
+  function tagIcon(name, active) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    const attrs = { viewBox: '0 0 24 24', class: 'tag-icon', fill: 'none', stroke: active ? METAL[name] || '#C6FF3D' : '#6E6790',
+      'stroke-width': '1.8', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
+    for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, v);
+    for (const d of TAG_ICONS[name] || [circle(12, 12, 8)]) {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', d);
       svg.append(path);
     }
     return svg;
@@ -606,80 +690,125 @@
       return el('div', { class: 'set' }, [setHead(res, 'button', { type: 'button', onclick: () => go(categoryOf(res), res.id) })]);
     }
 
-    function setPage(res) {
-      const entries = res.slots.map((e, index) => ({ ...e, index })).filter((e) => e.slot);
-      const missing = entries.filter((e) => !e.card && !e.done);
-      const have = entries.filter((e) => e.card);
-      const done = entries.filter((e) => e.done);
-      const row = (entry) => {
-        const line = slotLine(entry.slot);
-        const mark = entry.done ? { cls: 'ok', icon: '✓', hint: 'You marked this slot as done in the game' }
-          : !entry.card ? { cls: 'bad', icon: '✗', hint: 'Missing' }
-          : entry.unsure ? { cls: 'unknown', icon: '?', hint: "This slot's version has no number yet, so FutFox can't check it: check this card in the game" }
-          : entry.card.remembered ? { cls: 'ok', icon: '✓', hint: 'FutFox saw this card in your club before; it still counts in the Gallery' }
-          : { cls: 'ok', icon: '✓', hint: 'In your club' };
-        const yours = entry.card && `yours: ${entry.card.name} ${entry.card.rating}${entry.card.remembered ? ' (seen earlier)' : ''}`;
-        // A missing slot can be ticked when the card is already in the game's Gallery; a ticked one can be undone.
-        const tick = entry.done || !entry.card
-          ? el('button', { type: 'button', class: 'small', text: entry.done ? 'Undo' : 'Done in game', title: entry.done ? 'Count this slot as missing again' : 'Already in this set in the game: count it as filled', onclick: () => toggleDone(res.id, entry.index) })
-          : null;
-        return el('tr', { title: mark.hint }, [
-          el('td', { class: `mark ${mark.cls}`, text: mark.icon }),
-          el('td', { class: 'r', text: line.rating }),
-          el('td', {}, [
-            el('span', { class: 'name', text: line.name }),
-            el('span', { class: 'meta', text: [line.meta, yours, entry.done && 'done in the game'].filter(Boolean).join(' · ') }),
-          ]),
-          el('td', { class: 'act' }, tick ? [tick] : []),
-        ]);
-      };
-      // The set's grade ladder: the lowest score for each grade, what it gives, and which ones your cards reach.
-      const grades = H.setMatch.GRADES.filter((g) => res.grades[g] != null).map((g) => {
+    // The grade your cards reach, how far the next one is, and the set's grade ladder: each grade's
+    // lowest Item Score and the Gallery Tokens it gives.
+    function gradePanel(res) {
+      const graded = H.setMatch.GRADES.filter((g) => res.grades[g] != null);
+      const next = graded.find((g) => res.score < res.grades[g]);
+      const from = res.grade ? res.grades[res.grade] : 0;
+      const tokens = setTokens(res);
+      const scoreHint = res.bonus ? `${coins(res.baseScore)} from your matching cards + ${coins(res.bonus)} from bonus tags` : 'From your matching cards';
+      const reward = (g) => (tokensIn(res.rewards[g]) ? `${tokensIn(res.rewards[g])} tokens` : res.rewards[g] || 'its reward');
+      const steps = graded.map((g) => {
         const reached = res.score >= res.grades[g];
-        return el('tr', { title: reached ? 'Your matching cards reach this grade' : 'Not reached yet' }, [
-          el('td', { class: `mark ${reached ? 'ok' : 'bad'}`, text: reached ? '✓' : '·' }),
-          el('td', { class: 'r', text: g }),
-          el('td', {}, [
-            el('span', { class: 'name' }, [
-              /token/i.test(res.rewards[g] || '') && tokenSrc() ? el('img', { class: 'token', src: tokenSrc(), alt: '' }) : null,
-              res.rewards[g] || 'Reward not listed',
-            ]),
-            el('span', { class: 'meta', text: `From ${coins(res.grades[g])} Item Score` }),
-          ]),
+        return el('div', { class: `step g-${g}${reached ? '' : ' none'}${g === res.grade ? ' current' : ''}`, title: `Grade ${g}: from ${coins(res.grades[g])} Item Score${res.rewards[g] ? `, gives ${res.rewards[g]}` : ''}` }, [
+          el('span', { class: 'dia', text: g }),
+          el('span', { class: 'n', text: coins(res.grades[g]) }),
+          el('span', { class: 'gives' }, tokensIn(res.rewards[g])
+            ? [tokenSrc() ? el('img', { src: tokenSrc(), alt: '' }) : null, String(tokensIn(res.rewards[g]))]
+            : [res.rewards[g] ? 'Reward' : '–']),
         ]);
       });
-      // Bonus tags the set's cards reach, then the ones a card or two short of their first tier.
-      const tagRow = (t) => el('tr', { title: t.rule }, [
-        el('td', { class: `mark ${t.tier ? 'ok' : 'bad'}`, text: t.tier ? '✓' : '·' }),
-        el('td', { class: 'r', text: t.tier ? `+${t.tier.percent}%` : '' }),
-        el('td', {}, [
-          el('span', { class: 'name', text: t.name }),
-          el('span', { class: 'meta', text: [
-            t.tier ? `${t.count} cards · +${coins(t.bonus)} Item Score` : `${t.count} of ${t.next.count} cards`,
-            t.next && `${t.next.count} for +${t.next.percent}%`,
-          ].filter(Boolean).join(' · ') }),
+      return el('section', { class: 'grade-panel' }, [
+        el('div', { class: 'grade-top' }, [
+          el('span', { class: `grade big g-${res.grade || 'D'}${res.grade ? '' : ' none'}`, 'aria-hidden': 'true' }, [el('span', { class: 'dia', text: res.grade || '–' })]),
+          el('div', { class: 'grade-text' }, [
+            el('span', { class: 'muted', text: [`${res.name} · ${res.have} of ${res.total} cards`, res.unsure ? `${res.unsure} to check` : null].filter(Boolean).join(' · ') }),
+            el('span', { class: 'score', title: scoreHint }, [el('strong', { text: coins(res.score) }), el('span', { class: 'muted', text: ' Item Score' })]),
+            el('span', { text: res.grade ? `Grade ${res.grade}${tokens.earned ? ` · ${coins(tokens.earned)} tokens earned` : ''}` : graded.length ? 'No grade yet' : 'This set has no grades listed' }),
+          ]),
+        ]),
+        next ? el('div', { class: 'to-next' }, [
+          el('span', { class: 'bar', 'aria-hidden': 'true' }, [el('span', { style: `width:${Math.round((100 * (res.score - from)) / (res.grades[next] - from))}%` })]),
+          el('span', { class: 'note', text: `${coins(res.grades[next] - res.score)} more Item Score for grade ${next} and ${reward(next)}` }),
+        ]) : graded.length ? el('p', { class: 'note', text: 'Top grade reached.' }) : null,
+        steps.length ? el('div', { class: 'ladder' }, steps) : null,
+      ]);
+    }
+
+    // A small card as the game draws it: the version's card, the player's face, rating, position and
+    // name. A rule slot shows its version's blank card with what it asks for.
+    function miniCard({ rarityId, rating, playerId, position, name, label, missing }) {
+      const bg = rarityId != null && H.fut.cardImage ? H.fut.cardImage(rarityId, rating) : null;
+      const face = playerId != null && H.fut.playerFace ? H.fut.playerFace(playerId) : null;
+      const card = el('span', { class: `card${bg ? '' : ' blank'}${missing ? ' missing' : ''}`, 'aria-hidden': 'true' });
+      card.append(...[
+        bg ? el('img', { class: 'bg', src: bg, alt: '', onerror: (e) => { e.target.remove(); card.classList.add('blank'); } }) : null,
+        face ? el('img', { class: 'face', src: face, alt: '', onerror: (e) => e.target.remove() }) : null,
+        rating != null && !label ? el('span', { class: 'rt', text: String(rating) }) : null,
+        position ? el('span', { class: 'ps', text: position }) : null,
+        name ? el('span', { class: 'nm', text: name }) : null,
+        label ? el('span', { class: 'lbl', text: label }) : null,
+      ].filter(Boolean));
+      return card;
+    }
+
+    // One slot of the set: the card FutFox would use, or what is missing. A missing slot can be ticked
+    // when the card is already in the game's Gallery; a ticked one can be undone.
+    function slotCell(res, entry) {
+      const { slot, card } = entry;
+      const line = slotLine(slot);
+      const version = slot.rarityIds && slot.rarityIds.length ? slot.rarityIds[0] : slot.rarityId;
+      const about = el('span', { class: 'sr', text: [line.name, line.meta].join(', ') });
+      const tick = (done) => el('button', { type: 'button', class: 'link', text: done ? 'Undo' : 'Done in game',
+        title: done ? 'Count this slot as missing again' : 'Already in this set in the game: count it as filled', onclick: () => toggleDone(res.id, entry.index) });
+      if (card) {
+        const status = entry.unsure ? { cls: 'unknown', text: '? Check in game', hint: "This slot's version has no number yet, so FutFox can't check it: check this card in the game" }
+          : card.remembered ? { cls: 'ok', text: '✓ Seen earlier', hint: 'FutFox saw this card in your club before; it still counts in the Gallery' }
+          : { cls: 'ok', text: '✓ In your club', hint: 'In your club' };
+        const position = card.positions && card.positions.length ? H.fut.positionName(card.positions[0]) : null;
+        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYours: ${card.name} ${card.rating}. ${status.hint}` }, [
+          about,
+          miniCard({ rarityId: card.rarityId, rating: card.rating, playerId: card.playerId, position, name: card.name }),
+          el('span', { class: `cap ${status.cls}`, text: status.text }),
+        ]);
+      }
+      if (entry.done) {
+        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYou marked this slot as done in the game` }, [
+          about,
+          miniCard({ rarityId: version, rating: slot.rating, label: '✓ Done in game' }),
+          tick(true),
+        ]);
+      }
+      const exact = slot.kind === 'card';
+      return el('div', { class: 'slot', title: `Missing: ${line.name} · ${line.meta}` }, [
+        about,
+        miniCard({ rarityId: version, rating: exact ? slot.rating : slot.minRating, playerId: exact ? slot.playerId : null, name: exact ? line.name : null, label: exact ? null : line.name, missing: true }),
+        tick(false),
+      ]);
+    }
+
+    // A bonus tag the set's cards reach, or one a card or two short of its first tier.
+    function tagCard(t) {
+      return el('div', { class: `tagc${t.tier ? '' : ' near'}`, title: t.rule }, [
+        tagIcon(t.name, Boolean(t.tier)),
+        el('span', {}, [
+          el('strong', { text: t.tier ? `${t.name} +${t.tier.percent}%` : t.name }),
+          el('span', { class: 'meta', text: t.tier
+            ? [`${t.count} cards`, t.next ? `${t.next.count} for +${t.next.percent}%` : 'top tier'].join(' · ')
+            : `${t.count} of ${t.next.count} cards for +${t.next.percent}%` }),
         ]),
       ]);
+    }
+
+    function setPage(res) {
+      // Your cards first, then what is missing, then the slots ticked done in the game.
+      const order = (e) => (e.card ? 0 : e.done ? 2 : 1);
+      const entries = res.slots.map((e, index) => ({ ...e, index })).filter((e) => e.slot).sort((a, b) => order(a) - order(b) || a.index - b.index);
+      const missing = entries.filter((e) => !e.card && !e.done).length;
       const active = res.tags.filter((t) => t.tier);
       // One card is always "1 copy" of itself, so Multiples! only counts as close from two copies.
       const close = res.tags.filter((t) => !t.tier && t.count > (t.name === 'Multiples!' ? 1 : 0) && t.next.count - t.count <= 2);
-      return el('div', { class: 'set open' }, [
-        setHead(res, 'div', {}),
-        el('div', { class: 'set-body' }, [
-          missing.length ? el('h3', { text: `Missing (${missing.length})` }) : null,
-          missing.length ? el('table', {}, [el('tbody', {}, missing.map(row))]) : null,
-          have.length ? el('h3', { text: `Your cards (${have.length})` }) : null,
-          have.length ? el('table', {}, [el('tbody', {}, have.map(row))]) : null,
-          done.length ? el('h3', { text: `Done in the game (${done.length})` }) : null,
-          done.length ? el('table', {}, [el('tbody', {}, done.map(row))]) : null,
-          res.score ? el('p', { class: 'note', text: res.bonus ? `Gallery Item Score of your matching cards: ${coins(res.baseScore)} + ${coins(res.bonus)} from bonus tags = ${coins(res.score)}.` : `Gallery Item Score of your matching cards: ${coins(res.score)}.` }) : null,
-          active.length ? el('h3', { text: `Bonus tags (${active.length})` }) : null,
-          active.length ? el('table', {}, [el('tbody', {}, active.map(tagRow))]) : null,
-          close.length ? el('h3', { text: 'Bonus tags almost reached' }) : null,
-          close.length ? el('table', {}, [el('tbody', {}, close.map(tagRow))]) : null,
-          grades.length ? el('h3', { text: 'Grades' }) : null,
-          grades.length ? el('table', {}, [el('tbody', {}, grades)]) : null,
+      return el('div', { class: 'set-page' }, [
+        gradePanel(res),
+        el('section', {}, [
+          el('h3', { text: `Cards · ${res.have} of ${res.total}${missing ? ` · ${missing} missing` : ''}` }),
+          el('div', { class: 'cards' }, entries.map((e) => slotCell(res, e))),
         ]),
+        active.length || close.length ? el('section', {}, [
+          el('h3', { text: res.bonus ? `Bonus tags · +${coins(res.bonus)} Item Score` : 'Bonus tags' }),
+          el('div', { class: 'tags' }, active.concat(close).map(tagCard)),
+        ]) : null,
       ]);
     }
 
