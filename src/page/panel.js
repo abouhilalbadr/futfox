@@ -62,12 +62,17 @@
     select, input[type=number] { width: 100%; background: #1B1733; color: inherit; border: 1px solid #352E55; border-radius: 6px; padding: 7px 8px; font: inherit; }
     input[type=number] { width: 72px; }
     button { font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid #352E55; background: #1B1733; color: inherit; padding: 7px 12px; }
-    button.primary { background: #8B5CF6; color: #fff; border-color: #8B5CF6; font-weight: 700; }
+    /* Lime marks the main action, as on the website; violet stays for opening the market. */
+    button.primary { background: #C6FF3D; color: #0B0918; border-color: #C6FF3D; font-weight: 700; }
+    button.primary:not(:disabled):hover { background: #D4FF6B; border-color: #D4FF6B; }
+    /* Faded lime reads as olive, so a disabled main button goes grey instead. */
+    button.primary:disabled { opacity: 1; background: #1B1733; border-color: #352E55; color: #6E6790; }
+    button.market { background: #8B5CF6; color: #fff; border-color: #8B5CF6; font-weight: 700; }
     button:disabled { opacity: .5; cursor: default; }
     .close { border: 0; background: none; font-size: 24px; line-height: 1; padding: 4px 8px; color: #9A93B8; }
     .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     label.check { display: flex; align-items: center; gap: 8px; }
-    input[type=checkbox] { accent-color: #8B5CF6; }
+    input[type=checkbox] { accent-color: #C6FF3D; }
     .muted { color: #9A93B8; }
     ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
     ol.steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: #C9C3E0; }
@@ -91,7 +96,7 @@
     .error { color: #f08a7a; }
     .tabs { position: relative; display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
     /* The selected tab's underline, one bar that slides from tab to tab. */
-    .tabs .ink { position: absolute; left: 0; bottom: -1px; width: 1px; height: 2px; background: #8B5CF6; transform-origin: left; pointer-events: none; }
+    .tabs .ink { position: absolute; left: 0; bottom: -1px; width: 1px; height: 2px; background: #C6FF3D; transform-origin: left; pointer-events: none; }
     .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: #9A93B8; padding: 8px 10px; font-weight: 600; }
     .tabs button[aria-selected="true"] { color: #fff; }
     /* Categories, then a category's sets, as cards: one column at the panel's usual width, one more each
@@ -971,7 +976,7 @@
         const name = isBuy ? `Buy a ${p.rating}-rated ${H.fut.positionName(s.typeId)}` : p.name;
         const meta = `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(isBuy ? p.search.nationId : p.nationId)}`;
         const tag = isBuy
-          ? el('button', { class: 'small primary', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
+          ? el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
           : el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.untradeable ? 'Untradeable' : 'Club' });
         // A card to buy is no one yet, so it shows as an empty card.
         const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
