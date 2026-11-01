@@ -1475,14 +1475,19 @@
       // The SBC's rules on top. A rule about single cards (a club, nation, rarity...) is a button
       // that picks out the cards meeting it.
       const focus = state.ruleFocus != null ? res.ruleResults[state.ruleFocus] : null;
-      const rules = el('div', { class: 'rule-chips' }, res.ruleResults.map((r, n) => {
+      // The game shows how many players the squad needs (the slots that aren't locked) as a rule
+      // of its own, though it isn't one of the SBC's requirements.
+      const needed = res.required ? res.required.size : res.squad.length;
+      const filled = res.squad.filter((s, i) => s.player && (!res.required || res.required.has(i))).length;
+      const count = el('span', { class: `rule-chip ${filled === needed ? 'ok' : 'bad'}` }, [el('span', { class: 'ri', text: filled === needed ? '✓' : '✗' }), `Number of Players in the Squad: ${needed}`]);
+      const rules = el('div', { class: 'rule-chips' }, [count].concat(res.ruleResults.map((r, n) => {
         const icon = !r.rule.supported ? '?' : r.shortfall === 0 ? '✓' : '✗';
         const cls = `rule-chip ${!r.rule.supported ? 'unknown' : r.shortfall === 0 ? 'ok' : 'bad'}`;
         const text = [el('span', { class: 'ri', text: icon }), r.rule.label];
         const players = res.squad.map((s) => s.player).filter(Boolean);
         if (!players.length || H.requirements.cardMeets(r.rule, players[0]) === null) return el('span', { class: cls }, text);
         return el('button', { type: 'button', class: cls, 'aria-pressed': String(state.ruleFocus === n), title: 'Show the cards that meet this rule', onclick: () => { state.ruleFocus = state.ruleFocus === n ? null : n; render(); } }, text);
-      }));
+      })));
 
       // Drawn like the game's cards on its squad screen: each card in its slot's position, then
       // untradeable, chemistry and Change on one line, then where the card is.
