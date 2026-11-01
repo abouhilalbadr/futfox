@@ -2162,7 +2162,7 @@
       state.page = page;
       panel.replaceChildren(...[
         grip,
-        el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: hidePanel })]),
+        el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Minimize FutFox', title: 'Minimize: fold into the corner', text: '−', onclick: hidePanel })]),
         H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery'), el('span', { class: 'ink', 'aria-hidden': 'true' })]) : null,
         view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
         : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
