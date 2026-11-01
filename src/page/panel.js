@@ -85,16 +85,12 @@
     td { padding: 7px 5px; border-bottom: 1px solid #241F3C; vertical-align: middle; }
     td.pos { color: #9A93B8; width: 48px; font-size: 13px; }
     td.r { width: 34px; font-weight: 700; }
-    td.card-cell { width: 44px; padding-block: 4px; }
-    td.chem { width: 40px; color: #C6FF3D; letter-spacing: -1px; }
     .name { display: block; font-weight: 600; }
     .meta { display: block; font-size: 13px; color: #9A93B8; }
     .tag { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; }
     .tag.buy { background: #2A1F4D; color: #C4B1FF; }
     .tag.untr { background: #1d3327; color: #6fd29a; }
-    .tag.storage { background: #1f2c3d; color: #8cc4ff; }
-    .meta .untr { color: #6fd29a; }
-    /* A Streamlined SBC's suggested card: untradeable, points and Change on one line, then its pile. */
+    /* A suggested card: untradeable, points or chemistry and Change on one line, then where it is. */
     .pick-line { display: flex; align-items: center; gap: 4px; width: 100%; max-width: 160px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .pick-line .pts-icon { width: 14px; height: 14px; }
     .untr-ico { font-family: UltimateTeam-Icons, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #C9C3E0; }
@@ -105,10 +101,8 @@
     button.icon-btn svg { width: 14px; height: 14px; }
     .pick .src { font-size: 11px; color: #9A93B8; }
     .pick .src.store { color: #8cc4ff; }
+    .pick .chem-n { color: #C6FF3D; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
-    td.acts { width: 1%; }
-    .name .tag { margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: 2px; }
-    td.pts { width: 1%; white-space: nowrap; font-size: 13px; color: #C6FF3D; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
     .tabs { position: relative; display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
@@ -1390,19 +1384,6 @@
       ]);
     }
 
-    // Where a suggested card is: the club or SBC storage. Untradeable shows in its details line.
-    function sourceTag(p) {
-      return el('span', { class: p.storage ? 'tag storage' : 'tag', text: p.storage ? 'SBC storage' : 'Club' });
-    }
-
-    function cardMeta(p, nationId) {
-      return el('span', { class: 'meta' }, [
-        `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(nationId)}`,
-        p.untradeable ? ' · ' : null,
-        p.untradeable ? el('span', { class: 'untr', text: 'Untradeable' }) : null,
-      ]);
-    }
-
     function changeButton(entry, index, name) {
       return el('button', { class: 'icon-btn', type: 'button', title: 'Change: keep this card and suggest another', 'aria-label': `Change ${name}`, onclick: () => changePlayer(entry, index) }, [swapIcon()]);
     }
@@ -1424,35 +1405,39 @@
         el('span', { class: res.feasible ? 'ok' : 'bad', text: res.feasible ? 'Meets the rules' : 'Could not meet every rule' }),
       ]);
 
-      const rows = res.squad.map((s, i) => {
+      // Drawn like the game's cards, as Streamlined picks are: the card in the slot's position, then
+      // untradeable, chemistry and Change on one line, then where the card is.
+      const cells = res.squad.map((s, i) => {
         const p = s.player;
+        const position = H.fut.positionName(s.typeId);
         if (!p) {
-          const text = res.required && !res.required.has(i) ? 'Not needed for this SBC' : 'Empty';
-          return el('tr', {}, [el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }), el('td', { colspan: '5', class: 'muted', text })]);
+          if (res.required && !res.required.has(i)) return null;
+          return el('div', { class: 'slot pick' }, [miniCard({ position, label: 'Empty' }), el('span', { class: 'src', text: 'Nothing fits' })]);
         }
-        const isBuy = p.source === 'market';
-        const name = isBuy ? `Buy a ${p.rating}-rated ${H.fut.positionName(s.typeId)}` : p.name;
-        const meta = cardMeta(p, isBuy ? p.search.nationId : p.nationId);
-        // Where the card is sits next to its name, so the last column holds one button.
-        const action = isBuy
-          ? el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : changeButton(entry, i, p.name);
-        // A card to buy is no one yet, so it shows as an empty card.
-        const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
-        return el('tr', {}, [
-          el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }),
-          el('td', { class: 'card-cell' }, [card]),
-          el('td', { class: 'r', text: String(p.rating) }),
-          el('td', {}, [el('span', { class: 'name' }, [name, isBuy ? null : sourceTag(p)]), meta]),
-          el('td', { class: 'chem', title: `${perPlayer[i]} chemistry`, text: '◆'.repeat(perPlayer[i] || 0) || '–' }),
-          el('td', { class: 'acts' }, [action]),
+        if (p.source === 'market') {
+          return el('div', { class: 'slot pick', title: `Buy a ${p.rating}-rated ${position}: ${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }, [
+            miniCard({ rating: p.rating, position, name: 'To buy' }),
+            el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) }),
+            el('span', { class: 'src', text: `${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }),
+          ]);
+        }
+        const chem = perPlayer[i] || 0;
+        const plain = p.rarity === 0 || p.rarity === 1;
+        return el('div', { class: 'slot pick', title: `${p.name} ${p.rating} · ${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}` }, [
+          miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position, name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
+          el('div', { class: 'pick-line' }, [
+            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
+            el('span', { class: 'chem-n', title: `${chem} chemistry`, text: `◆ ${chem}` }),
+            changeButton(entry, i, p.name),
+          ]),
+          el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
         ]);
       });
 
       return el('section', {}, [
         el('h2', { text: 'Suggested squad' }),
         summary,
-        el('table', {}, [el('tbody', {}, rows)]),
+        el('div', { class: 'cards' }, cells),
         buys.length
           ? el('p', { class: 'note', text: `${buys.length} card${buys.length > 1 ? 's' : ''} to buy. "Search market" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.` })
           : null,
