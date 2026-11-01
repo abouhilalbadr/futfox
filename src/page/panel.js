@@ -242,12 +242,16 @@
        Only rotation and opacity move, so they keep going while a squad search blocks the page. */
     .spin { display: inline-block; flex: none; width: 12px; height: 12px; margin-right: 8px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: futfox-spin .7s linear infinite; }
     .muted .spin, p .spin { color: #C6FF3D; }
-    .slot.skel .card { animation: futfox-pulse 1.2s ease-in-out infinite; }
+    .slot.skel .card, .skel-box, .cat.skel { animation: futfox-pulse 1.2s ease-in-out infinite; }
+    .skel-box { display: block; height: 10px; border-radius: 5px; background: #2A2445; }
+    .cat.skel { min-height: 150px; }
+    .pick-skel { display: flex; align-items: center; gap: 12px; padding: 6px 12px 6px 8px; border: 1px solid #2A2445; border-radius: 8px; }
+    .skel-text { display: grid; gap: 8px; flex: 1; }
     @keyframes futfox-spin { to { transform: rotate(360deg); } }
     @keyframes futfox-pulse { 50% { opacity: .35; } }
     @media (prefers-reduced-motion: reduce) {
       .spin { animation-duration: 2s; }
-      .slot.skel .card { animation: none; opacity: .6; }
+      .slot.skel .card, .skel-box, .cat.skel { animation: none; opacity: .6; }
       .card .holo { animation: none; }
       .card .holo.has-still { display: none; }
       .card .holo-still { display: block; }
@@ -408,6 +412,11 @@
 
   function spinner() {
     return el('span', { class: 'spin', 'aria-hidden': 'true' });
+  }
+
+  // A faded bar that pulses, standing in for a line of text still loading; n staggers the pulse.
+  function skelBar(width, n = 0) {
+    return el('span', { class: 'skel-box', style: `width: ${width}; animation-delay: ${(n % 5) * 120}ms` });
   }
 
   function swapIcon() {
@@ -1690,7 +1699,7 @@
         el('p', { class: 'muted', role: 'status' }, state.loading
           ? [spinner(), `Loading your club… ${state.loadedCount || 0} players so far`]
           : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}`),
-        el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Load my club', disabled: state.loading, onclick: loadClub })]),
+        el('div', { class: 'row' }, [el('button', { type: 'button', disabled: state.loading, onclick: loadClub }, state.loading ? [spinner(), 'Loading…'] : ['Load my club'])]),
         el('p', { class: 'note', text: 'Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.' }),
       ]);
     }
@@ -2011,7 +2020,12 @@
           el('input', { type: 'search', name: 'name', value: p.text, placeholder: 'Player name, 3 letters or more', 'aria-label': 'Player name', autocomplete: 'off', oninput: (e) => typePicker(e.target.value) }),
         ]),
         p.error ? el('p', { class: 'error', text: p.error }) : null,
-        p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row)) : null,
+        p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row))
+          : p.loading ? el('div', { class: 'picks', 'aria-hidden': 'true' }, [0, 1, 2, 3].map((n) => el('div', { class: 'pick-skel' }, [
+            el('span', { class: 'slot skel' }, [Object.assign(miniCard({ small: true }), { style: `animation-delay: ${n * 120}ms` })]),
+            el('span', { class: 'skel-text' }, [skelBar('45%', n), skelBar('30%', n)]),
+          ])))
+          : null,
         p.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), 'Searching EA…'])
           : !p.cards.length ? el('p', { class: 'muted', text: p.query ? `No card fits this slot for "${p.query}".`
             : !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.'
@@ -2135,7 +2149,9 @@
           ]),
           error ? el('p', { class: 'error', text: error }) : null,
           known ? null : el('p', { class: 'note', text: 'Press Load my club so FutFox can check which cards you have.' }),
-          results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name)))) : null,
+          results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name))))
+            : loading ? el('div', { class: 'sets', 'aria-hidden': 'true' }, [0, 1, 2, 3].map((n) => el('div', { class: 'cat skel', style: `animation-delay: ${n * 120}ms` }, [skelBar('40%', n), el('span', { class: 'skel-text' }, [skelBar('70%', n), skelBar('45%', n)])])))
+            : null,
           results.length ? el('p', { class: 'note', text: 'Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Pick player to choose the card that is in the slot in the game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.' }) : null,
         ]),
         clubSection(known),
