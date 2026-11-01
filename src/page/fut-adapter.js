@@ -537,10 +537,12 @@
 
   // ---- Names ------------------------------------------------------------------------
 
+  // The league's full name: its short code (ENG 1, ESP 1) is unclear and shared, as Premier
+  // League and Barclays WSL both are ENG 1.
   function leagueName(id) {
     if (!id || id < 0) return 'Any league';
     const l = attempt(() => root.repositories.TeamConfig.getLeague(id), null);
-    return l ? l.abbreviation || l.name : `League ${id}`;
+    return l ? l.name || l.abbreviation : `League ${id}`;
   }
 
   function nationName(id) {
