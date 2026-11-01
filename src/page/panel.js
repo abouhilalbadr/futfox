@@ -39,22 +39,36 @@
       border-radius: 10px; background: #120F24; color: #e7ebf2; font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
       box-shadow: 0 0 0 1px #8B5CF6, 0 8px 24px rgba(0,0,0,.45); overflow: hidden; }
     .dock button { padding: 2px 8px; font-size: 12px; }
-    .dock-bar { display: flex; align-items: center; gap: 6px; padding: 5px 4px 5px 6px; }
+    /* A checklist: progress on top, then one row per card (small card, name, where to find it,
+       Copy and a round tick), placed rows faded. */
+    .dock-progress { flex: none; height: 3px; background: #2A2445; }
+    .dock-progress i { display: block; height: 100%; background: #C6FF3D; transition: width .2s; }
+    .dock-head { padding: 8px 12px 4px; font-size: 12px; color: #9A93B8; }
+    .dock-head strong { color: #e7ebf2; font-weight: 600; }
+    .dock-bar { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 8px; }
     .dock-list + .dock-bar { border-top: 1px solid #2A2445; }
     .dock .fox-btn { border: 0; background: none; padding: 2px; display: grid; }
     .dock .fox-btn .fox { width: 22px; height: 22px; }
     .dock .close { font-size: 18px; padding: 0 6px; }
-    .dock-bar .count { font-variant-numeric: tabular-nums; }
-    .dock-list { list-style: none; margin: 0; padding: 4px 0; overflow-y: auto; }
-    .dock-list li, .dock-bar .next { display: grid; grid-template-columns: 16px 30px 22px minmax(0, 1fr) auto; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
-    .dock-list li { padding: 3px 8px 3px 10px; }
-    .dock-bar .next { flex: 1; min-width: 0; }
-    .dock-bar .done { display: block; color: #6fd29a; }
-    .dock .pos { color: #9A93B8; font-size: 12px; }
-    .dock .r { font-weight: 700; }
-    .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .dock .src { color: #8cc4ff; font-size: 12px; }
-    .dock-list li.placed .name, .dock-list li.placed .r { color: #6E6790; text-decoration: line-through; }
+    .dock-bar .count { flex: 1; color: #9A93B8; font-variant-numeric: tabular-nums; }
+    .dock-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+    .dock-row { display: flex; align-items: center; gap: 10px; min-width: 0; font-variant-numeric: tabular-nums; }
+    .dock-list .dock-row { padding: 6px 10px; border-top: 1px solid #221D3D; }
+    .dock-list .dock-row:first-child { border-top: 0; }
+    .dock-bar .dock-row { flex: 1; }
+    .dock-row .card.small { width: 26px; }
+    .dock-row .who { flex: 1; min-width: 0; display: grid; }
+    .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+    .dock .name .r { margin-right: 6px; }
+    .dock .sub { font-size: 12px; color: #9A93B8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dock .sub .store { color: #8cc4ff; }
+    .dock .icon-btn { margin: 0; width: 28px; height: 28px; }
+    .dock button.tick { flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #352E55; background: none; display: grid; place-items: center; color: #0B0918; font-size: 13px; font-weight: 800; line-height: 1; }
+    .dock button.tick:hover { border-color: #C6FF3D; }
+    .dock button.tick[aria-checked=true] { background: #C6FF3D; border-color: #C6FF3D; }
+    .dock-row.placed > :not(.tick) { opacity: .45; }
+    .dock-row.placed .name { text-decoration: line-through; }
+    .dock-bar .done { flex: 1; color: #6fd29a; }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #2A2445; }
     h1 { margin: 0; font-size: 18px; font-weight: 700; }
     h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #9A93B8; }
@@ -417,6 +431,19 @@
   // A faded bar that pulses, standing in for a line of text still loading; n staggers the pulse.
   function skelBar(width, n = 0) {
     return el('span', { class: 'skel-box', style: `width: ${width}; animation-delay: ${(n % 5) * 120}ms` });
+  }
+
+  function copyIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    for (const [tag, attrs] of [['rect', { x: 9, y: 9, width: 11, height: 11, rx: 2 }], ['path', { d: 'M5 15V6a2 2 0 0 1 2-2h8' }]]) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries({ ...attrs, fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })) node.setAttribute(k, v);
+      svg.append(node);
+    }
+    return svg;
   }
 
   function swapIcon() {
@@ -852,27 +879,32 @@
     setInterval(() => { if (!open && state.result) sync(); }, 1000);
 
     function copyName(name, button) {
-      const done = () => { button.textContent = 'Copied'; setTimeout(() => { button.textContent = 'Copy'; }, 1200); };
+      const kids = [...button.childNodes];
+      const done = () => { button.replaceChildren('✓'); setTimeout(() => button.replaceChildren(...kids), 1200); };
       navigator.clipboard.writeText(name).then(done, () => {});
     }
 
     // One player's line: placed tick, position, rating, name, and Copy (or Market for a card to buy).
+    // One card to place: a small card, its name and rating, its position (or a Streamlined card's
+    // points) and where the game's picker lists it, then Copy (or Market) and the tick.
     function placingRow(s, i, tick) {
       const p = s.player;
-      // A Streamlined SBC's card has no position; its Item Score shows there instead.
-      const pos = s.typeId == null ? coins(p.score) : H.fut.positionName(s.typeId);
       const isBuy = p.source === 'market';
-      const name = isBuy ? `Buy a ${p.rating} ${pos}` : p.name;
-      return [
-        el('input', { type: 'checkbox', checked: state.placed.has(i), 'aria-label': `${name} placed`, onchange: () => tick(i) }),
-        el('span', { class: 'pos', text: pos }),
-        el('span', { class: 'r', text: String(p.rating) }),
-        // The game's picker has separate Club and SBC Storage tabs, so say which one to look in.
-        el('span', { class: 'name', title: p.storage ? `${name} (SBC storage)` : name }, [name, p.storage ? el('span', { class: 'src', text: ' · SBC storage' }) : null]),
+      const where = s.typeId == null ? `${coins(p.score)} points` : H.fut.positionName(s.typeId);
+      const name = isBuy ? `Buy a ${p.rating} ${where}` : p.name;
+      const placed = state.placed.has(i);
+      return el('div', { class: `dock-row${placed ? ' placed' : ''}` }, [
+        isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true }),
+        el('span', { class: 'who' }, [
+          el('span', { class: 'name', title: name }, isBuy ? [name] : [el('span', { class: 'r', text: String(p.rating) }), name]),
+          // The game's picker has separate Club and SBC Storage tabs, so say which one to look in.
+          el('span', { class: 'sub' }, isBuy ? [where, ' · Market'] : [where, ' · ', el('span', { class: p.storage ? 'store' : null, text: p.storage ? 'SBC storage' : 'Club' })]),
+        ]),
         isBuy
           ? el('button', { type: 'button', text: 'Market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : el('button', { type: 'button', title: 'Copy the name to search your club', text: 'Copy', onclick: (e) => copyName(p.name, e.currentTarget) }),
-      ];
+          : el('button', { class: 'icon-btn', type: 'button', title: 'Copy the name to search your club', 'aria-label': `Copy ${p.name}`, onclick: (e) => copyName(p.name, e.currentTarget) }, [copyIcon()]),
+        el('button', { class: 'tick', type: 'button', role: 'checkbox', 'aria-checked': String(placed), 'aria-label': `${name} placed`, title: placed ? 'Placed' : 'Tick once it is in the game', text: placed ? '✓' : '', onclick: () => tick(i) }),
+      ]);
     }
 
     // Folded, it is one line with the next player to place, small enough to sit under the game's
@@ -887,15 +919,19 @@
         else state.placed.add(i);
         renderDock();
       };
+      const progress = el('div', { class: 'dock-progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(rows.length), 'aria-valuenow': String(done), 'aria-label': 'Cards placed' }, [
+        el('i', { style: `width: ${rows.length ? (done / rows.length) * 100 : 0}%` }),
+      ]);
       return [
-        state.dockOpen
-          ? el('ul', { class: 'dock-list' }, rows.map(({ s, i }) => el('li', { class: state.placed.has(i) ? 'placed' : null }, placingRow(s, i, tick))))
-          : null,
+        progress,
+        state.dockOpen ? el('div', { class: 'dock-head' }, [el('strong', { text: 'Placing' }), ` ${done} of ${rows.length} · tick each card once it's in the game`]) : null,
+        state.dockOpen ? el('ul', { class: 'dock-list' }, rows.map(({ s, i }) => el('li', {}, [placingRow(s, i, tick)]))) : null,
         el('div', { class: 'dock-bar' }, [
           el('button', { class: 'fox-btn', type: 'button', title: 'Open FutFox', 'aria-label': 'Open FutFox', onclick: () => { state.showSquad = true; state.scrollTo = 0; openPanel(); } }, [foxIcon()]),
-          next ? el('div', { class: 'next' }, placingRow(next.s, next.i, tick)) : el('span', { class: 'next done', text: 'All placed: check it and submit' }),
-          el('span', { class: 'muted count', title: `${done} of ${rows.length} placed`, text: `${done}/${rows.length}` }),
-          el('button', { type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), title: state.dockOpen ? 'Hide the list' : 'Show every player', text: state.dockOpen ? '▾' : '▴', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }),
+          state.dockOpen ? el('span', { class: 'count', text: `${done} of ${rows.length} placed` })
+            : next ? placingRow(next.s, next.i, tick)
+              : el('span', { class: 'done', text: 'All placed: check it and submit' }),
+          el('button', { type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), title: state.dockOpen ? 'Hide the list' : 'Show every card', text: state.dockOpen ? '▾' : '▴', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }),
           el('button', { class: 'close', type: 'button', 'aria-label': 'Close the list', title: 'Close the list', text: '×', onclick: () => { state.placing = false; state.dockClosed = true; sync(); } }),
         ]),
       ].filter(Boolean);
