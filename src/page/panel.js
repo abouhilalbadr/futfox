@@ -728,6 +728,9 @@
 
     function openPanel() {
       open = true;
+      // Closing the placing list hides it until FutFox is opened again; closing the panel then
+      // folds back into the list while the squad's SBC is open.
+      state.dockClosed = false;
       refreshChallenges();
       sync();
     }
