@@ -160,7 +160,25 @@
     }
   }
 
-  const api = { KEY, QUALITY, SUPPORTED, qualityOf, parseRequirement, shortfall };
+  // Whether one card counts toward a rule about single cards (a club, nation, league, quality,
+  // rarity or rating), or null for a rule about the whole squad (team rating, chemistry, counts).
+  function cardMeets(rule, p) {
+    switch (rule.key) {
+      case KEY.NATION_ID: return rule.ids.includes(p.nationId);
+      case KEY.LEAGUE_ID: return rule.ids.includes(p.leagueId);
+      case KEY.CLUB_ID: return rule.ids.includes(p.clubId);
+      case KEY.PLAYER_LEVEL: return p.quality === rule.value;
+      case KEY.PLAYER_QUALITY: return rule.count > 0 ? p.quality === rule.value : miss(p.quality, rule.scope, rule.value) === 0;
+      case KEY.LEGEND_COUNT: return !!p.isIcon;
+      case KEY.PLAYER_RARITY: return matchesRarity(p, rule.ids);
+      case KEY.PLAYER_MIN_OVR: return p.rating >= rule.value;
+      case KEY.PLAYER_MAX_OVR: return p.rating <= rule.value;
+      case KEY.PLAYER_EXACT_OVR: return p.rating === rule.value;
+      default: return null;
+    }
+  }
+
+  const api = { KEY, QUALITY, SUPPORTED, qualityOf, parseRequirement, shortfall, cardMeets };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else (root.FutFox = root.FutFox || {}).requirements = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -101,6 +101,18 @@
     button.icon-btn svg { width: 14px; height: 14px; }
     .pick .src { font-size: 11px; color: #9A93B8; }
     .pick .src.store { color: #8cc4ff; }
+    /* A squad SBC's cards on a pitch, in the formation's lines; each line centred. */
+    .pitch { display: grid; gap: 14px; padding: 14px 10px; border: 1px solid #1f3a2a; border-radius: 12px; background: #10201a; }
+    .pitch-row { display: flex; justify-content: center; gap: 8px; }
+    .pitch-row > .slot { flex: 0 1 calc((100% - 32px) / 5); max-width: 140px; min-width: 0; }
+    .slot.locked .card { opacity: .45; }
+    .slot.dim { opacity: .3; }
+    .rule-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rule-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #2A2445; border-radius: 999px; background: #15112A; font-size: 13px; color: #C9C3E0; }
+    button.rule-chip:hover { border-color: #8B5CF6; }
+    button.rule-chip[aria-pressed=true] { border-color: #C6FF3D; color: #fff; }
+    .rule-chip .ri { font-weight: 700; }
+    .rule-chip.ok .ri { color: #6fd29a; } .rule-chip.bad .ri { color: #f08a7a; } .rule-chip.unknown .ri { color: #9A93B8; }
     /* A card's chemistry as the game shows it: three diamonds on a round badge, lit for each point. */
     .chem-pts { position: relative; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #1d272f; border: 1px solid #333d47; }
     .chem-pts i { position: absolute; font: normal 400 7px/1 UltimateTeam-Icons, sans-serif; color: #fff; opacity: .3; }
@@ -367,6 +379,24 @@
   const coins = (n) => Math.round(n).toLocaleString('en-US');
 
   // Two arrows chasing each other: swap this card for another.
+  // A formation's slot indexes in the lines the game draws them, attack first, each line from
+  // left to right. Slot names say the side: LCB is the left centre-back, RS the right striker.
+  const LINES = [[20, 27], [17, 19], [12, 16], [9, 11], [1, 8], [0, 0]];
+  const WIDE = new Set(['LWB', 'LB', 'LM', 'LW', 'LF', 'RWB', 'RB', 'RM', 'RW', 'RF']);
+  function pitchRows(slots) {
+    const across = (name) => {
+      const side = /^L/.test(name) ? -1 : /^R/.test(name) ? 1 : 0;
+      return 2 + side * (WIDE.has(name) ? 2 : 1);
+    };
+    return LINES
+      .map(([lo, hi]) => slots
+        .map((slot, i) => ({ i, x: across(slot.name || '') }))
+        .filter(({ i }) => slots[i].typeId >= lo && slots[i].typeId <= hi)
+        .sort((a, b) => a.x - b.x)
+        .map(({ i }) => i))
+      .filter((row) => row.length);
+  }
+
   function swapIcon() {
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
@@ -973,6 +1003,7 @@
 
     function showResult(result) {
       state.result = result;
+      state.ruleFocus = null;
       state.placed = new Set();
       state.placing = false;
       state.dockClosed = false;
@@ -1438,17 +1469,34 @@
         el('span', { class: res.feasible ? 'ok' : 'bad', text: res.feasible ? 'Meets the rules' : 'Could not meet every rule' }),
       ]);
 
-      // Drawn like the game's cards, as Streamlined picks are: the card in the slot's position, then
+      // The SBC's rules on top. A rule about single cards (a club, nation, rarity...) is a button
+      // that picks out the cards meeting it.
+      const focus = state.ruleFocus != null ? res.ruleResults[state.ruleFocus] : null;
+      const rules = el('div', { class: 'rule-chips' }, res.ruleResults.map((r, n) => {
+        const icon = !r.rule.supported ? '?' : r.shortfall === 0 ? '✓' : '✗';
+        const cls = `rule-chip ${!r.rule.supported ? 'unknown' : r.shortfall === 0 ? 'ok' : 'bad'}`;
+        const text = [el('span', { class: 'ri', text: icon }), r.rule.label];
+        const players = res.squad.map((s) => s.player).filter(Boolean);
+        if (!players.length || H.requirements.cardMeets(r.rule, players[0]) === null) return el('span', { class: cls }, text);
+        return el('button', { type: 'button', class: cls, 'aria-pressed': String(state.ruleFocus === n), title: 'Show the cards that meet this rule', onclick: () => { state.ruleFocus = state.ruleFocus === n ? null : n; render(); } }, text);
+      }));
+
+      // Drawn like the game's cards on its squad screen: each card in its slot's position, then
       // untradeable, chemistry and Change on one line, then where the card is.
-      const cells = res.squad.map((s, i) => {
+      const formation = H.fut.slotsFor(entry.challenge) || res.squad.map((s) => ({ typeId: s.typeId, name: H.fut.positionName(s.typeId) }));
+      const cell = (s, i) => {
         const p = s.player;
         const position = H.fut.positionName(s.typeId);
         if (!p) {
-          if (res.required && !res.required.has(i)) return null;
-          return el('div', { class: 'slot pick' }, [miniCard({ position, label: 'Empty' }), el('span', { class: 'src', text: 'Nothing fits' })]);
+          const locked = res.required && !res.required.has(i);
+          return el('div', { class: 'slot pick locked', title: locked ? 'This slot is locked: the SBC needs no card here' : 'No card fits this slot' }, [
+            miniCard({ position, label: locked ? 'Locked' : 'Empty' }),
+            el('span', { class: 'src', text: locked ? 'Not needed' : 'Nothing fits' }),
+          ]);
         }
+        const dim = focus && !H.requirements.cardMeets(focus.rule, p);
         if (p.source === 'market') {
-          return el('div', { class: 'slot pick', title: `Buy a ${p.rating}-rated ${position}: ${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }, [
+          return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `Buy a ${p.rating}-rated ${position}: ${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }, [
             miniCard({ rating: p.rating, position, name: 'To buy' }),
             el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) }),
             el('span', { class: 'src', text: `${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }),
@@ -1456,7 +1504,7 @@
         }
         const chem = perPlayer[i] || 0;
         const plain = p.rarity === 0 || p.rarity === 1;
-        return el('div', { class: 'slot pick', title: `${p.name} ${p.rating} · ${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}` }, [
+        return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `${p.name} ${p.rating} · ${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}` }, [
           miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position, name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
           el('div', { class: 'pick-line' }, [
             p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
@@ -1465,12 +1513,14 @@
           ]),
           el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
         ]);
-      });
+      };
+      const pitch = el('div', { class: 'pitch' }, pitchRows(formation).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => cell(res.squad[i], i)))));
 
       return el('section', {}, [
         el('h2', { text: 'Suggested squad' }),
         summary,
-        el('div', { class: 'cards' }, cells),
+        rules,
+        pitch,
         buys.length
           ? el('p', { class: 'note', text: `${buys.length} card${buys.length > 1 ? 's' : ''} to buy. "Search market" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.` })
           : null,
