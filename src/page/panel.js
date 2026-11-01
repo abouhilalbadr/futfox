@@ -53,6 +53,7 @@
     .dock .pos { color: #9A93B8; font-size: 12px; }
     .dock .r { font-weight: 700; }
     .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dock .src { color: #8cc4ff; font-size: 12px; }
     .dock-list li.placed .name, .dock-list li.placed .r { color: #6E6790; text-decoration: line-through; }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #2A2445; }
     h1 { margin: 0; font-size: 18px; font-weight: 700; }
@@ -91,6 +92,8 @@
     .tag { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; }
     .tag.buy { background: #2A1F4D; color: #C4B1FF; }
     .tag.untr { background: #1d3327; color: #6fd29a; }
+    .tag.storage { background: #1f2c3d; color: #8cc4ff; }
+    .meta .untr { color: #6fd29a; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     td.acts { width: 1%; }
     td.acts > div { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -776,7 +779,8 @@
         el('input', { type: 'checkbox', checked: state.placed.has(i), 'aria-label': `${name} placed`, onchange: () => tick(i) }),
         el('span', { class: 'pos', text: pos }),
         el('span', { class: 'r', text: String(p.rating) }),
-        el('span', { class: 'name', title: name, text: name }),
+        // The game's picker has separate Club and SBC Storage tabs, so say which one to look in.
+        el('span', { class: 'name', title: p.storage ? `${name} (SBC storage)` : name }, [name, p.storage ? el('span', { class: 'src', text: ' · SBC storage' }) : null]),
         isBuy
           ? el('button', { type: 'button', text: 'Market', onclick: () => H.fut.openMarketSearch(p.search) })
           : el('button', { type: 'button', title: 'Copy the name to search your club', text: 'Copy', onclick: (e) => copyName(p.name, e.currentTarget) }),
@@ -1350,6 +1354,19 @@
       ]);
     }
 
+    // Where a suggested card is: the club or SBC storage. Untradeable shows in its details line.
+    function sourceTag(p) {
+      return el('span', { class: p.storage ? 'tag storage' : 'tag', text: p.storage ? 'SBC storage' : 'Club' });
+    }
+
+    function cardMeta(p, nationId) {
+      return el('span', { class: 'meta' }, [
+        `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(nationId)}`,
+        p.untradeable ? ' · ' : null,
+        p.untradeable ? el('span', { class: 'untr', text: 'Untradeable' }) : null,
+      ]);
+    }
+
     function changeButton(entry, index) {
       return el('button', { class: 'small', type: 'button', title: 'Keep this card and suggest another', text: 'Change', onclick: () => changePlayer(entry, index) });
     }
@@ -1378,17 +1395,17 @@
         }
         const isBuy = p.source === 'market';
         const name = isBuy ? `Buy a ${p.rating}-rated ${H.fut.positionName(s.typeId)}` : p.name;
-        const meta = `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(isBuy ? p.search.nationId : p.nationId)}`;
+        const meta = cardMeta(p, isBuy ? p.search.nationId : p.nationId);
         const tag = isBuy
           ? el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.storage ? 'Storage' : p.untradeable ? 'Untradeable' : 'Club' });
+          : sourceTag(p);
         // A card to buy is no one yet, so it shows as an empty card.
         const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
         return el('tr', {}, [
           el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }),
           el('td', { class: 'card-cell' }, [card]),
           el('td', { class: 'r', text: String(p.rating) }),
-          el('td', {}, [el('span', { class: 'name', text: name }), el('span', { class: 'meta', text: meta })]),
+          el('td', {}, [el('span', { class: 'name', text: name }), meta]),
           el('td', { class: 'chem', title: `${perPlayer[i]} chemistry`, text: '◆'.repeat(perPlayer[i] || 0) || '–' }),
           el('td', { class: 'acts' }, [el('div', {}, [tag, isBuy ? null : changeButton(entry, i)].filter(Boolean))]),
         ]);
@@ -1423,12 +1440,12 @@
       ]);
       const rows = res.squad.map((s, i) => {
         const p = s.player;
-        const meta = `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}`;
-        const tag = el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.storage ? 'Storage' : p.untradeable ? 'Untradeable' : 'Club' });
+        const meta = cardMeta(p, p.nationId);
+        const tag = sourceTag(p);
         return el('tr', {}, [
           el('td', { class: 'card-cell' }, [miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true })]),
           el('td', { class: 'r', text: String(p.rating) }),
-          el('td', {}, [el('span', { class: 'name', text: p.name }), el('span', { class: 'meta', text: meta })]),
+          el('td', {}, [el('span', { class: 'name', text: p.name }), meta]),
           el('td', { class: 'pts', title: 'Item Score', text: `${coins(p.score)} pts` }),
           el('td', { class: 'acts' }, [el('div', {}, [tag, changeButton(entry, i)])]),
         ]);
