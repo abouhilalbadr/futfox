@@ -94,6 +94,17 @@
     .tag.untr { background: #1d3327; color: #6fd29a; }
     .tag.storage { background: #1f2c3d; color: #8cc4ff; }
     .meta .untr { color: #6fd29a; }
+    /* A Streamlined SBC's suggested card: untradeable, points and Change on one line, then its pile. */
+    .pick-line { display: flex; align-items: center; gap: 4px; width: 100%; max-width: 160px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pick-line .pts-icon { width: 14px; height: 14px; }
+    .untr-ico { font-family: UltimateTeam-Icons, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #C9C3E0; }
+    /* The game's untradeable glyph from its own icon font (the backslash is doubled for the template). */
+    .untr-ico::before { content: '\\e0ea'; }
+    button.icon-btn { margin-left: auto; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; color: #C9C3E0; }
+    button.icon-btn:hover { border-color: #8B5CF6; color: #fff; }
+    button.icon-btn svg { width: 14px; height: 14px; }
+    .pick .src { font-size: 11px; color: #9A93B8; }
+    .pick .src.store { color: #8cc4ff; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     td.acts { width: 1%; }
     td.acts > div { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -194,6 +205,9 @@
     .card.plain { color: #2B2210; text-shadow: none; }
     .card.plain .rt, .card.plain .ps { left: 13%; }
     .card.plain .nm { left: 14%; right: 14%; }
+    /* Flag, league and club, in a row under the name as on the game's cards. */
+    .card .bdg { position: absolute; left: 14%; right: 14%; top: 79%; display: flex; justify-content: center; align-items: center; gap: 5cqw; }
+    .card .bdg img { height: 10cqw; max-width: 17cqw; object-fit: contain; }
     .card.missing .bg, .card.missing .face { opacity: .3; filter: grayscale(1); }
     .card.missing .rt, .card.missing .nm { opacity: .6; }
     .slot .cap { font-size: 11px; white-space: nowrap; }
@@ -351,6 +365,25 @@
   }
 
   const coins = (n) => Math.round(n).toLocaleString('en-US');
+
+  // Two arrows chasing each other: swap this card for another.
+  function swapIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    for (const d of ['M20 11a8 8 0 0 0-14.3-4.9L4 8', 'M4 4v4h4', 'M4 13a8 8 0 0 0 14.3 4.9L20 16', 'M20 20v-4h-4']) {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.append(path);
+    }
+    return svg;
+  }
 
   // A number box with - and + buttons. Empty is allowed when `empty` names what it means
   // (shown as the placeholder); onChange gets a number, or null for empty.
@@ -1438,22 +1471,26 @@
         ]),
         el('span', { class: res.reached ? 'ok' : 'bad', text: res.reached ? 'Reaches the target' : `Short by ${coins(res.need - res.score)} points` }),
       ]);
-      const rows = res.squad.map((s, i) => {
+      // Drawn like the game's own cards, with the line the game's picker shows under each card.
+      const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
+      const cells = res.squad.map((s, i) => {
         const p = s.player;
-        const meta = cardMeta(p, p.nationId);
-        const tag = sourceTag(p);
-        return el('tr', {}, [
-          el('td', { class: 'card-cell' }, [miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true })]),
-          el('td', { class: 'r', text: String(p.rating) }),
-          el('td', {}, [el('span', { class: 'name', text: p.name }), meta]),
-          el('td', { class: 'pts', title: 'Item Score', text: `${coins(p.score)} pts` }),
-          el('td', { class: 'acts' }, [el('div', {}, [tag, changeButton(entry, i)])]),
+        const plain = p.rarity === 0 || p.rarity === 1;
+        return el('div', { class: 'slot pick' }, [
+          miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position: H.fut.positionName(p.positions[0]), name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
+          el('div', { class: 'pick-line' }, [
+            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
+            points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null,
+            el('span', { title: 'Item Score', text: coins(p.score) }),
+            el('button', { class: 'icon-btn', type: 'button', title: 'Change: keep this card and suggest another', 'aria-label': `Change ${p.name}`, onclick: () => changePlayer(entry, i) }, [swapIcon()]),
+          ]),
+          el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
         ]);
       });
       return el('section', {}, [
         el('h2', { text: 'Suggested cards' }),
         summary,
-        rows.length ? el('table', {}, [el('tbody', {}, rows)]) : el('p', { class: 'muted', text: 'No card in your club or SBC storage fits this challenge.' }),
+        cells.length ? el('div', { class: 'cards' }, cells) : el('p', { class: 'muted', text: 'No card in your club or SBC storage fits this challenge.' }),
         res.reached ? null : el('p', { class: 'note', text: `These are your ${res.limit} highest-scoring cards. Submit them to bank their points, then come back for the rest.` }),
         el('p', { class: 'note', text: `Picked from ${res.poolSize} cards the game's picker lists for this challenge. Nothing has been ticked or submitted.` }),
         keptOutNote(entry),
@@ -1749,7 +1786,7 @@
       return [sweep, still];
     }
 
-    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small, foil, foilArt }) {
+    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small, foil, foilArt, badges }) {
       const bg = rarityId != null && H.fut.cardImage ? H.fut.cardImage(rarityId, rating) : null;
       const face = playerId != null && H.fut.playerFace ? H.fut.playerFace(playerId) : null;
       const plain = bg && (rarityId === 0 || rarityId === 1);
@@ -1762,6 +1799,9 @@
         position ? el('span', { class: 'ps', text: position }) : null,
         name ? el('span', { class: 'nm', text: name }) : null,
         label ? el('span', { class: 'lbl', text: label }) : null,
+        badges && badges.some(Boolean)
+          ? el('span', { class: 'bdg' }, badges.filter(Boolean).map((src) => el('img', { src, alt: '', onerror: (e) => e.target.remove() })))
+          : null,
       ].filter(Boolean));
       return card;
     }

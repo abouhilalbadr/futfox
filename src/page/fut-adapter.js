@@ -157,6 +157,8 @@
       nationId: item.nationId,
       leagueId: item.leagueId,
       clubId: attempt(() => root.repositories.TeamConfig.getLinkedTeam(item.teamId), item.teamId) || item.teamId,
+      // The club on the card itself, for its badge (clubId above is the one chemistry counts).
+      teamId: item.teamId,
       rarity: item.rareflag,
       isIcon: attempt(() => item.isLegend(), false),
       positions: (item.possiblePositions || [item.preferredPosition]).slice(),
@@ -534,6 +536,19 @@
   const tokenImage = () => attempt(() => new URL('images/rewards/meta/flat/generic_token.png', root.location.href).href, null);
   // The coin the Web App shows beside your coin balance in its top bar.
   const coinImage = () => attempt(() => new URL('images/coinIcon.png', root.location.href).href, null);
+  // The diamond the Web App shows beside Item Scores and SBC points.
+  const sbcPointsImage = () => attempt(() => new URL('images/sbc/dustpoint.png', root.location.href).href, null);
+  const flagImage = (id) => (id > 0 ? attempt(() => root.AssetLocationUtils.getFlagImageUri(id), null) : null);
+  // The flag, league logo and club badge drawn on a card: the game's dark-ink logos on common and
+  // rare cards (light), its white ones on special cards.
+  function cardBadges(player, { light = false } = {}) {
+    const ink = (uri) => (light ? uri : darkImage(uri));
+    return [
+      flagImage(player.nationId),
+      player.leagueId > 0 ? ink(attempt(() => root.AssetLocationUtils.getLeagueImageUri(player.leagueId), null)) : null,
+      player.teamId > 0 ? ink(attempt(() => root.AssetLocationUtils.getBadgeImageUri(player.teamId), null)) : null,
+    ];
+  }
 
   // ---- Names ------------------------------------------------------------------------
 
@@ -579,6 +594,6 @@
   H.fut = {
     isReady, getChallenges, openChallengeId, shownChallengeId, rulesFor, slotsFor, requiredSlotsFor,
     knownClubItems, knownStorageItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
-    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
+    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, sbcPointsImage, cardBadges, searchSlotCards, versionName,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
