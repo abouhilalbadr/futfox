@@ -62,6 +62,8 @@
     .dock .name .r { margin-right: 6px; }
     .dock .sub { font-size: 12px; color: #9A93B8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .dock .sub .store { color: #8cc4ff; }
+    .dock .sub .pts { color: #e7ebf2; font-weight: 600; }
+    .dock .sub .pts-icon { width: 12px; height: 12px; margin-right: 3px; vertical-align: -2px; }
     .dock .icon-btn { margin: 0; width: 28px; height: 28px; }
     .dock button.tick { flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #352E55; background: none; display: grid; place-items: center; color: #0B0918; font-size: 13px; font-weight: 800; line-height: 1; }
     .dock button.tick:hover { border-color: #C6FF3D; }
@@ -890,8 +892,11 @@
     function placingRow(s, i, tick) {
       const p = s.player;
       const isBuy = p.source === 'market';
-      const where = s.typeId == null ? `${coins(p.score)} points` : H.fut.positionName(s.typeId);
-      const name = isBuy ? `Buy a ${p.rating} ${where}` : p.name;
+      const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
+      // A Streamlined SBC's card has no position: its points show there, with the game's points icon.
+      const where = s.typeId != null ? H.fut.positionName(s.typeId)
+        : el('span', { class: 'pts', title: 'Item Score' }, [points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null, coins(p.score)]);
+      const name = isBuy ? `Buy a ${p.rating} ${H.fut.positionName(s.typeId)}` : p.name;
       const placed = state.placed.has(i);
       return el('div', { class: `dock-row${placed ? ' placed' : ''}` }, [
         isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true }),
