@@ -1291,9 +1291,9 @@
             field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) })),
           ]),
           el('div', { class: 'switches' }, [
-            toggle('slKeepSpecial', 'Keep special cards', 'Use common and rare cards only'),
-            toggle('untradeablesOnly', 'Untradeables only'),
-            toggle('keepActiveSquad', 'Keep active squad', 'Never use players from your active squad'),
+            toggle('slKeepSpecial', "Don't use special cards", 'Only common and rare cards are used'),
+            toggle('untradeablesOnly', 'Use untradeable cards only'),
+            toggle('keepActiveSquad', "Don't use my active squad", 'Players in your active squad are left out'),
           ]),
         ]),
         el('div', { class: 'opt-card' }, [
