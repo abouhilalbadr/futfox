@@ -180,7 +180,9 @@
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  // The same paged request the Club screen makes, spaced out like a person paging.
+  // The same paged request the Club screen makes, spaced out like a person paging. The Web App
+  // answers each page with every club card it has cached so far, not just that page, so the
+  // length of a reply can't tell the last page; its retrievedAll flag does.
   async function loadClub(onProgress) {
     for (let page = 0; page < CLUB_MAX_PAGES; page++) {
       const criteria = new root.UTSearchCriteriaDTO();
@@ -188,10 +190,12 @@
       criteria.count = CLUB_PAGE_SIZE;
       criteria.offset = page * CLUB_PAGE_SIZE;
       const result = await observe(root.services.Club.search(criteria), 'loading the club');
-      const items = (result.response && result.response.items) || [];
+      const response = result.response || {};
+      const items = response.items || [];
       for (const item of items) loadedItems.set(item.id, item);
       onProgress(loadedItems.size);
-      if (items.length < CLUB_PAGE_SIZE) break;
+      const lastPage = typeof response.retrievedAll === 'boolean' ? response.retrievedAll : items.length < CLUB_PAGE_SIZE;
+      if (lastPage) break;
       await sleep(1500 + Math.random() * 1500);
     }
     return loadedItems.size;
