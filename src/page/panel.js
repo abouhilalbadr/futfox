@@ -958,6 +958,14 @@
       return state.challenges.find((c) => c.id === state.selectedId) || null;
     }
 
+    // When something happened, for "loaded just now", "loaded 5 min ago" or "loaded at 14:05".
+    function ago(ms) {
+      const min = Math.floor((Date.now() - ms) / 60000);
+      if (min < 1) return 'just now';
+      if (min < 60) return `${min} min ago`;
+      return `at ${new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
     async function loadClub() {
       state.loading = true;
       state.error = null;
@@ -967,6 +975,7 @@
           state.loadedCount = n;
           render();
         });
+        state.clubLoadedAt = Date.now();
       } catch (e) {
         state.error = e.message;
       }
@@ -1732,10 +1741,11 @@
     function clubSection(known) {
       return el('section', {}, [
         el('h2', { text: 'Your club' }),
-        el('p', { class: 'muted', role: 'status' }, state.loading
-          ? [spinner(), `Loading your club… ${state.loadedCount || 0} players so far`]
-          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}`),
-        el('div', { class: 'row' }, [el('button', { type: 'button', disabled: state.loading, onclick: loadClub }, state.loading ? [spinner(), 'Loading…'] : ['Load my club'])]),
+        // One spinner, on the button; the line says how far the load is, or when it last ran.
+        el('p', { class: 'muted', role: 'status', text: state.loading
+          ? `${state.loadedCount || 0} players so far`
+          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}${state.clubLoadedAt ? ` · loaded ${ago(state.clubLoadedAt)}` : ''}` }),
+        el('div', { class: 'row' }, [el('button', { type: 'button', disabled: state.loading, onclick: loadClub }, state.loading ? [spinner(), 'Loading your club…'] : [state.clubLoadedAt ? 'Reload my club' : 'Load my club'])]),
         el('p', { class: 'note', text: 'Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.' }),
       ]);
     }
