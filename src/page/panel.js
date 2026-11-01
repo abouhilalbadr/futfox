@@ -49,7 +49,8 @@
     .dock-list + .dock-bar { border-top: 1px solid #2A2445; }
     .dock .fox-btn { border: 0; background: none; padding: 2px; display: grid; }
     .dock .fox-btn .fox { width: 22px; height: 22px; }
-    .dock .close { font-size: 18px; padding: 0 6px; }
+    .dock .close { font-size: 20px; padding: 0 6px; height: 28px; }
+    .dock-bar .icon-btn svg { width: 16px; height: 16px; }
     .dock-bar .count { flex: 1; color: #9A93B8; font-variant-numeric: tabular-nums; }
     .dock-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
     .dock-row { display: flex; align-items: center; gap: 10px; min-width: 0; font-variant-numeric: tabular-nums; }
@@ -437,6 +438,18 @@
   // A faded bar that pulses, standing in for a line of text still loading; n staggers the pulse.
   function skelBar(width, n = 0) {
     return el('span', { class: 'skel-box', style: `width: ${width}; animation-delay: ${(n % 5) * 120}ms` });
+  }
+
+  // A chevron pointing up (to open the list above) or down (to fold it).
+  function chevronIcon(up) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(NS, 'path');
+    for (const [k, v] of Object.entries({ d: up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })) path.setAttribute(k, v);
+    svg.append(path);
+    return svg;
   }
 
   function copyIcon() {
@@ -940,7 +953,7 @@
           state.dockOpen ? el('span', { class: 'count', text: `${done} of ${rows.length} placed` })
             : next ? placingRow(next.s, next.i, tick)
               : el('span', { class: 'done', text: 'All placed: check it and submit' }),
-          el('button', { type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), title: state.dockOpen ? 'Hide the list' : 'Show every card', text: state.dockOpen ? '▾' : '▴', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }),
+          el('button', { class: 'icon-btn', type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), 'aria-label': state.dockOpen ? 'Hide the list' : 'Show every card', title: state.dockOpen ? 'Hide the list' : 'Show every card', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }, [chevronIcon(!state.dockOpen)]),
           el('button', { class: 'close', type: 'button', 'aria-label': 'Close the list', title: 'Close the list', text: '×', onclick: () => { state.placing = false; state.dockClosed = true; sync(); } }),
         ]),
       ].filter(Boolean);
