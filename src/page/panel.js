@@ -238,7 +238,16 @@
     }
     @keyframes futfox-holo { from { background-position: 0% 0; } to { background-position: 100% 0; } }
     @keyframes futfox-shine { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+    /* Busy: a spinning ring beside the text, and faded cards pulsing where the result will go.
+       Only rotation and opacity move, so they keep going while a squad search blocks the page. */
+    .spin { display: inline-block; flex: none; width: 12px; height: 12px; margin-right: 8px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: futfox-spin .7s linear infinite; }
+    .muted .spin, p .spin { color: #C6FF3D; }
+    .slot.skel .card { animation: futfox-pulse 1.2s ease-in-out infinite; }
+    @keyframes futfox-spin { to { transform: rotate(360deg); } }
+    @keyframes futfox-pulse { 50% { opacity: .35; } }
     @media (prefers-reduced-motion: reduce) {
+      .spin { animation-duration: 2s; }
+      .slot.skel .card { animation: none; opacity: .6; }
       .card .holo { animation: none; }
       .card .holo.has-still { display: none; }
       .card .holo-still { display: block; }
@@ -395,6 +404,10 @@
         .sort((a, b) => a.x - b.x)
         .map(({ i }) => i))
       .filter((row) => row.length);
+  }
+
+  function spinner() {
+    return el('span', { class: 'spin', 'aria-hidden': 'true' });
   }
 
   function swapIcon() {
@@ -1022,6 +1035,7 @@
       state.setupScroll = body ? body.scrollTop : 0;
       state.solving = true;
       state.error = null;
+      state.scrollTo = 0;
       render();
       if (H.fut.isStreamlined(entry.challenge)) {
         // EA's picker lists the cards a Streamlined SBC takes; FutFox asks it, then picks.
@@ -1416,6 +1430,32 @@
       ]);
     }
 
+    // While FutFox works out a suggestion: its page, with faded cards pulsing where the cards will go
+    // (a squad's in its formation, locked slots as they are).
+    function solvingPage(entry) {
+      const streamlined = H.fut.isStreamlined(entry.challenge);
+      const skel = (n) => {
+        const card = miniCard({});
+        card.style.animationDelay = `${(n % 5) * 120}ms`;
+        return el('div', { class: 'slot skel' }, [card]);
+      };
+      const slots = streamlined ? null : H.fut.slotsFor(entry.challenge);
+      const required = slots ? new Set(H.fut.requiredSlotsFor(entry.challenge)) : null;
+      const cards = slots
+        ? el('div', { class: 'pitch' }, pitchRows(slots).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => (required.has(i)
+          ? skel(i)
+          : el('div', { class: 'slot locked' }, [miniCard({ position: H.fut.positionName(slots[i].typeId), label: 'Locked' })]))))))
+        : el('div', { class: 'cards' }, [0, 1, 2, 3, 4].map(skel));
+      return [
+        crumbs([[entry.setName || 'Challenge'], [entry.name]], 'SBC'),
+        el('section', { 'aria-busy': 'true' }, [
+          el('h2', { text: streamlined ? 'Suggested cards' : 'Suggested squad' }),
+          el('p', { class: 'muted', role: 'status' }, [spinner(), streamlined ? 'Asking the game which cards this challenge takes…' : 'Finding the cheapest squad in your club…']),
+          cards,
+        ]),
+      ];
+    }
+
     // The suggested squad on its own page, like a Gallery set: the challenge's options are one step back.
     function squadPage(entry) {
       const back = () => { state.showSquad = false; state.scrollTo = state.setupScroll || 0; render(); };
@@ -1647,9 +1687,9 @@
     function clubSection(known) {
       return el('section', {}, [
         el('h2', { text: 'Your club' }),
-        el('p', { class: 'muted', text: state.loading
-          ? `Loading… ${state.loadedCount || 0} players so far`
-          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}` }),
+        el('p', { class: 'muted', role: 'status' }, state.loading
+          ? [spinner(), `Loading your club… ${state.loadedCount || 0} players so far`]
+          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}`),
         el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Load my club', disabled: state.loading, onclick: loadClub })]),
         el('p', { class: 'note', text: 'Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.' }),
       ]);
@@ -1972,7 +2012,7 @@
         ]),
         p.error ? el('p', { class: 'error', text: p.error }) : null,
         p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row)) : null,
-        p.loading ? el('p', { class: 'muted', role: 'status', text: 'Searching EA…' })
+        p.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), 'Searching EA…'])
           : !p.cards.length ? el('p', { class: 'muted', text: p.query ? `No card fits this slot for "${p.query}".`
             : !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.'
               : p.cleared ? 'Type 3 letters or more of a player name.' : 'No card fits this slot.' })
@@ -2019,7 +2059,7 @@
           }, [el('span', { class: 'dia', text: g })])),
           s ? el('button', { type: 'button', class: 'link', text: 'Clear', onclick: () => { state.suggest = null; render(); } }) : null,
         ]),
-        s && s.loading ? el('p', { class: 'muted', role: 'status', text: s.total ? `Searching the squad builder list… ${s.done} of ${s.total}` : 'Looking in your club…' }) : null,
+        s && s.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), s.total ? `Searching the squad builder list… ${s.done} of ${s.total}` : 'Looking in your club…']) : null,
         s && s.error ? el('p', { class: 'error', text: `${s.error} Some slots may have no suggestion.` }) : null,
         plan && !plan.adds.length ? el('p', { class: 'note', text: 'No card FutFox can find fits the empty slots.' }) : null,
         plan && plan.adds.length ? el('p', { class: 'sum' }, [
@@ -2090,7 +2130,7 @@
         el('section', {}, [
           el('h2', { text: 'Gallery sets' }),
           el('div', { class: 'row' }, [
-            el('span', { class: 'muted', text: loading ? 'Loading sets…' : data && data.sets.length ? `${data.sets.length} ${data.sets.length === 1 ? 'set' : 'sets'} · updated ${day(data.publishedAt)}` : 'No sets published yet' }),
+            loading ? el('span', { class: 'muted', role: 'status' }, [spinner(), 'Loading sets…']) : el('span', { class: 'muted', text: data && data.sets.length ? `${data.sets.length} ${data.sets.length === 1 ? 'set' : 'sets'} · updated ${day(data.publishedAt)}` : 'No sets published yet' }),
             el('button', { class: 'small', type: 'button', text: 'Refresh sets', disabled: loading, onclick: () => loadSets(true) }),
           ]),
           error ? el('p', { class: 'error', text: error }) : null,
@@ -2113,7 +2153,7 @@
     // categories, a category, a set, then picking a player).
     function pageNow(view, entry) {
       if (view === 'gallery') return state.picker && state.openSet != null ? 3 : state.openSet != null ? 2 : state.category != null ? 1 : 0;
-      return state.result && state.showSquad && entry ? 1 : 0;
+      return state.solving || (state.result && state.showSquad) ? (entry ? 1 : 0) : 0;
     }
 
     // Moving to another page: the old page slides out and fades as the new one slides in from the
@@ -2170,6 +2210,7 @@
         el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Minimize FutFox', title: 'Minimize: fold into the corner', text: '−', onclick: hidePanel })]),
         H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery'), el('span', { class: 'ink', 'aria-hidden': 'true' })]) : null,
         view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
+        : state.solving && entry ? el('div', { class: 'body' }, solvingPage(entry))
         : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
         : el('div', { class: 'body' }, [
           el('section', {}, [
@@ -2200,7 +2241,7 @@
           streamlined ? null : clubSection(known),
           streamlined ? streamlinedOptions(entry) : squadOptions(),
           el('div', { class: 'row' }, [
-            el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : streamlined ? 'Find cheapest cards' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),
+            el('button', { class: 'primary', type: 'button', disabled: !entry || state.solving, onclick: solve }, state.solving ? [spinner(), 'Solving…'] : [streamlined ? 'Find cheapest cards' : 'Find cheapest squad']),
             state.result ? el('button', { type: 'button', text: 'Show the last squad', onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
           ]),
           state.error ? el('p', { class: 'error', text: state.error }) : null,
