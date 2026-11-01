@@ -301,7 +301,9 @@
       // Streamlined SBCs: the rating range, the most cards a time (empty: the game's limit), the
       // points to reach now (empty: all that's left), where cards come from and what to favour.
       slMinRating: 45, slMaxRating: 86, slMaxCards: null, slPoints: null,
-      slClub: true, slStorage: true, slStorageFirst: true, slKeepSpecial: false, slPrefer: 'cheapest',
+      slClub: true, slStorage: true, slKeepSpecial: false, slPrefer: 'cheapest',
+      // Both kinds: SBC storage cards are used before club cards.
+      storageFirst: true,
     };
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
@@ -884,7 +886,7 @@
         // Common and rare cards only: special versions are worth keeping.
         .filter((p) => !settings.slKeepSpecial || p.rarity <= 1)
         // A card in SBC storage can't go back to the club, so using it first costs nothing.
-        .map((p) => (settings.slStorageFirst && p.storage ? { ...p, cost: 0 } : p));
+        .map((p) => (settings.storageFirst && p.storage ? { ...p, cost: 0 } : p));
       const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
       const need = Number(settings.slPoints) > 0 ? Math.min(Number(settings.slPoints), remaining) : remaining;
       const limit = Math.min(H.fut.submitLimit(), Number(settings.slMaxCards) || Infinity);
@@ -1281,7 +1283,7 @@
         el('div', { class: 'opt-group' }, [
           el('span', { class: 'muted', text: 'Take cards from' }),
           el('div', { class: 'opt-row' }, [check('slClub', 'Club'), check('slStorage', 'SBC storage')]),
-          check('slStorageFirst', 'Use SBC storage cards first'),
+          check('storageFirst', 'Use SBC storage cards first'),
           check('slKeepSpecial', 'Keep special cards (use common and rare only)'),
           check('untradeablesOnly', 'Use untradeables only'),
           check('keepActiveSquad', 'Keep my active squad players'),
@@ -1355,7 +1357,7 @@
         const meta = `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(isBuy ? p.search.nationId : p.nationId)}`;
         const tag = isBuy
           ? el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.untradeable ? 'Untradeable' : 'Club' });
+          : el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.storage ? 'Storage' : p.untradeable ? 'Untradeable' : 'Club' });
         // A card to buy is no one yet, so it shows as an empty card.
         const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
         return el('tr', {}, [
@@ -1378,7 +1380,7 @@
         res.eaChem ? null : el('p', { class: 'note', text: buys.length
           ? 'Chemistry is estimated because the squad includes cards to buy. Check it in the squad builder.'
           : "Chemistry is estimated because the game's own count wasn't available. Check it in the squad builder." }),
-        el('p', { class: 'note', text: `Picked from ${res.poolSize} club players. Nothing has been placed in your squad.` }),
+        el('p', { class: 'note', text: `Picked from ${res.poolSize} club and SBC storage players. Nothing has been placed in your squad.` }),
         keptOutNote(entry),
       ]);
     }
@@ -1486,9 +1488,11 @@
     function clubSection(known) {
       return el('section', {}, [
         el('h2', { text: 'Your club' }),
-        el('p', { class: 'muted', text: state.loading ? `Loading… ${state.loadedCount || 0} players so far` : `${known} players known` }),
+        el('p', { class: 'muted', text: state.loading
+          ? `Loading… ${state.loadedCount || 0} players so far`
+          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}` }),
         el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Load my club', disabled: state.loading, onclick: loadClub })]),
-        el('p', { class: 'note', text: 'Reads your club list the same way the Club screen does, one page every few seconds.' }),
+        el('p', { class: 'note', text: 'Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.' }),
       ]);
     }
 
@@ -2037,6 +2041,7 @@
             el('label', { class: 'check' }, [el('input', { id: 'futfox-keep', type: 'checkbox', checked: settings.keepActiveSquad, onchange: (e) => setSetting('keepActiveSquad', e.target.checked) }), 'Keep my active squad players']),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-untr', type: 'checkbox', checked: settings.untradeablesOnly, onchange: (e) => setSetting('untradeablesOnly', e.target.checked) }), 'Use untradeables only']),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
+            el('label', { class: 'check' }, [el('input', { id: 'futfox-storage', type: 'checkbox', checked: settings.storageFirst, onchange: (e) => setSetting('storageFirst', e.target.checked) }), 'Use SBC storage cards first']),
             el('div', { class: 'opt-row' }, ['Keep players rated', stepper({ value: settings.protectFrom, min: 0, max: 99, label: 'rating to keep', onChange: (n) => setSetting('protectFrom', n) }), 'and above']),
           ]),
           el('div', { class: 'row' }, [

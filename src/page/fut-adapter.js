@@ -211,17 +211,47 @@
       if (lastPage) break;
       await sleep(1500 + Math.random() * 1500);
     }
+    await loadStorage(onProgress);
     return loadedItems.size;
   }
 
-  function clubPool({ prices, keepActiveSquad, protectFrom, untradeablesOnly }) {
+  // Players in SBC storage: duplicates of club cards, kept for SBCs only. Read like the Club
+  // screen's SBC Storage tile does, after the club.
+  const storageItems = new Map();
+  async function loadStorage(onProgress) {
+    if (!attempt(() => root.services.Configuration.checkFeatureEnabled(root.UTServerSettingsRepository.KEY.STORAGE_PILE_ENABLED), true)) return;
+    for (let page = 0; page < CLUB_MAX_PAGES; page++) {
+      await sleep(1000 + Math.random() * 1000);
+      const criteria = new root.UTSearchCriteriaDTO();
+      criteria.type = root.SearchType.PLAYER;
+      criteria.count = CLUB_PAGE_SIZE;
+      criteria.offset = page * CLUB_PAGE_SIZE;
+      const result = await observe(root.services.Item.searchStorageItems(criteria), 'loading SBC storage');
+      const response = result.response || {};
+      const items = (response.items || []).filter((item) => attempt(() => item.isPlayer(), false));
+      for (const item of items) storageItems.set(item.id, item);
+      onProgress(loadedItems.size);
+      if (response.endOfList !== false || items.length < CLUB_PAGE_SIZE) break;
+    }
+  }
+
+  function knownStorageItems() {
+    return Array.from(storageItems.values());
+  }
+
+  // Club and SBC storage players for a squad. A storage card can't go back to the club, so with
+  // storageFirst it costs nothing and is used before its club copy.
+  function clubPool({ prices, keepActiveSquad, protectFrom, untradeablesOnly, storageFirst }) {
     const active = keepActiveSquad ? activeSquad : new Set();
-    return knownClubItems()
-      .filter((item) => !active.has(item.id))
-      .filter((item) => !protectFrom || item.rating < protectFrom)
-      .filter((item) => !untradeablesOnly || isUntradeable(item))
-      .filter(isUsable)
-      .map((item) => toPlayer(item, prices));
+    const keep = (item) => !active.has(item.id)
+      && (!protectFrom || item.rating < protectFrom)
+      && (!untradeablesOnly || isUntradeable(item))
+      && isUsable(item);
+    const storage = knownStorageItems().filter(keep).map((item) => {
+      const player = { ...toPlayer(item, prices), storage: true };
+      return storageFirst ? { ...player, cost: 0 } : player;
+    });
+    return knownClubItems().filter(keep).map((item) => toPlayer(item, prices)).concat(storage);
   }
 
   // ---- Streamlined SBCs -------------------------------------------------------------
@@ -546,7 +576,7 @@
 
   H.fut = {
     isReady, getChallenges, openChallengeId, shownChallengeId, rulesFor, slotsFor, requiredSlotsFor,
-    knownClubItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
+    knownClubItems, knownStorageItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
     leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
