@@ -437,11 +437,14 @@
   }
 
   // Drag and drop for the button, the placing card and the panel: grab(target) says which part of
-  // the element picks it up. Where it was dropped (and the panel's size) is kept in settings.places,
-  // pulled back on screen when the window shrinks; a double-click on the grabbed part puts it back.
-  // fromBottom keeps the element's bottom edge where it was dropped, so it grows upwards.
-  function movable(node, key, settings, grab, { fromBottom = false } = {}) {
+  // the element picks it up. Where it was dropped is kept in settings.places as the window corner it
+  // is nearest and its distance from that corner, so it lands in the same corner on any screen, and
+  // is pulled back on screen when the window is too small for it. A double-click on the grabbed part
+  // puts it back. An element dropped near the bottom keeps its bottom edge there and grows upwards.
+  function movable(node, key, settings, grab) {
     const places = settings.places || (settings.places = {});
+    // A spot kept as plain pixels from the top left (before corners) belongs to another screen.
+    if (places[key] && !places[key].corner) delete places[key];
     let start = null;
     let dragged = false;
     // Whether the last press was on the part that picks it up; the element holds the pointer from
@@ -458,19 +461,25 @@
         for (const prop of ['left', 'top', 'right', 'bottom', 'width', 'height']) node.style[prop] = '';
         return;
       }
-      if (at.w) node.style.width = `${at.w}px`;
+      if (at.w) node.style.width = `${Math.min(at.w, window.innerWidth)}px`;
       if (at.h) node.style.height = `${Math.min(at.h, window.innerHeight)}px`;
       // Its layout size, not the box on screen, which is scaled while it animates in.
       const r = { width: node.offsetWidth, height: node.offsetHeight };
-      const x = Math.max(0, Math.min(at.x, window.innerWidth - r.width));
-      const y = Math.max(0, Math.min(fromBottom ? window.innerHeight - at.b - r.height : at.y, window.innerHeight - r.height));
-      Object.assign(node.style, fromBottom
-        ? { left: `${Math.round(x)}px`, bottom: `${Math.round(window.innerHeight - y - r.height)}px`, right: 'auto', top: 'auto' }
-        : { left: `${Math.round(x)}px`, top: `${Math.round(y)}px`, right: 'auto', bottom: 'auto' });
+      const left = at.corner[1] === 'l' ? at.dx : window.innerWidth - at.dx - r.width;
+      const top = at.corner[0] === 't' ? at.dy : window.innerHeight - at.dy - r.height;
+      const x = Math.max(0, Math.min(left, window.innerWidth - r.width));
+      const y = Math.max(0, Math.min(top, window.innerHeight - r.height));
+      Object.assign(node.style, { left: `${Math.round(x)}px`, top: `${Math.round(y)}px`, right: 'auto', bottom: 'auto' });
     }
 
     function spot(left, top) {
-      return fromBottom ? { x: left, b: window.innerHeight - top - node.offsetHeight } : { x: left, y: top };
+      const right = window.innerWidth - left - node.offsetWidth;
+      const bottom = window.innerHeight - top - node.offsetHeight;
+      return {
+        corner: (top <= bottom ? 't' : 'b') + (left <= right ? 'l' : 'r'),
+        dx: Math.max(0, Math.round(Math.min(left, right))),
+        dy: Math.max(0, Math.round(Math.min(top, bottom))),
+      };
     }
 
     node.addEventListener('pointerdown', (e) => {
@@ -546,7 +555,7 @@
 
     const free = (t) => !t.closest('button, input, select, a, .grip');
     const toggleSpot = movable(toggle, 'toggle', settings, () => true);
-    const dockSpot = movable(dock, 'dock', settings, free, { fromBottom: true });
+    const dockSpot = movable(dock, 'dock', settings, free);
     const panelSpot = movable(panel, 'panel', settings, (t) => Boolean(t.closest('header')) && free(t));
     let resized = null;
     new ResizeObserver(() => {
