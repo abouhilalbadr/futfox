@@ -445,7 +445,10 @@
     // then on, so later events no longer say which part was pressed.
     let grabbed = false;
 
+    // A hidden element measures 0 wide, which would let it be pulled back only as far as the very
+    // edge, off screen; it is placed when it shows instead.
     function place() {
+      if (node.hidden) return;
       const at = places[key];
       node.classList.toggle('moved', Boolean(at));
       if (!at) {
@@ -539,7 +542,7 @@
     const grip = resizeGrip(panel, settings);
 
     const free = (t) => !t.closest('button, input, select, a, .grip');
-    movable(toggle, 'toggle', settings, () => true);
+    const toggleSpot = movable(toggle, 'toggle', settings, () => true);
     const dockSpot = movable(dock, 'dock', settings, free, { fromBottom: true });
     const panelSpot = movable(panel, 'panel', settings, (t) => Boolean(t.closest('header')) && free(t));
     let resized = null;
@@ -601,6 +604,7 @@
         dock.replaceChildren(...placingList());
         dockSpot.place();
       }
+      if (want === toggle) toggleSpot.place();
       if (!was) return;
       const hide = () => {
         if (!was.classList.contains('leaving')) return;
