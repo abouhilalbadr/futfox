@@ -291,8 +291,15 @@
     .segmented button { border: 0; border-radius: 0; padding: 6px 12px; background: #1B1733; color: #9A93B8; }
     .segmented button + button { border-left: 1px solid #352E55; }
     .segmented button[aria-pressed=true] { background: #2A2445; color: #fff; font-weight: 600; }
-    .opt-group { display: grid; gap: 8px; padding-top: 4px; }
-    .opt-group > .muted { font-size: 13px; }
+    /* Streamlined options: three small cards, each a 2-column grid of equal fields. */
+    .opt-card { display: grid; gap: 10px; padding: 12px; border: 1px solid #2A2445; border-radius: 10px; background: #15112A; }
+    .opt-card h3 { margin: 0; font-size: 12px; font-weight: 600; color: #9A93B8; }
+    .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .field { display: grid; gap: 4px; min-width: 0; }
+    .field > span { font-size: 13px; color: #9A93B8; }
+    .field .stepper { display: flex; }
+    .field .stepper input, .field .stepper input.wide { flex: 1; width: 0; min-width: 0; }
+    .segmented.full { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   `;
 
   function loadSettings() {
@@ -1254,39 +1261,40 @@
       return box;
     }
 
-    // Streamlined SBCs: which cards to use, how many and how many points to reach now.
+    // Streamlined SBCs: which cards to use, how many and how many points to reach now, and whether
+    // they come from the club, SBC storage or both; one small card each.
     function streamlinedOptions(entry) {
       const c = entry.challenge;
       const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
       const limit = H.fut.submitLimit();
       const check = (key, text) => el('label', { class: 'check' }, [el('input', { type: 'checkbox', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }), text]);
+      // A div, not a label: clicking a label would press the stepper's first button.
+      const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: label }), control]);
       const prefer = (value, text) => el('button', { type: 'button', 'aria-pressed': String(settings.slPrefer === value), text, onclick: () => { setSetting('slPrefer', value); render(); } });
       return el('section', {}, [
         el('h2', { text: 'Options' }),
-        el('div', { class: 'opt-row' }, [
-          'Use cards rated',
-          stepper({ value: settings.slMinRating, min: 40, max: 99, label: 'lowest rating', onChange: (n) => setSetting('slMinRating', n) }),
-          'to',
-          stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) }),
-        ]),
-        el('div', { class: 'opt-row' }, [
-          'Use at most',
-          stepper({ value: settings.slMaxCards, min: 1, max: limit, label: 'cards', empty: String(limit), onChange: (n) => setSetting('slMaxCards', n) }),
-          `cards (the game takes up to ${limit} a time)`,
-        ]),
-        el('div', { class: 'opt-row' }, [
-          'Reach',
-          stepper({ value: settings.slPoints, min: 1, max: Math.max(1, remaining), step: 500, wide: true, label: 'points', empty: coins(remaining), onChange: (n) => setSetting('slPoints', n) }),
-          'points now',
-        ]),
-        el('div', { class: 'opt-row' }, ['Favour', el('div', { class: 'segmented', role: 'group', 'aria-label': 'Favour' }, [prefer('cheapest', 'Fewest coins'), prefer('fewest', 'Fewest cards')])]),
-        el('div', { class: 'opt-group' }, [
-          el('span', { class: 'muted', text: 'Take cards from' }),
-          el('div', { class: 'opt-row' }, [check('slClub', 'Club'), check('slStorage', 'SBC storage')]),
-          check('storageFirst', 'Use SBC storage cards first'),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Which cards' }),
+          el('div', { class: 'pair' }, [
+            field('From rating', stepper({ value: settings.slMinRating, min: 40, max: 99, label: 'lowest rating', onChange: (n) => setSetting('slMinRating', n) })),
+            field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) })),
+          ]),
           check('slKeepSpecial', 'Keep special cards (use common and rare only)'),
           check('untradeablesOnly', 'Use untradeables only'),
           check('keepActiveSquad', 'Keep my active squad players'),
+        ]),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'How many' }),
+          el('div', { class: 'pair' }, [
+            field(`Max cards (up to ${limit})`, stepper({ value: settings.slMaxCards, min: 1, max: limit, label: 'cards', empty: String(limit), onChange: (n) => setSetting('slMaxCards', n) })),
+            field('Points now', stepper({ value: settings.slPoints, min: 1, max: Math.max(1, remaining), step: 500, wide: true, label: 'points', empty: coins(remaining), onChange: (n) => setSetting('slPoints', n) })),
+          ]),
+          el('div', { class: 'segmented full', role: 'group', 'aria-label': 'Favour' }, [prefer('cheapest', 'Fewest coins'), prefer('fewest', 'Fewest cards')]),
+        ]),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Take cards from' }),
+          el('div', { class: 'pair' }, [check('slClub', 'Club'), check('slStorage', 'SBC storage')]),
+          check('storageFirst', 'Use SBC storage cards first'),
         ]),
       ]);
     }
