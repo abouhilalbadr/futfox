@@ -72,7 +72,6 @@
     button:disabled { opacity: .5; cursor: default; }
     .close { border: 0; background: none; font-size: 24px; line-height: 1; padding: 4px 8px; color: #9A93B8; }
     .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    label.check { display: flex; align-items: center; gap: 8px; }
     input[type=checkbox] { accent-color: #C6FF3D; }
     .muted { color: #9A93B8; }
     ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -305,12 +304,11 @@
     .stepper input:focus-visible { outline: none; }
     .stepper input.wide { width: 76px; }
     .stepper input::placeholder { color: #6E6790; }
-    .opt-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .segmented { display: inline-flex; border: 1px solid #352E55; border-radius: 6px; overflow: hidden; }
     .segmented button { border: 0; border-radius: 0; padding: 6px 12px; background: #1B1733; color: #9A93B8; }
     .segmented button + button { border-left: 1px solid #352E55; }
     .segmented button[aria-pressed=true] { background: #2A2445; color: #fff; font-weight: 600; }
-    /* Streamlined options: three small cards, each a 2-column grid of equal fields. */
+    /* SBC options: small cards, each a 2-column grid of equal fields and a list of switches. */
     .opt-card { display: grid; gap: 10px; padding: 12px; border: 1px solid #2A2445; border-radius: 10px; background: #15112A; }
     .opt-card h3 { margin: 0; font-size: 12px; font-weight: 600; color: #9A93B8; }
     .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -1313,16 +1311,43 @@
 
     // Streamlined SBCs: which cards to use, how many and how many points to reach now, and whether
     // they come from the club, SBC storage or both; one small card each.
+    // An on/off option: its text on the left, a switch on the right.
+    const switchRow = (key, text, hint) => el('label', { class: 'switch-row', title: hint || null }, [
+      el('span', { text }),
+      el('input', { class: 'switch', type: 'checkbox', role: 'switch', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }),
+    ]);
+    // A div, not a label: clicking a label would press the stepper's first button.
+    const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: label }), control]);
+
+    // A squad SBC's options, in the same cards as a Streamlined SBC's.
+    function squadOptions() {
+      return el('section', {}, [
+        el('h2', { text: 'Options' }),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Which cards' }),
+          el('div', { class: 'pair' }, [
+            // Stored as the lowest rating kept back (0: none), shown as the highest one used.
+            field('Highest rating to use', stepper({ value: Number(settings.protectFrom) ? settings.protectFrom - 1 : 99, min: 40, max: 99, label: 'highest rating to use', onChange: (n) => setSetting('protectFrom', n == null || n >= 99 ? 0 : n + 1) })),
+          ]),
+          el('div', { class: 'switches' }, [
+            switchRow('untradeablesOnly', 'Use untradeable cards only'),
+            switchRow('keepActiveSquad', "Don't use my active squad", 'Players in your active squad are left out'),
+          ]),
+        ]),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Take cards from' }),
+          el('div', { class: 'switches' }, [
+            switchRow('storageFirst', 'SBC storage cards first', 'SBC storage cards go in before club cards'),
+            switchRow('allowMarket', 'Suggest cards to buy when the club falls short'),
+          ]),
+        ]),
+      ]);
+    }
+
     function streamlinedOptions(entry) {
       const c = entry.challenge;
       const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
       const limit = H.fut.submitLimit();
-      const toggle = (key, text, hint) => el('label', { class: 'switch-row', title: hint || null }, [
-        el('span', { text }),
-        el('input', { class: 'switch', type: 'checkbox', role: 'switch', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }),
-      ]);
-      // A div, not a label: clicking a label would press the stepper's first button.
-      const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: label }), control]);
       const prefer = (value, text) => el('button', { type: 'button', 'aria-pressed': String(settings.slPrefer === value), text, onclick: () => { setSetting('slPrefer', value); render(); } });
       return el('section', {}, [
         el('h2', { text: 'Options' }),
@@ -1333,9 +1358,9 @@
             field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) })),
           ]),
           el('div', { class: 'switches' }, [
-            toggle('slKeepSpecial', "Don't use special cards", 'Only common and rare cards are used'),
-            toggle('untradeablesOnly', 'Use untradeable cards only'),
-            toggle('keepActiveSquad', "Don't use my active squad", 'Players in your active squad are left out'),
+            switchRow('slKeepSpecial', "Don't use special cards", 'Only common and rare cards are used'),
+            switchRow('untradeablesOnly', 'Use untradeable cards only'),
+            switchRow('keepActiveSquad', "Don't use my active squad", 'Players in your active squad are left out'),
           ]),
         ]),
         el('div', { class: 'opt-card' }, [
@@ -1349,9 +1374,9 @@
         el('div', { class: 'opt-card' }, [
           el('h3', { text: 'Take cards from' }),
           el('div', { class: 'switches' }, [
-            toggle('slClub', 'Use club cards'),
-            toggle('slStorage', 'Use SBC storage'),
-            toggle('storageFirst', 'Storage cards first', 'SBC storage cards go in before club cards'),
+            switchRow('slClub', 'Use club cards'),
+            switchRow('slStorage', 'Use SBC storage'),
+            switchRow('storageFirst', 'Storage cards first', 'SBC storage cards go in before club cards'),
           ]),
         ]),
       ]);
@@ -2115,14 +2140,7 @@
               ])
             : null,
           streamlined ? null : clubSection(known),
-          streamlined ? streamlinedOptions(entry) : el('section', {}, [
-            el('h2', { text: 'Options' }),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-keep', type: 'checkbox', checked: settings.keepActiveSquad, onchange: (e) => setSetting('keepActiveSquad', e.target.checked) }), 'Keep my active squad players']),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-untr', type: 'checkbox', checked: settings.untradeablesOnly, onchange: (e) => setSetting('untradeablesOnly', e.target.checked) }), 'Use untradeables only']),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-storage', type: 'checkbox', checked: settings.storageFirst, onchange: (e) => setSetting('storageFirst', e.target.checked) }), 'Use SBC storage cards first']),
-            el('div', { class: 'opt-row' }, ['Keep players rated', stepper({ value: settings.protectFrom, min: 0, max: 99, label: 'rating to keep', onChange: (n) => setSetting('protectFrom', n) }), 'and above']),
-          ]),
+          streamlined ? streamlinedOptions(entry) : squadOptions(),
           el('div', { class: 'row' }, [
             el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : streamlined ? 'Find cheapest cards' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),
             state.result ? el('button', { type: 'button', text: 'Show the last squad', onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
