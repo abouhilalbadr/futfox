@@ -104,17 +104,6 @@ h1, h2, h3 { text-wrap: balance; }
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 6px; }
 .fineprint { margin: 0; font-size: 14px; color: var(--muted); }
 
-/* "New" marks for the Gallery */
-.nav-new {
-  display: inline-block; padding: 1px 7px; border-radius: 999px;
-  background: var(--lime); color: var(--night); font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
-}
-.hero-new {
-  display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; max-width: 100%;
-  background: var(--tile); border: 1px solid var(--tile-line); border-radius: 22px; color: var(--text-soft); text-decoration: none; font-size: 14px; text-align: left;
-}
-.hero-new:hover { border-color: var(--violet); color: var(--text); }
-
 /* Tiles: the bento building block, used by every section */
 .tile { background: var(--tile); border: 1px solid var(--tile-line); border-radius: 28px; padding: 36px; min-width: 0; }
 .tile h2 { margin: 0; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.08; font-weight: 800; letter-spacing: -0.03em; }
