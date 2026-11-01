@@ -162,6 +162,8 @@
       rarity: item.rareflag,
       isIcon: attempt(() => item.isLegend(), false),
       positions: (item.possiblePositions || [item.preferredPosition]).slice(),
+      // The position on the card; possiblePositions is in slot order, not with it first.
+      position: item.preferredPosition,
       profile: chemProfileOf(item),
       untradeable,
       marketAverage,

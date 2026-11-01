@@ -1236,7 +1236,7 @@
         },
       }, [
         el('span', { class: 'menu-text' }, current
-          ? [el('span', { class: 'menu-set', text: current.setName }), el('span', { class: 'menu-name', text: current.name })]
+          ? [current.setName !== current.name ? el('span', { class: 'menu-set', text: current.setName }) : null, el('span', { class: 'menu-name', text: current.name })].filter(Boolean)
           : [el('span', { class: 'menu-name', text: 'Pick a challenge' })]),
         current ? challengeChip(current) : null,
         el('span', { class: 'chev', 'aria-hidden': 'true' }),
@@ -1266,7 +1266,9 @@
         for (const c of shown) {
           if (c.setId !== set) {
             set = c.setId;
-            rows.push(el('li', { class: 'menu-group', role: 'presentation', text: c.setName }));
+            // A set that is a single challenge of the same name needs no heading of its own.
+            const alone = shown.filter((x) => x.setId === c.setId).length === 1 && c.setName === c.name;
+            if (!alone) rows.push(el('li', { class: 'menu-group', role: 'presentation', text: c.setName }));
           }
           const node = el('li', {
             class: 'menu-opt', role: 'option', id: `futfox-challenge-${c.id}`, 'aria-selected': String(c.id === state.selectedId),
@@ -1477,7 +1479,7 @@
         const p = s.player;
         const plain = p.rarity === 0 || p.rarity === 1;
         return el('div', { class: 'slot pick' }, [
-          miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position: H.fut.positionName(p.positions[0]), name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
+          miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position: H.fut.positionName(p.position ?? p.positions[0]), name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
           el('div', { class: 'pick-line' }, [
             p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
             points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null,
