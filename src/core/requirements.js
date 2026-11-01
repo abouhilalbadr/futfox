@@ -18,6 +18,7 @@
     LEAGUE_ID: 11,
     CLUB_ID: 12,
     LEGEND_COUNT: 15,
+    PLAYER_LEVEL: 17,
     PLAYER_RARITY: 18,
     TEAM_RATING: 19,
     PLAYER_RARITY_GROUP: 25,
@@ -39,7 +40,7 @@
     KEY.SAME_NATION_COUNT, KEY.SAME_LEAGUE_COUNT, KEY.SAME_CLUB_COUNT,
     KEY.NATION_COUNT, KEY.LEAGUE_COUNT, KEY.CLUB_COUNT,
     KEY.NATION_ID, KEY.LEAGUE_ID, KEY.CLUB_ID,
-    KEY.LEGEND_COUNT, KEY.PLAYER_RARITY, KEY.TEAM_RATING,
+    KEY.LEGEND_COUNT, KEY.PLAYER_LEVEL, KEY.PLAYER_RARITY, KEY.TEAM_RATING,
     KEY.PLAYER_MIN_OVR, KEY.PLAYER_EXACT_OVR, KEY.PLAYER_MAX_OVR,
     KEY.CHEMISTRY_POINTS, KEY.ALL_PLAYERS_CHEMISTRY_POINTS,
   ]);
@@ -131,6 +132,9 @@
         return miss(players.filter((p) => rule.ids.includes(p.leagueId)).length, rule.scope, target);
       case KEY.CLUB_ID:
         return miss(players.filter((p) => rule.ids.includes(p.clubId)).length, rule.scope, target);
+      // "Gold: Min. 7 Players": how many cards are of that quality.
+      case KEY.PLAYER_LEVEL:
+        return miss(players.filter((p) => p.quality === rule.value).length, rule.scope, target);
       case KEY.LEGEND_COUNT:
         return miss(players.filter((p) => p.isIcon).length, rule.scope, rule.value);
       case KEY.PLAYER_RARITY: {

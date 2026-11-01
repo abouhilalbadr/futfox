@@ -92,6 +92,9 @@
     .tag.buy { background: #2A1F4D; color: #C4B1FF; }
     .tag.untr { background: #1d3327; color: #6fd29a; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
+    td.acts { width: 1%; }
+    td.acts > div { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    td.pts { width: 1%; white-space: nowrap; font-size: 13px; color: #C6FF3D; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
     .tabs { position: relative; display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid #2A2445; }
@@ -533,7 +536,7 @@
     document.body.append(host);
 
     const settings = loadSettings();
-    const state = { challenges: [], selectedId: null, result: null, loading: false, error: null, solving: false, sets: { data: null, loading: false, error: null }, category: null, openSet: null, scrolls: {}, scrollTo: null };
+    const state = { challenges: [], selectedId: null, result: null, keptOut: new Map(), loading: false, error: null, solving: false, sets: { data: null, loading: false, error: null }, category: null, openSet: null, scrolls: {}, scrollTo: null };
 
     const toggle = el('button', { class: 'toggle', type: 'button', title: 'Drag to move. Double-click to put it back.' }, [foxIcon(), 'FutFox']);
     const dock = el('aside', { class: 'dock', hidden: true, 'aria-label': 'Place the squad' });
@@ -651,7 +654,8 @@
     // One player's line: placed tick, position, rating, name, and Copy (or Market for a card to buy).
     function placingRow(s, i, tick) {
       const p = s.player;
-      const pos = H.fut.positionName(s.typeId);
+      // A Streamlined SBC's card has no position; its Item Score shows there instead.
+      const pos = s.typeId == null ? coins(p.score) : H.fut.positionName(s.typeId);
       const isBuy = p.source === 'market';
       const name = isBuy ? `Buy a ${p.rating} ${pos}` : p.name;
       return [
@@ -722,6 +726,77 @@
       render();
     }
 
+    // Cards the player kept out of a challenge's suggestions with Change: { id → name } per challenge.
+    function keptOut(challengeId) {
+      if (!state.keptOut.has(challengeId)) state.keptOut.set(challengeId, new Map());
+      return state.keptOut.get(challengeId);
+    }
+
+    function poolOptions() {
+      return { ...settings, protectFrom: Number(settings.protectFrom) || 0 };
+    }
+
+    // The cheapest squad for a challenge with a formation. fixed keeps players where they are
+    // ({ [slot index]: player }) so only the other slots are searched.
+    function solveSquad(entry, { fixed, market = settings.allowMarket, iterations } = {}) {
+      const c = entry.challenge;
+      const slots = H.fut.slotsFor(c);
+      if (!slots) throw new Error('This SBC uses a formation the app has not loaded yet. Open the challenge first.');
+      const out = keptOut(entry.id);
+      const rules = H.fut.rulesFor(c);
+      const pool = H.fut.clubPool(poolOptions()).filter((p) => !out.has(p.id));
+      const result = H.solver.solve({
+        slots,
+        rules,
+        pool,
+        fixed,
+        iterations,
+        requiredSlots: H.fut.requiredSlotsFor(c),
+        market: { enabled: market },
+        ratingFloat: H.fut.ratingUsesFloat(),
+        thresholds: H.fut.chemThresholds(),
+        seed: Date.now() % 100000,
+      });
+      const players = result.squad.map((s) => s.player);
+      result.eaChem = H.fut.eaChemistry(c.formation, players);
+      result.rules = rules;
+      result.poolSize = pool.length;
+      result.challengeId = entry.id;
+      return result;
+    }
+
+    // The cheapest cards for a Streamlined SBC, from the cards its own picker lists (pool).
+    function pickScore(entry, pool) {
+      const c = entry.challenge;
+      const out = keptOut(entry.id);
+      const cards = pool.filter((p) => !out.has(p.id));
+      const need = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
+      const limit = H.fut.submitLimit();
+      const pick = H.streamlined.pickForScore({ cards, need, limit });
+      return {
+        ...pick,
+        kind: 'score',
+        challengeId: entry.id,
+        need,
+        limit,
+        pool,
+        poolSize: cards.length,
+        rules: H.fut.rulesFor(c),
+        ruleResults: [],
+        squad: pick.picks.map((player) => ({ player, typeId: null })),
+      };
+    }
+
+    function showResult(result) {
+      state.result = result;
+      state.placed = new Set();
+      state.placing = false;
+      state.dockClosed = false;
+      // The squad opens on its own page, from the top; the challenge page is one step back.
+      state.showSquad = true;
+      state.scrollTo = 0;
+    }
+
     function solve() {
       const entry = selected();
       if (!entry) return;
@@ -730,42 +805,57 @@
       state.solving = true;
       state.error = null;
       render();
+      if (H.fut.isStreamlined(entry.challenge)) {
+        // EA's picker lists the cards a Streamlined SBC takes; FutFox asks it, then picks.
+        H.fut.streamlinedPool(entry.challenge, poolOptions())
+          .then((pool) => showResult(pickScore(entry, pool)), (e) => { state.error = e.message; })
+          .then(() => { state.solving = false; render(); });
+        return;
+      }
       // Let the panel paint "Solving..." before the search blocks the page for a moment.
       setTimeout(() => {
         try {
-          const c = entry.challenge;
-          const slots = H.fut.slotsFor(c);
-          if (!slots) throw new Error('This SBC uses a formation the app has not loaded yet. Open the challenge first.');
-          const rules = H.fut.rulesFor(c);
-          const pool = H.fut.clubPool({ ...settings, protectFrom: Number(settings.protectFrom) || 0 });
-          const result = H.solver.solve({
-            slots,
-            rules,
-            pool,
-            requiredSlots: H.fut.requiredSlotsFor(c),
-            market: { enabled: settings.allowMarket },
-            ratingFloat: H.fut.ratingUsesFloat(),
-            thresholds: H.fut.chemThresholds(),
-            seed: Date.now() % 100000,
-          });
-          const players = result.squad.map((s) => s.player);
-          result.eaChem = H.fut.eaChemistry(c.formation, players);
-          result.rules = rules;
-          result.poolSize = pool.length;
-          result.challengeId = entry.id;
-          state.result = result;
-          state.placed = new Set();
-          state.placing = false;
-          state.dockClosed = false;
-          // The squad opens on its own page, from the top; the challenge page is one step back.
-          state.showSquad = true;
-          state.scrollTo = 0;
+          showResult(solveSquad(entry));
         } catch (e) {
           state.error = e.message;
         }
         state.solving = false;
         render();
       }, 30);
+    }
+
+    // Change: keeps that card out of this challenge's suggestions and finds another for its place.
+    // In a squad the other players stay where they are, and a card to buy fills the place when no
+    // club card fits; a Streamlined SBC's cards are picked again without it.
+    function changePlayer(entry, index) {
+      const res = state.result;
+      const player = res.squad[index].player;
+      keptOut(entry.id).set(player.id, player.name);
+      try {
+        if (res.kind === 'score') {
+          state.result = pickScore(entry, res.pool);
+          state.placed = new Set();
+        } else {
+          const fixed = {};
+          res.squad.forEach((s, i) => { if (i !== index && s.player) fixed[i] = s.player; });
+          state.result = solveSquad(entry, { fixed, market: true, iterations: 6000 });
+          state.placed.delete(index);
+        }
+        state.error = null;
+      } catch (e) {
+        state.error = e.message;
+      }
+      render();
+    }
+
+    // The cards kept out with Change, and a way to let FutFox use them again.
+    function keptOutNote(entry) {
+      const out = keptOut(entry.id);
+      if (!out.size) return null;
+      return el('p', { class: 'note' }, [
+        `Kept out: ${Array.from(out.values()).join(', ')}. `,
+        el('button', { class: 'small', type: 'button', text: 'Use them again', onclick: () => { out.clear(); render(); } }),
+      ]);
     }
 
     function setSetting(key, value) {
@@ -932,16 +1022,24 @@
       const back = () => { state.showSquad = false; state.scrollTo = state.setupScroll || 0; render(); };
       return [
         crumbs([[entry.setName || 'Challenge', back], [entry.name]], 'SBC'),
-        renderResult(),
-        placeSteps(),
+        state.result.kind === 'score' ? renderScoreResult(entry) : renderResult(entry),
+        placeSteps(state.result.kind === 'score'),
       ];
     }
 
     // FutFox never changes a squad, so the player places the suggestion in the game.
-    function placeSteps() {
+    function placeSteps(streamlined) {
+      const steps = streamlined
+        ? [
+            'In the game, open this challenge and press Start Challenge (or Continue) to reach its card picker.',
+            'Press the button below: FutFox folds into a small list in the corner, each card with its Item Score.',
+            "Tick each card in the game's picker, then in the list. Both list the highest Item Score first.",
+            'Check the points reach the target, then submit it yourself.',
+          ]
+        : null;
       return el('section', {}, [
-        el('h2', { text: 'Place it in the game' }),
-        el('ol', { class: 'steps' }, [
+        el('h2', { text: streamlined ? 'Pick them in the game' : 'Place it in the game' }),
+        el('ol', { class: 'steps' }, steps ? steps.map((text) => el('li', { text })) : [
           el('li', { text: 'Press the button below, or click anywhere in the game: FutFox folds into a small list in the corner while this SBC is open.' }),
           el('li', { text: 'Click a position on the pitch, search your club for that player (Copy puts the name on your clipboard), then tick the player in the list.' }),
           el('li', { text: 'For a card to buy, press Search market (Market in the list), buy one with the rating shown, then place it the same way.' }),
@@ -954,7 +1052,11 @@
       ]);
     }
 
-    function renderResult() {
+    function changeButton(entry, index) {
+      return el('button', { class: 'small', type: 'button', title: 'Keep this card and suggest another', text: 'Change', onclick: () => changePlayer(entry, index) });
+    }
+
+    function renderResult(entry) {
       const res = state.result;
       if (!res) return null;
       const chem = res.eaChem ? res.eaChem.total : res.chemistry;
@@ -990,7 +1092,7 @@
           el('td', { class: 'r', text: String(p.rating) }),
           el('td', {}, [el('span', { class: 'name', text: name }), el('span', { class: 'meta', text: meta })]),
           el('td', { class: 'chem', title: `${perPlayer[i]} chemistry`, text: '◆'.repeat(perPlayer[i] || 0) || '–' }),
-          el('td', {}, [tag]),
+          el('td', { class: 'acts' }, [el('div', {}, [tag, isBuy ? null : changeButton(entry, i)].filter(Boolean))]),
         ]);
       });
 
@@ -1005,6 +1107,41 @@
           ? 'Chemistry is estimated because the squad includes cards to buy. Check it in the squad builder.'
           : "Chemistry is estimated because the game's own count wasn't available. Check it in the squad builder." }),
         el('p', { class: 'note', text: `Picked from ${res.poolSize} club players. Nothing has been placed in your squad.` }),
+        keptOutNote(entry),
+      ]);
+    }
+
+    // A Streamlined SBC's picks: cards, not a squad, with the points each one brings.
+    function renderScoreResult(entry) {
+      const res = state.result;
+      const summary = el('div', { class: 'summary' }, [
+        el('span', {}, [el('strong', { text: coins(res.score) }), ` of ${coins(res.need)} points`]),
+        el('span', {}, [el('strong', { text: String(res.picks.length) }), ` of ${res.limit} cards`]),
+        el('span', {}, [
+          H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
+          el('strong', { text: coins(res.cost) }), ' est. coins',
+        ]),
+        el('span', { class: res.reached ? 'ok' : 'bad', text: res.reached ? 'Reaches the target' : `Short by ${coins(res.need - res.score)} points` }),
+      ]);
+      const rows = res.squad.map((s, i) => {
+        const p = s.player;
+        const meta = `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}`;
+        const tag = el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.storage ? 'Storage' : p.untradeable ? 'Untradeable' : 'Club' });
+        return el('tr', {}, [
+          el('td', { class: 'card-cell' }, [miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true })]),
+          el('td', { class: 'r', text: String(p.rating) }),
+          el('td', {}, [el('span', { class: 'name', text: p.name }), el('span', { class: 'meta', text: meta })]),
+          el('td', { class: 'pts', title: 'Item Score', text: `${coins(p.score)} pts` }),
+          el('td', { class: 'acts' }, [el('div', {}, [tag, changeButton(entry, i)])]),
+        ]);
+      });
+      return el('section', {}, [
+        el('h2', { text: 'Suggested cards' }),
+        summary,
+        rows.length ? el('table', {}, [el('tbody', {}, rows)]) : el('p', { class: 'muted', text: 'No card in your club or SBC storage fits this challenge.' }),
+        res.reached ? null : el('p', { class: 'note', text: `These are your ${res.limit} highest-scoring cards. Submit them to bank their points, then come back for the rest.` }),
+        el('p', { class: 'note', text: `Picked from ${res.poolSize} cards the game's picker lists for this challenge. Nothing has been ticked or submitted.` }),
+        keptOutNote(entry),
       ]);
     }
 
@@ -1578,6 +1715,7 @@
       const focused = panel.getRootNode().activeElement;
       const typing = focused && focused.matches('.picker input') ? [focused.selectionStart, focused.selectionEnd] : null;
       const entry = selected();
+      const streamlined = Boolean(entry) && H.fut.isStreamlined(entry.challenge);
       const known = H.fut.knownClubItems().length;
       const view = H.fut.galleryEnabled ? settings.view : 'sbc';
       // The Gallery tab shows the Gallery Token until there is an art/gallery.png.
@@ -1607,24 +1745,31 @@
           entry
             ? el('section', {}, [
                 el('h2', { text: 'Requirements' }),
-                el('ul', { class: 'rules' }, H.fut.rulesFor(entry.challenge).map((rule) => {
-                  // Match by key and value, since rulesFor() builds fresh objects each time.
-                  const resultRule = state.result && state.result.rules.find((r) => r.key === rule.key && r.label === rule.label);
-                  const st = ruleStatus(resultRule || rule);
-                  return el('li', { title: st.hint }, [el('span', { class: st.cls, text: st.icon }), el('span', { text: rule.label + (st.hint ? ` – ${st.hint}` : '') })]);
-                })),
+                el('ul', { class: 'rules' }, [
+                  streamlined
+                    ? el('li', {}, [el('span', { class: 'muted', text: '◆' }), el('span', { text: `Item Score: ${coins(entry.challenge.submittedScore || 0)} of ${coins(entry.challenge.scoreRequirement || 0)} points, up to ${H.fut.submitLimit()} cards a time` })])
+                    : null,
+                  ...H.fut.rulesFor(entry.challenge).map((rule) => {
+                    // The game's picker only lists cards that meet a Streamlined SBC's requirements.
+                    if (streamlined) return el('li', {}, [el('span', { class: 'ok', text: '✓' }), el('span', { text: `${rule.label} – the game only offers cards that meet it` })]);
+                    // Match by key and value, since rulesFor() builds fresh objects each time.
+                    const resultRule = state.result && state.result.rules.find((r) => r.key === rule.key && r.label === rule.label);
+                    const st = ruleStatus(resultRule || rule);
+                    return el('li', { title: st.hint }, [el('span', { class: st.cls, text: st.icon }), el('span', { text: rule.label + (st.hint ? ` – ${st.hint}` : '') })]);
+                  }),
+                ].filter(Boolean)),
               ])
             : null,
-          clubSection(known),
+          streamlined ? null : clubSection(known),
           el('section', {}, [
             el('h2', { text: 'Options' }),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-keep', type: 'checkbox', checked: settings.keepActiveSquad, onchange: (e) => setSetting('keepActiveSquad', e.target.checked) }), 'Keep my active squad players']),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-untr', type: 'checkbox', checked: settings.untradeablesOnly, onchange: (e) => setSetting('untradeablesOnly', e.target.checked) }), 'Use untradeables only']),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
+            streamlined ? null : el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
             el('label', { class: 'check' }, ['Keep players rated', el('input', { id: 'futfox-protect', type: 'number', min: '0', max: '99', value: String(settings.protectFrom), onchange: (e) => setSetting('protectFrom', Number(e.target.value)) }), 'and above']),
           ]),
           el('div', { class: 'row' }, [
-            el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),
+            el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : streamlined ? 'Find cheapest cards' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),
             state.result ? el('button', { type: 'button', text: 'Show the last squad', onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
           ]),
           state.error ? el('p', { class: 'error', text: state.error }) : null,

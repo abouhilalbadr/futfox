@@ -21,6 +21,7 @@
         "src/core/rating.js",
         "src/core/chemistry.js",
         "src/core/solver.js",
+        "src/core/streamlined.js",
         "src/core/gallery.js",
         "src/core/bonus-tags.js",
         "src/core/set-match.js",

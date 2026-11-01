@@ -81,3 +81,12 @@ test('shortfall measures distance from each rule', () => {
   assert.equal(shortfall(rule(KEY.PLAYER_RARITY, 0, [1], 2), ctx), 0);
   assert.equal(shortfall(rule(KEY.PLAYER_MIN_OVR, 0, [80]), ctx), 1);
 });
+
+test('counts the cards of a quality for a player level rule', () => {
+  const gold = { quality: 3 };
+  const silver = { quality: 2 };
+  const goldMin7 = parseRequirement({ kvPairs: { _collection: { [KEY.PLAYER_LEVEL]: [3] } }, count: 7, scope: 0 });
+  assert.equal(goldMin7.supported, true);
+  assert.equal(shortfall(goldMin7, { players: [...Array(5).fill(gold), silver, silver] }), 2);
+  assert.equal(shortfall(goldMin7, { players: Array(7).fill(gold) }), 0);
+});

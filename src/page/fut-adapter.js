@@ -1,8 +1,9 @@
 // Everything that touches the EA FC Web App lives here. It reads the app's in-memory
 // objects (services, repositories) and makes two kinds of request, both only when the user
-// asks: the paged club list ("Load my club") and the squad builder's search for cards the
-// user doesn't own ("Pick player" on a Gallery slot, or "Suggest cards" on a Gallery set, one
-// search per different empty slot). It also reads, without changing them,
+// asks: the paged club list ("Load my club"), the cards a Streamlined SBC's own picker lists
+// ("Find cheapest cards") and the squad builder's search for cards the user doesn't own
+// ("Pick player" on a Gallery slot, or "Suggest cards" on a Gallery set, one search per
+// different empty slot). It also reads, without changing them,
 // the club list replies the Web App receives, for their Gallery marks.
 // It never bids, buys, lists, saves or submits anything.
 (function (root) {
@@ -209,6 +210,48 @@
       .filter((item) => !untradeablesOnly || isUntradeable(item))
       .filter(isUsable)
       .map((item) => toPlayer(item, prices));
+  }
+
+  // ---- Streamlined SBCs -------------------------------------------------------------
+
+  // EA's "one-click" challenges: no formation, just cards whose Item Scores add up to a target.
+  function isStreamlined(challenge) {
+    return attempt(() => challenge.isOneClickChallenge(), false);
+  }
+
+  // How many cards one submission takes; the Web App falls back to 30 when the server says nothing.
+  function submitLimit() {
+    return attempt(() => root.services.Configuration.getFeatureSetting(root.UTServerSettingsRepository.KEY.ONE_CLICK_SBC_SUBMIT_LIMIT), 0)
+      || attempt(() => root.UTOneClickSBCWorkAreaViewModel.DEFAULT_PAGE_SIZE, 0) || 30;
+  }
+
+  // The cards the challenge's own picker lists (club, then SBC storage), each with its Item Score.
+  // EA only lists cards that meet the challenge's requirements, so they need no checking here.
+  async function streamlinedPool(challenge, { prices, keepActiveSquad, protectFrom, untradeablesOnly }) {
+    const active = keepActiveSquad ? activeSquad : new Set();
+    const found = new Map();
+    for (const pile of [root.PileSearchType.CLUB, root.PileSearchType.STORAGE]) {
+      for (let page = 0; page < CLUB_MAX_PAGES; page++) {
+        const criteria = new root.UTSearchCriteriaDTO();
+        criteria.sbcChallengeId = challenge.id;
+        criteria.pileSearchType = pile;
+        criteria.count = CLUB_PAGE_SIZE;
+        criteria.offset = page * CLUB_PAGE_SIZE;
+        const result = await observe(root.services.Club.search(criteria), 'reading the cards this SBC takes');
+        const response = result.response || {};
+        const items = response.items || [];
+        for (const item of items) if (!found.has(item.id)) found.set(item.id, { item, storage: pile === root.PileSearchType.STORAGE });
+        const lastPage = typeof response.retrievedAll === 'boolean' ? response.retrievedAll : items.length < CLUB_PAGE_SIZE;
+        if (lastPage) break;
+        await sleep(1500 + Math.random() * 1500);
+      }
+    }
+    return Array.from(found.values())
+      .filter(({ item }) => item.sbsScore > 0 && !active.has(item.id))
+      .filter(({ item }) => !protectFrom || item.rating < protectFrom)
+      .filter(({ item }) => !untradeablesOnly || isUntradeable(item))
+      .filter(({ item }) => isUsable(item))
+      .map(({ item, storage }) => ({ ...toPlayer(item, prices), score: item.sbsScore, storage }));
   }
 
   // ---- Gallery ----------------------------------------------------------------------
@@ -494,7 +537,7 @@
 
   H.fut = {
     isReady, getChallenges, openChallengeId, rulesFor, slotsFor, requiredSlotsFor,
-    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
+    knownClubItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
     leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
