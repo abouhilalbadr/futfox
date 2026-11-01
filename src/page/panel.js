@@ -107,7 +107,7 @@
     .pick .src.store { color: #8cc4ff; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     td.acts { width: 1%; }
-    td.acts > div { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .name .tag { margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: 2px; }
     td.pts { width: 1%; white-space: nowrap; font-size: 13px; color: #C6FF3D; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
@@ -917,6 +917,7 @@
       const players = result.squad.map((s) => s.player);
       result.eaChem = H.fut.eaChemistry(c.formation, players);
       result.rules = rules;
+      result.required = new Set(H.fut.requiredSlotsFor(c));
       result.poolSize = pool.length;
       result.challengeId = entry.id;
       return result;
@@ -1402,8 +1403,8 @@
       ]);
     }
 
-    function changeButton(entry, index) {
-      return el('button', { class: 'small', type: 'button', title: 'Keep this card and suggest another', text: 'Change', onclick: () => changePlayer(entry, index) });
+    function changeButton(entry, index, name) {
+      return el('button', { class: 'icon-btn', type: 'button', title: 'Change: keep this card and suggest another', 'aria-label': `Change ${name}`, onclick: () => changePlayer(entry, index) }, [swapIcon()]);
     }
 
     function renderResult(entry) {
@@ -1426,23 +1427,25 @@
       const rows = res.squad.map((s, i) => {
         const p = s.player;
         if (!p) {
-          return el('tr', {}, [el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }), el('td', { colspan: '5', class: 'muted', text: 'Empty' })]);
+          const text = res.required && !res.required.has(i) ? 'Not needed for this SBC' : 'Empty';
+          return el('tr', {}, [el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }), el('td', { colspan: '5', class: 'muted', text })]);
         }
         const isBuy = p.source === 'market';
         const name = isBuy ? `Buy a ${p.rating}-rated ${H.fut.positionName(s.typeId)}` : p.name;
         const meta = cardMeta(p, isBuy ? p.search.nationId : p.nationId);
-        const tag = isBuy
+        // Where the card is sits next to its name, so the last column holds one button.
+        const action = isBuy
           ? el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : sourceTag(p);
+          : changeButton(entry, i, p.name);
         // A card to buy is no one yet, so it shows as an empty card.
         const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
         return el('tr', {}, [
           el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }),
           el('td', { class: 'card-cell' }, [card]),
           el('td', { class: 'r', text: String(p.rating) }),
-          el('td', {}, [el('span', { class: 'name', text: name }), meta]),
+          el('td', {}, [el('span', { class: 'name' }, [name, isBuy ? null : sourceTag(p)]), meta]),
           el('td', { class: 'chem', title: `${perPlayer[i]} chemistry`, text: '◆'.repeat(perPlayer[i] || 0) || '–' }),
-          el('td', { class: 'acts' }, [el('div', {}, [tag, isBuy ? null : changeButton(entry, i)].filter(Boolean))]),
+          el('td', { class: 'acts' }, [action]),
         ]);
       });
 
@@ -1484,7 +1487,7 @@
             p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
             points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null,
             el('span', { title: 'Item Score', text: coins(p.score) }),
-            el('button', { class: 'icon-btn', type: 'button', title: 'Change: keep this card and suggest another', 'aria-label': `Change ${p.name}`, onclick: () => changePlayer(entry, i) }, [swapIcon()]),
+            changeButton(entry, i, p.name),
           ]),
           el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
         ]);
