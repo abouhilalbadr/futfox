@@ -68,11 +68,25 @@
     return { cards: kept };
   }
 
-  // The club's cards plus remembered ones the Web App doesn't hold now, marked remembered.
+  // One Gallery card per player and version: an evolution upgrades the same card (its rating may
+  // change), so another copy of it that left the club is not a second card. The holographic
+  // version counts apart, as in set-match.
+  const cardKey = (c) => (c.playerId != null ? `${c.playerId}:${c.rarityId}:${c.foil ? 1 : 0}` : `id:${c.id}`);
+
+  // The club's cards plus remembered ones the Web App doesn't hold now, marked remembered; a
+  // remembered card is left out while the club (or a more recently seen one) is the same card.
   function withRemembered(cards, memory) {
     const live = new Set(cards.map((c) => String(c.id)));
+    const have = new Set(cards.map(cardKey));
     const gone = Object.values((memory && memory.cards) || {})
       .filter((c) => !live.has(String(c.id)))
+      .sort((a, b) => (b.seenAt || 0) - (a.seenAt || 0))
+      .filter((c) => {
+        const key = cardKey(c);
+        if (have.has(key)) return false;
+        have.add(key);
+        return true;
+      })
       .map(({ seenAt, ...c }) => ({ ...c, remembered: true }));
     return cards.concat(gone);
   }
