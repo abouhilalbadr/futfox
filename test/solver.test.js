@@ -92,3 +92,28 @@ test('reports an impossible squad instead of pretending', () => {
   assert.equal(result.feasible, false);
   assert.ok(result.violation > 0);
 });
+
+test('keeps fixed players and searches only the open slot', () => {
+  const pool = makePool(13);
+  const rules = [rule(KEY.TEAM_RATING, 0, [75])];
+  const first = solve({ slots: F343, rules, pool, seed: 6 });
+  const fixed = {};
+  first.squad.forEach((s, i) => { if (i !== 4) fixed[i] = s.player; });
+  const out = first.squad[4].player;
+  const next = solve({ slots: F343, rules, pool: pool.filter((p) => p !== out), fixed, seed: 6, iterations: 4000, restarts: 2 });
+  next.squad.forEach((s, i) => { if (i !== 4) assert.equal(s.player, fixed[i], `slot ${i} kept`); });
+  assert.notEqual(next.squad[4].player, out);
+  assert.ok(next.squad[4].player, 'the open slot is filled');
+});
+
+test('fills a changed slot with a card to buy when the club has none left', () => {
+  const pool = makePool(17);
+  const rules = [rule(KEY.TEAM_RATING, 0, [75])];
+  const first = solve({ slots: F343, rules, pool, seed: 8 });
+  const fixed = {};
+  first.squad.forEach((s, i) => { if (i !== 0) fixed[i] = s.player; });
+  const keepers = pool.filter((p) => !p.positions.includes(0) && !Object.values(fixed).includes(p));
+  const next = solve({ slots: F343, rules, pool: keepers, fixed, market: { enabled: true, leagues: [13], nations: [14] }, seed: 8, iterations: 4000, restarts: 2 });
+  assert.equal(next.squad[0].player.source, 'market');
+  assert.deepEqual(next.squad[0].player.positions, [F343[0].typeId]);
+});

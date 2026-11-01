@@ -63,8 +63,11 @@
       iterations = 25000,
       restarts = 4,
       seed = 1,
+      // { [slot index]: player } kept where they are; only the other slots are searched.
+      fixed = {},
     } = input;
     const required = input.requiredSlots || slots.map((_, i) => i);
+    const open = required.filter((i) => !fixed[i]);
     const rand = mulberry32(seed);
     const activeRules = rules.filter((r) => r.supported);
     const prices = market.prices || DEFAULT_PRICES;
@@ -136,9 +139,9 @@
     }
 
     function greedy() {
-      const assign = slots.map(() => null);
-      const used = new Set();
-      for (const i of required) {
+      const assign = slots.map((_, i) => fixed[i] || null);
+      const used = usedKeys(assign);
+      for (const i of open) {
         const options = (byPosition.get(slots[i].typeId) || []).filter((p) => !used.has(p.defId));
         const fallback = options.length ? options : pool.filter((p) => !used.has(p.defId));
         let best = null;
@@ -151,10 +154,11 @@
 
     function neighbour(assign) {
       const next = assign.slice();
-      const i = pick(required, rand);
+      if (!open.length) return next;
+      const i = pick(open, rand);
       const roll = rand();
-      if (roll < 0.15 && required.length > 1) {
-        const j = pick(required, rand);
+      if (roll < 0.15 && open.length > 1) {
+        const j = pick(open, rand);
         [next[i], next[j]] = [retarget(next[j], slots[i].typeId), retarget(next[i], slots[j].typeId)];
         return next;
       }

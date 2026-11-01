@@ -39,21 +39,39 @@
       border-radius: 10px; background: #120F24; color: #e7ebf2; font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
       box-shadow: 0 0 0 1px #8B5CF6, 0 8px 24px rgba(0,0,0,.45); overflow: hidden; }
     .dock button { padding: 2px 8px; font-size: 12px; }
-    .dock-bar { display: flex; align-items: center; gap: 6px; padding: 5px 4px 5px 6px; }
+    /* A checklist: progress on top, then one row per card (small card, name, where to find it,
+       Copy and a round tick), placed rows faded. */
+    .dock-progress { flex: none; height: 3px; background: #2A2445; }
+    .dock-progress i { display: block; height: 100%; background: #C6FF3D; transition: width .2s; }
+    .dock-head { padding: 8px 12px 4px; font-size: 12px; color: #9A93B8; }
+    .dock-head strong { color: #e7ebf2; font-weight: 600; }
+    .dock-bar { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 8px; }
     .dock-list + .dock-bar { border-top: 1px solid #2A2445; }
     .dock .fox-btn { border: 0; background: none; padding: 2px; display: grid; }
     .dock .fox-btn .fox { width: 22px; height: 22px; }
-    .dock .close { font-size: 18px; padding: 0 6px; }
-    .dock-bar .count { font-variant-numeric: tabular-nums; }
-    .dock-list { list-style: none; margin: 0; padding: 4px 0; overflow-y: auto; }
-    .dock-list li, .dock-bar .next { display: grid; grid-template-columns: 16px 30px 22px minmax(0, 1fr) auto; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
-    .dock-list li { padding: 3px 8px 3px 10px; }
-    .dock-bar .next { flex: 1; min-width: 0; }
-    .dock-bar .done { display: block; color: #6fd29a; }
-    .dock .pos { color: #9A93B8; font-size: 12px; }
-    .dock .r { font-weight: 700; }
-    .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .dock-list li.placed .name, .dock-list li.placed .r { color: #6E6790; text-decoration: line-through; }
+    .dock .close { font-size: 20px; padding: 0 6px; height: 28px; }
+    .dock-bar .icon-btn svg { width: 16px; height: 16px; }
+    .dock-bar .count { flex: 1; color: #9A93B8; font-variant-numeric: tabular-nums; }
+    .dock-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+    .dock-row { display: flex; align-items: center; gap: 10px; min-width: 0; font-variant-numeric: tabular-nums; }
+    .dock-list .dock-row { padding: 6px 10px; border-top: 1px solid #221D3D; }
+    .dock-list .dock-row:first-child { border-top: 0; }
+    .dock-bar .dock-row { flex: 1; }
+    .dock-row .card.small { width: 26px; }
+    .dock-row .who { flex: 1; min-width: 0; display: grid; }
+    .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+    .dock .name .r { margin-right: 6px; }
+    .dock .sub { font-size: 12px; color: #9A93B8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .dock .sub .store { color: #8cc4ff; }
+    .dock .sub .pts { color: #e7ebf2; font-weight: 600; }
+    .dock .sub .pts-icon { width: 12px; height: 12px; margin-right: 3px; vertical-align: -2px; }
+    .dock .icon-btn { margin: 0; width: 28px; height: 28px; }
+    .dock button.tick { flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #352E55; background: none; display: grid; place-items: center; color: #0B0918; font-size: 13px; font-weight: 800; line-height: 1; }
+    .dock button.tick:hover { border-color: #C6FF3D; }
+    .dock button.tick[aria-checked=true] { background: #C6FF3D; border-color: #C6FF3D; }
+    .dock-row.placed > :not(.tick) { opacity: .45; }
+    .dock-row.placed .name { text-decoration: line-through; }
+    .dock-bar .done { flex: 1; color: #6fd29a; }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #2A2445; }
     h1 { margin: 0; font-size: 18px; font-weight: 700; }
     h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #9A93B8; }
@@ -71,7 +89,6 @@
     button:disabled { opacity: .5; cursor: default; }
     .close { border: 0; background: none; font-size: 24px; line-height: 1; padding: 4px 8px; color: #9A93B8; }
     .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    label.check { display: flex; align-items: center; gap: 8px; }
     input[type=checkbox] { accent-color: #C6FF3D; }
     .muted { color: #9A93B8; }
     ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -84,13 +101,43 @@
     td { padding: 7px 5px; border-bottom: 1px solid #241F3C; vertical-align: middle; }
     td.pos { color: #9A93B8; width: 48px; font-size: 13px; }
     td.r { width: 34px; font-weight: 700; }
-    td.card-cell { width: 44px; padding-block: 4px; }
-    td.chem { width: 40px; color: #C6FF3D; letter-spacing: -1px; }
     .name { display: block; font-weight: 600; }
     .meta { display: block; font-size: 13px; color: #9A93B8; }
     .tag { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 6px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; }
     .tag.buy { background: #2A1F4D; color: #C4B1FF; }
     .tag.untr { background: #1d3327; color: #6fd29a; }
+    /* A suggested card: untradeable, points or chemistry and Change on one line, then where it is. */
+    /* As wide as the card's art (about 80% of its box), so the line starts and ends at its corners. */
+    .pick-line { display: flex; align-items: center; gap: 4px; width: 80%; max-width: 128px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pick-line .pts-icon { width: 14px; height: 14px; }
+    .untr-ico { font-family: UltimateTeam-Icons, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #C9C3E0; }
+    /* The game's untradeable glyph from its own icon font (the backslash is doubled for the template). */
+    .untr-ico::before { content: '\\e0ea'; }
+    button.icon-btn { margin-left: auto; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; color: #C9C3E0; }
+    button.icon-btn:hover { border-color: #8B5CF6; color: #fff; }
+    button.icon-btn svg { width: 14px; height: 14px; }
+    .pick .src { font-size: 11px; color: #9A93B8; }
+    .pick .src.store { color: #8cc4ff; }
+    /* A squad SBC's cards on a pitch, in the formation's lines; each line centred. */
+    .pitch { display: grid; gap: 14px; padding: 14px 10px; border: 1px solid #1f3a2a; border-radius: 12px; background: #10201a; }
+    .pitch-row { display: flex; justify-content: center; gap: 8px; }
+    .pitch-row > .slot { flex: 0 1 calc((100% - 32px) / 5); max-width: 140px; min-width: 0; }
+    .slot.locked .card { opacity: .45; }
+    .slot.dim { opacity: .3; }
+    .rule-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rule-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #2A2445; border-radius: 999px; background: #15112A; font-size: 13px; color: #C9C3E0; }
+    button.rule-chip:hover { border-color: #8B5CF6; }
+    button.rule-chip[aria-pressed=true] { border-color: #C6FF3D; color: #fff; }
+    .rule-chip .ri { font-weight: 700; }
+    .rule-chip.ok .ri { color: #6fd29a; } .rule-chip.bad .ri { color: #f08a7a; } .rule-chip.unknown .ri { color: #9A93B8; }
+    /* A card's chemistry as the game shows it: three diamonds on a round badge, lit for each point. */
+    .chem-pts { position: relative; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #1d272f; border: 1px solid #333d47; }
+    .chem-pts i { position: absolute; font: normal 400 7px/1 UltimateTeam-Icons, sans-serif; color: #fff; opacity: .3; }
+    .chem-pts i::before { content: '\\e031'; }
+    .chem-pts i.on { opacity: 1; }
+    .chem-pts i:nth-child(1) { left: 3px; bottom: 4px; }
+    .chem-pts i:nth-child(2) { left: 50%; top: 3px; transform: translateX(-50%); }
+    .chem-pts i:nth-child(3) { right: 3px; bottom: 4px; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
@@ -188,6 +235,9 @@
     .card.plain { color: #2B2210; text-shadow: none; }
     .card.plain .rt, .card.plain .ps { left: 13%; }
     .card.plain .nm { left: 14%; right: 14%; }
+    /* Flag, league and club, in a row under the name as on the game's cards. */
+    .card .bdg { position: absolute; left: 14%; right: 14%; top: 79%; display: flex; justify-content: center; align-items: center; gap: 5cqw; }
+    .card .bdg img { height: 10cqw; max-width: 17cqw; object-fit: contain; }
     .card.missing .bg, .card.missing .face { opacity: .3; filter: grayscale(1); }
     .card.missing .rt, .card.missing .nm { opacity: .6; }
     .slot .cap { font-size: 11px; white-space: nowrap; }
@@ -205,7 +255,20 @@
     }
     @keyframes futfox-holo { from { background-position: 0% 0; } to { background-position: 100% 0; } }
     @keyframes futfox-shine { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+    /* Busy: a spinning ring beside the text, and faded cards pulsing where the result will go.
+       Only rotation and opacity move, so they keep going while a squad search blocks the page. */
+    .spin { display: inline-block; flex: none; width: 12px; height: 12px; margin-right: 8px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: futfox-spin .7s linear infinite; }
+    .muted .spin, p .spin { color: #C6FF3D; }
+    .slot.skel .card, .skel-box, .cat.skel { animation: futfox-pulse 1.2s ease-in-out infinite; }
+    .skel-box { display: block; height: 10px; border-radius: 5px; background: #2A2445; }
+    .cat.skel { min-height: 150px; }
+    .pick-skel { display: flex; align-items: center; gap: 12px; padding: 6px 12px 6px 8px; border: 1px solid #2A2445; border-radius: 8px; }
+    .skel-text { display: grid; gap: 8px; flex: 1; }
+    @keyframes futfox-spin { to { transform: rotate(360deg); } }
+    @keyframes futfox-pulse { 50% { opacity: .35; } }
     @media (prefers-reduced-motion: reduce) {
+      .spin { animation-duration: 2s; }
+      .slot.skel .card, .skel-box, .cat.skel { animation: none; opacity: .6; }
       .card .holo { animation: none; }
       .card .holo.has-still { display: none; }
       .card .holo-still { display: block; }
@@ -251,10 +314,75 @@
     label.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
     label.file:focus-within { outline: 2px solid #8B5CF6; }
     footer { padding: 10px 16px; border-top: 1px solid #2A2445; font-size: 13px; color: #9A93B8; }
+    /* The challenge picker: a button that opens a searchable list grouped by SBC set. */
+    .menu { position: relative; }
+    .menu-btn { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; }
+    .menu-btn:hover, .menu-btn[aria-expanded=true] { border-color: #8B5CF6; }
+    .menu-text { flex: 1; min-width: 0; display: grid; }
+    .menu-set, .menu-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .menu-set { font-size: 12px; color: #9A93B8; }
+    .menu-name { font-weight: 600; }
+    .chev { flex: none; width: 10px; height: 10px; border: solid #9A93B8; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+    .menu-btn[aria-expanded=true] .chev { transform: translateY(2px) rotate(-135deg); }
+    .menu-pop { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; display: grid; gap: 6px; padding: 6px;
+      background: #141029; border: 1px solid #352E55; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+    .menu-pop input { width: 100%; background: #1B1733; color: inherit; border: 1px solid #352E55; border-radius: 6px; padding: 7px 8px; font: inherit; }
+    .menu-list { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; }
+    .menu-group { padding: 8px 8px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #6E6790; }
+    .menu-opt { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; }
+    .menu-opt.active { background: #231D40; }
+    .menu-opt .menu-name { flex: 1; min-width: 0; font-weight: 500; }
+    .menu-opt[aria-selected=true] .menu-name { color: #C6FF3D; font-weight: 600; }
+    .menu-empty { padding: 10px 8px; color: #9A93B8; }
+    .chip { flex: none; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .chip.done { background: #1d3327; color: #6fd29a; }
+    .chip.pts { display: inline-flex; align-items: center; gap: 3px; background: #22203a; color: #C6FF3D; }
+    .chip .pts-icon { width: 11px; height: 11px; }
+    .summary .pts-icon, .rules .pts-icon { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
+    .chem-ico { font: normal 400 13px/1 UltimateTeam-Icons, sans-serif; margin-right: 4px; color: #C6FF3D; }
+    .chem-ico::before { content: '\\e030'; }
+    /* Number boxes with their own - and + buttons instead of the browser's spinner. */
+    .stepper { display: inline-flex; align-items: stretch; border: 1px solid #352E55; border-radius: 6px; background: #1B1733; }
+    .stepper:focus-within { border-color: #8B5CF6; }
+    .stepper button { border: 0; background: none; padding: 0 10px; color: #9A93B8; font-size: 16px; line-height: 1; }
+    .stepper button:not(:disabled):hover { color: #fff; }
+    .stepper input { width: 52px; border: 0; background: none; color: inherit; font: inherit; text-align: center; padding: 6px 0; font-variant-numeric: tabular-nums; }
+    .stepper input:focus-visible { outline: none; }
+    .stepper input.wide { width: 76px; }
+    .stepper input::placeholder { color: #6E6790; }
+    .segmented { display: inline-flex; border: 1px solid #352E55; border-radius: 6px; overflow: hidden; }
+    .segmented button { border: 0; border-radius: 0; padding: 6px 12px; background: #1B1733; color: #9A93B8; }
+    .segmented button + button { border-left: 1px solid #352E55; }
+    .segmented button[aria-pressed=true] { background: #2A2445; color: #fff; font-weight: 600; }
+    /* SBC options: small cards, each a 2-column grid of equal fields and a list of switches. */
+    .opt-card { display: grid; gap: 10px; padding: 12px; border: 1px solid #2A2445; border-radius: 10px; background: #15112A; }
+    .opt-card h3 { margin: 0; font-size: 12px; font-weight: 600; color: #9A93B8; }
+    .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .field { display: grid; gap: 4px; min-width: 0; }
+    .field > span { font-size: 13px; color: #9A93B8; }
+    .field .stepper { display: flex; }
+    .field .stepper input, .field .stepper input.wide { flex: 1; width: 0; min-width: 0; }
+    .segmented.full { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* On/off options: the text on the left, a switch on the right, one row each. */
+    .switches { display: grid; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #2A2445; cursor: pointer; }
+    .switch-row:first-child { border-top: 0; padding-top: 2px; }
+    input.switch { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 34px; height: 20px; margin: 0; border-radius: 999px; background: #352E55; cursor: pointer; transition: background .15s; }
+    input.switch::before { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #C9C3E0; transition: transform .15s, background .15s; }
+    input.switch:checked { background: #C6FF3D; }
+    input.switch:checked::before { transform: translateX(14px); background: #0B0918; }
   `;
 
   function loadSettings() {
-    const defaults = { keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc' };
+    const defaults = {
+      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc',
+      // Streamlined SBCs: the rating range, the most cards a time (empty: the game's limit), the
+      // points to reach now (empty: all that's left), where cards come from and what to favour.
+      slMinRating: 45, slMaxRating: 86, slMaxCards: null, slPoints: null,
+      slClub: true, slStorage: true, slKeepSpecial: false, slPrefer: 'cheapest',
+      // Both kinds: SBC storage cards are used before club cards.
+      storageFirst: true,
+    };
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
     } catch (e) {
@@ -283,6 +411,106 @@
   }
 
   const coins = (n) => Math.round(n).toLocaleString('en-US');
+
+  // Two arrows chasing each other: swap this card for another.
+  // A formation's slot indexes in the lines the game draws them, attack first, each line from
+  // left to right. Slot names say the side: LCB is the left centre-back, RS the right striker.
+  const LINES = [[20, 27], [17, 19], [12, 16], [9, 11], [1, 8], [0, 0]];
+  const WIDE = new Set(['LWB', 'LB', 'LM', 'LW', 'LF', 'RWB', 'RB', 'RM', 'RW', 'RF']);
+  function pitchRows(slots) {
+    const across = (name) => {
+      const side = /^L/.test(name) ? -1 : /^R/.test(name) ? 1 : 0;
+      return 2 + side * (WIDE.has(name) ? 2 : 1);
+    };
+    return LINES
+      .map(([lo, hi]) => slots
+        .map((slot, i) => ({ i, x: across(slot.name || '') }))
+        .filter(({ i }) => slots[i].typeId >= lo && slots[i].typeId <= hi)
+        .sort((a, b) => a.x - b.x)
+        .map(({ i }) => i))
+      .filter((row) => row.length);
+  }
+
+  function spinner() {
+    return el('span', { class: 'spin', 'aria-hidden': 'true' });
+  }
+
+  // A faded bar that pulses, standing in for a line of text still loading; n staggers the pulse.
+  function skelBar(width, n = 0) {
+    return el('span', { class: 'skel-box', style: `width: ${width}; animation-delay: ${(n % 5) * 120}ms` });
+  }
+
+  // A chevron pointing up (to open the list above) or down (to fold it).
+  function chevronIcon(up) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(NS, 'path');
+    for (const [k, v] of Object.entries({ d: up ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })) path.setAttribute(k, v);
+    svg.append(path);
+    return svg;
+  }
+
+  function copyIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    for (const [tag, attrs] of [['rect', { x: 9, y: 9, width: 11, height: 11, rx: 2 }], ['path', { d: 'M5 15V6a2 2 0 0 1 2-2h8' }]]) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries({ ...attrs, fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })) node.setAttribute(k, v);
+      svg.append(node);
+    }
+    return svg;
+  }
+
+  function swapIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    for (const d of ['M20 11a8 8 0 0 0-14.3-4.9L4 8', 'M4 4v4h4', 'M4 13a8 8 0 0 0 14.3 4.9L20 16', 'M20 20v-4h-4']) {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.append(path);
+    }
+    return svg;
+  }
+
+  // A number box with - and + buttons. Empty is allowed when `empty` names what it means
+  // (shown as the placeholder); onChange gets a number, or null for empty.
+  function stepper({ value, min, max, step = 1, label, empty, wide, onChange }) {
+    const clamp = (n) => Math.min(max, Math.max(min, n));
+    const input = el('input', { type: 'text', inputmode: 'numeric', 'aria-label': label, class: wide ? 'wide' : null, value: value == null ? '' : String(value), placeholder: empty || '' });
+    const set = (n) => {
+      const next = n == null ? null : clamp(Math.round(n));
+      input.value = next == null ? '' : String(next);
+      onChange(next);
+    };
+    const current = () => (input.value.trim() === '' ? null : Number(input.value.replace(/[^\d]/g, '')));
+    input.addEventListener('change', () => {
+      const n = current();
+      set(n == null || Number.isNaN(n) ? (empty ? null : value) : n);
+    });
+    input.addEventListener('keydown', (e) => {
+      const dir = { ArrowUp: 1, ArrowDown: -1 }[e.key];
+      if (!dir) return;
+      e.preventDefault();
+      set((current() ?? (dir > 0 ? min - step : max + step)) + dir * step);
+    });
+    const bump = (dir) => set((current() ?? (dir > 0 ? min - step : max + step)) + dir * step);
+    return el('span', { class: 'stepper' }, [
+      el('button', { type: 'button', tabindex: '-1', 'aria-label': `Less ${label}`, text: '−', onclick: () => bump(-1) }),
+      input,
+      el('button', { type: 'button', tabindex: '-1', 'aria-label': `More ${label}`, text: '+', onclick: () => bump(1) }),
+    ]);
+  }
 
   // The FutFox mark (brand/logo/futfox-symbol.svg), built with DOM calls so it needs no innerHTML.
   const FOX_HEAD = 'M128 102L101.59 86.75L63.59 20.93L39 112.7L11.2 160.85L60.82 189.5L100.62 200.16L128 227.54L155.38 200.16'
@@ -434,37 +662,49 @@
   }
 
   // Drag and drop for the button, the placing card and the panel: grab(target) says which part of
-  // the element picks it up. Where it was dropped (and the panel's size) is kept in settings.places,
-  // pulled back on screen when the window shrinks; a double-click on the grabbed part puts it back.
-  // fromBottom keeps the element's bottom edge where it was dropped, so it grows upwards.
-  function movable(node, key, settings, grab, { fromBottom = false } = {}) {
+  // the element picks it up. Where it was dropped is kept in settings.places as the window corner it
+  // is nearest and its distance from that corner, so it lands in the same corner on any screen, and
+  // is pulled back on screen when the window is too small for it. A double-click on the grabbed part
+  // puts it back. An element dropped near the bottom keeps its bottom edge there and grows upwards.
+  function movable(node, key, settings, grab) {
     const places = settings.places || (settings.places = {});
+    // A spot kept as plain pixels from the top left (before corners) belongs to another screen.
+    if (places[key] && !places[key].corner) delete places[key];
     let start = null;
     let dragged = false;
     // Whether the last press was on the part that picks it up; the element holds the pointer from
     // then on, so later events no longer say which part was pressed.
     let grabbed = false;
 
+    // A hidden element measures 0 wide, which would let it be pulled back only as far as the very
+    // edge, off screen; it is placed when it shows instead.
     function place() {
+      if (node.hidden) return;
       const at = places[key];
       node.classList.toggle('moved', Boolean(at));
       if (!at) {
         for (const prop of ['left', 'top', 'right', 'bottom', 'width', 'height']) node.style[prop] = '';
         return;
       }
-      if (at.w) node.style.width = `${at.w}px`;
+      if (at.w) node.style.width = `${Math.min(at.w, window.innerWidth)}px`;
       if (at.h) node.style.height = `${Math.min(at.h, window.innerHeight)}px`;
       // Its layout size, not the box on screen, which is scaled while it animates in.
       const r = { width: node.offsetWidth, height: node.offsetHeight };
-      const x = Math.max(0, Math.min(at.x, window.innerWidth - r.width));
-      const y = Math.max(0, Math.min(fromBottom ? window.innerHeight - at.b - r.height : at.y, window.innerHeight - r.height));
-      Object.assign(node.style, fromBottom
-        ? { left: `${Math.round(x)}px`, bottom: `${Math.round(window.innerHeight - y - r.height)}px`, right: 'auto', top: 'auto' }
-        : { left: `${Math.round(x)}px`, top: `${Math.round(y)}px`, right: 'auto', bottom: 'auto' });
+      const left = at.corner[1] === 'l' ? at.dx : window.innerWidth - at.dx - r.width;
+      const top = at.corner[0] === 't' ? at.dy : window.innerHeight - at.dy - r.height;
+      const x = Math.max(0, Math.min(left, window.innerWidth - r.width));
+      const y = Math.max(0, Math.min(top, window.innerHeight - r.height));
+      Object.assign(node.style, { left: `${Math.round(x)}px`, top: `${Math.round(y)}px`, right: 'auto', bottom: 'auto' });
     }
 
     function spot(left, top) {
-      return fromBottom ? { x: left, b: window.innerHeight - top - node.offsetHeight } : { x: left, y: top };
+      const right = window.innerWidth - left - node.offsetWidth;
+      const bottom = window.innerHeight - top - node.offsetHeight;
+      return {
+        corner: (top <= bottom ? 't' : 'b') + (left <= right ? 'l' : 'r'),
+        dx: Math.max(0, Math.round(Math.min(left, right))),
+        dy: Math.max(0, Math.round(Math.min(top, bottom))),
+      };
     }
 
     node.addEventListener('pointerdown', (e) => {
@@ -530,7 +770,7 @@
     document.body.append(host);
 
     const settings = loadSettings();
-    const state = { challenges: [], selectedId: null, result: null, loading: false, error: null, solving: false, sets: { data: null, loading: false, error: null }, category: null, openSet: null, scrolls: {}, scrollTo: null };
+    const state = { challenges: [], selectedId: null, result: null, keptOut: new Map(), loading: false, error: null, solving: false, sets: { data: null, loading: false, error: null }, category: null, openSet: null, scrolls: {}, scrollTo: null };
 
     const toggle = el('button', { class: 'toggle', type: 'button', title: 'Drag to move. Double-click to put it back.' }, [foxIcon(), 'FutFox']);
     const dock = el('aside', { class: 'dock', hidden: true, 'aria-label': 'Place the squad' });
@@ -539,8 +779,8 @@
     const grip = resizeGrip(panel, settings);
 
     const free = (t) => !t.closest('button, input, select, a, .grip');
-    movable(toggle, 'toggle', settings, () => true);
-    const dockSpot = movable(dock, 'dock', settings, free, { fromBottom: true });
+    const toggleSpot = movable(toggle, 'toggle', settings, () => true);
+    const dockSpot = movable(dock, 'dock', settings, free);
     const panelSpot = movable(panel, 'panel', settings, (t) => Boolean(t.closest('header')) && free(t));
     let resized = null;
     new ResizeObserver(() => {
@@ -556,14 +796,31 @@
 
     function openPanel() {
       open = true;
+      // Closing the placing list hides it until FutFox is opened again; closing the panel then
+      // folds back into the list while the squad's SBC is open.
+      state.dockClosed = false;
       refreshChallenges();
       sync();
     }
 
     function hidePanel() {
       open = false;
+      state.menu = null;
       sync();
     }
+
+    // A press anywhere else in the panel closes the challenge list, without redrawing the panel so
+    // the press still reaches what it was on.
+    panel.addEventListener('pointerdown', (e) => {
+      if (!state.menu) return;
+      const box = panel.querySelector('.menu');
+      if (box && e.composedPath().includes(box)) return;
+      state.menu = null;
+      const pop = box && box.querySelector('.menu-pop');
+      if (pop) pop.remove();
+      const button = box && box.querySelector('.menu-btn');
+      if (button) button.setAttribute('aria-expanded', 'false');
+    });
 
     toggle.addEventListener('click', openPanel);
 
@@ -601,6 +858,7 @@
         dock.replaceChildren(...placingList());
         dockSpot.place();
       }
+      if (want === toggle) toggleSpot.place();
       if (!was) return;
       const hide = () => {
         if (!was.classList.contains('leaving')) return;
@@ -640,25 +898,35 @@
     setInterval(() => { if (!open && state.result) sync(); }, 1000);
 
     function copyName(name, button) {
-      const done = () => { button.textContent = 'Copied'; setTimeout(() => { button.textContent = 'Copy'; }, 1200); };
+      const kids = [...button.childNodes];
+      const done = () => { button.replaceChildren('✓'); setTimeout(() => button.replaceChildren(...kids), 1200); };
       navigator.clipboard.writeText(name).then(done, () => {});
     }
 
     // One player's line: placed tick, position, rating, name, and Copy (or Market for a card to buy).
+    // One card to place: a small card, its name and rating, its position (or a Streamlined card's
+    // points) and where the game's picker lists it, then Copy (or Market) and the tick.
     function placingRow(s, i, tick) {
       const p = s.player;
-      const pos = H.fut.positionName(s.typeId);
       const isBuy = p.source === 'market';
-      const name = isBuy ? `Buy a ${p.rating} ${pos}` : p.name;
-      return [
-        el('input', { type: 'checkbox', checked: state.placed.has(i), 'aria-label': `${name} placed`, onchange: () => tick(i) }),
-        el('span', { class: 'pos', text: pos }),
-        el('span', { class: 'r', text: String(p.rating) }),
-        el('span', { class: 'name', title: name, text: name }),
+      const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
+      // A Streamlined SBC's card has no position: its points show there, with the game's points icon.
+      const where = s.typeId != null ? H.fut.positionName(s.typeId)
+        : el('span', { class: 'pts', title: 'Item Score' }, [points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null, coins(p.score)]);
+      const name = isBuy ? `Buy a ${p.rating} ${H.fut.positionName(s.typeId)}` : p.name;
+      const placed = state.placed.has(i);
+      return el('div', { class: `dock-row${placed ? ' placed' : ''}` }, [
+        isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true }),
+        el('span', { class: 'who' }, [
+          el('span', { class: 'name', title: name }, isBuy ? [name] : [el('span', { class: 'r', text: String(p.rating) }), name]),
+          // The game's picker has separate Club and SBC Storage tabs, so say which one to look in.
+          el('span', { class: 'sub' }, isBuy ? [where, ' · Market'] : [where, ' · ', el('span', { class: p.storage ? 'store' : null, text: p.storage ? 'SBC storage' : 'Club' })]),
+        ]),
         isBuy
           ? el('button', { type: 'button', text: 'Market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : el('button', { type: 'button', title: 'Copy the name to search your club', text: 'Copy', onclick: (e) => copyName(p.name, e.currentTarget) }),
-      ];
+          : el('button', { class: 'icon-btn', type: 'button', title: 'Copy the name to search your club', 'aria-label': `Copy ${p.name}`, onclick: (e) => copyName(p.name, e.currentTarget) }, [copyIcon()]),
+        el('button', { class: 'tick', type: 'button', role: 'checkbox', 'aria-checked': String(placed), 'aria-label': `${name} placed`, title: placed ? 'Placed' : 'Tick once it is in the game', text: placed ? '✓' : '', onclick: () => tick(i) }),
+      ]);
     }
 
     // Folded, it is one line with the next player to place, small enough to sit under the game's
@@ -673,22 +941,32 @@
         else state.placed.add(i);
         renderDock();
       };
+      const progress = el('div', { class: 'dock-progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(rows.length), 'aria-valuenow': String(done), 'aria-label': 'Cards placed' }, [
+        el('i', { style: `width: ${rows.length ? (done / rows.length) * 100 : 0}%` }),
+      ]);
       return [
-        state.dockOpen
-          ? el('ul', { class: 'dock-list' }, rows.map(({ s, i }) => el('li', { class: state.placed.has(i) ? 'placed' : null }, placingRow(s, i, tick))))
-          : null,
+        progress,
+        state.dockOpen ? el('div', { class: 'dock-head' }, [el('strong', { text: 'Placing' }), ` ${done} of ${rows.length} · tick each card once it's in the game`]) : null,
+        state.dockOpen ? el('ul', { class: 'dock-list' }, rows.map(({ s, i }) => el('li', {}, [placingRow(s, i, tick)]))) : null,
         el('div', { class: 'dock-bar' }, [
           el('button', { class: 'fox-btn', type: 'button', title: 'Open FutFox', 'aria-label': 'Open FutFox', onclick: () => { state.showSquad = true; state.scrollTo = 0; openPanel(); } }, [foxIcon()]),
-          next ? el('div', { class: 'next' }, placingRow(next.s, next.i, tick)) : el('span', { class: 'next done', text: 'All placed: check it and submit' }),
-          el('span', { class: 'muted count', title: `${done} of ${rows.length} placed`, text: `${done}/${rows.length}` }),
-          el('button', { type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), title: state.dockOpen ? 'Hide the list' : 'Show every player', text: state.dockOpen ? '▾' : '▴', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }),
+          state.dockOpen ? el('span', { class: 'count', text: `${done} of ${rows.length} placed` })
+            : next ? placingRow(next.s, next.i, tick)
+              : el('span', { class: 'done', text: 'All placed: check it and submit' }),
+          el('button', { class: 'icon-btn', type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), 'aria-label': state.dockOpen ? 'Hide the list' : 'Show every card', title: state.dockOpen ? 'Hide the list' : 'Show every card', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }, [chevronIcon(!state.dockOpen)]),
           el('button', { class: 'close', type: 'button', 'aria-label': 'Close the list', title: 'Close the list', text: '×', onclick: () => { state.placing = false; state.dockClosed = true; sync(); } }),
         ]),
       ].filter(Boolean);
     }
 
+    // Follows the challenge the game shows; otherwise keeps the one picked here while it is listed.
     function refreshChallenges() {
       state.challenges = H.fut.getChallenges();
+      const shown = H.fut.shownChallengeId();
+      if (shown != null && shown !== state.selectedId && state.challenges.some((c) => c.id === shown)) {
+        state.selectedId = shown;
+        state.result = null;
+      }
       const stillThere = state.challenges.some((c) => c.id === state.selectedId);
       if (!stillThere) {
         const open = state.challenges.find((c) => c.status !== 'COMPLETED');
@@ -702,6 +980,14 @@
       return state.challenges.find((c) => c.id === state.selectedId) || null;
     }
 
+    // When something happened, for "loaded just now", "loaded 5 min ago" or "loaded at 14:05".
+    function ago(ms) {
+      const min = Math.floor((Date.now() - ms) / 60000);
+      if (min < 1) return 'just now';
+      if (min < 60) return `${min} min ago`;
+      return `at ${new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
     async function loadClub() {
       state.loading = true;
       state.error = null;
@@ -711,11 +997,111 @@
           state.loadedCount = n;
           render();
         });
+        state.clubLoadedAt = Date.now();
       } catch (e) {
         state.error = e.message;
       }
       state.loading = false;
       render();
+    }
+
+    // Cards the player kept out of a challenge's suggestions with Change: { id → name } per challenge.
+    function keptOut(challengeId) {
+      if (!state.keptOut.has(challengeId)) state.keptOut.set(challengeId, new Map());
+      return state.keptOut.get(challengeId);
+    }
+
+    function poolOptions() {
+      return { ...settings, protectFrom: Number(settings.protectFrom) || 0 };
+    }
+
+    // The cheapest squad for a challenge with a formation. fixed keeps players where they are
+    // ({ [slot index]: player }) so only the other slots are searched.
+    function solveSquad(entry, { fixed, market = settings.allowMarket, iterations } = {}) {
+      const c = entry.challenge;
+      const slots = H.fut.slotsFor(c);
+      if (!slots) throw new Error('This SBC uses a formation the app has not loaded yet. Open the challenge first.');
+      const out = keptOut(entry.id);
+      const rules = H.fut.rulesFor(c);
+      const pool = H.fut.clubPool(poolOptions()).filter((p) => !out.has(p.id));
+      const result = H.solver.solve({
+        slots,
+        rules,
+        pool,
+        fixed,
+        iterations,
+        requiredSlots: H.fut.requiredSlotsFor(c),
+        market: { enabled: market },
+        ratingFloat: H.fut.ratingUsesFloat(),
+        thresholds: H.fut.chemThresholds(),
+        seed: Date.now() % 100000,
+      });
+      const players = result.squad.map((s) => s.player);
+      result.eaChem = H.fut.eaChemistry(c.formation, players);
+      result.rules = rules;
+      result.required = new Set(H.fut.requiredSlotsFor(c));
+      result.poolSize = pool.length;
+      result.challengeId = entry.id;
+      return result;
+    }
+
+    // The cheapest cards for a Streamlined SBC, from the cards its own picker lists (pool), within
+    // the Streamlined options.
+    function pickScore(entry, pool) {
+      const c = entry.challenge;
+      const out = keptOut(entry.id);
+      const min = Number(settings.slMinRating) || 0;
+      const max = Number(settings.slMaxRating) || 99;
+      const cards = pool
+        .filter((p) => !out.has(p.id))
+        .filter((p) => (p.storage ? settings.slStorage : settings.slClub))
+        .filter((p) => p.rating >= min && p.rating <= max)
+        .filter((p) => !settings.keepActiveSquad || !p.active)
+        .filter((p) => !settings.untradeablesOnly || p.untradeable)
+        // Common and rare cards only: special versions are worth keeping.
+        .filter((p) => !settings.slKeepSpecial || p.rarity <= 1)
+        // A card in SBC storage can't go back to the club, so using it first costs nothing.
+        .map((p) => (settings.storageFirst && p.storage ? { ...p, cost: 0 } : p));
+      const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
+      const need = Number(settings.slPoints) > 0 ? Math.min(Number(settings.slPoints), remaining) : remaining;
+      const limit = Math.min(H.fut.submitLimit(), Number(settings.slMaxCards) || Infinity);
+      const pick = H.streamlined.pickForScore({ cards, need, limit, prefer: settings.slPrefer });
+      return {
+        ...pick,
+        kind: 'score',
+        challengeId: entry.id,
+        need,
+        remaining,
+        limit,
+        pool,
+        poolSize: cards.length,
+        rules: H.fut.rulesFor(c),
+        ruleResults: [],
+        squad: pick.picks.map((player) => ({ player, typeId: null })),
+      };
+    }
+
+    // The cards a Streamlined SBC takes, asked of the game once and reused while the challenge's
+    // progress is unchanged, so trying other options is instant.
+    let streamlinedCache = null;
+    async function streamlinedCards(entry) {
+      const c = entry.challenge;
+      const key = `${entry.id}:${c.submittedScore || 0}`;
+      if (streamlinedCache && streamlinedCache.key === key && Date.now() - streamlinedCache.at < 5 * 60 * 1000) return streamlinedCache.pool;
+      const pool = await H.fut.streamlinedPool(c, { prices: settings.prices });
+      streamlinedCache = { key, at: Date.now(), pool };
+      return pool;
+    }
+
+    function showResult(result) {
+      state.result = result;
+      state.ruleFocus = null;
+      state.placed = new Set();
+      state.placing = false;
+      state.dockClosed = false;
+      // The squad opens on its own page, from the top; the challenge page is one step back.
+      state.showSquad = true;
+      state.scrollTo = 0;
     }
 
     function solve() {
@@ -725,43 +1111,59 @@
       state.setupScroll = body ? body.scrollTop : 0;
       state.solving = true;
       state.error = null;
+      state.scrollTo = 0;
       render();
+      if (H.fut.isStreamlined(entry.challenge)) {
+        // EA's picker lists the cards a Streamlined SBC takes; FutFox asks it, then picks.
+        streamlinedCards(entry)
+          .then((pool) => showResult(pickScore(entry, pool)), (e) => { state.error = e.message; })
+          .then(() => { state.solving = false; render(); });
+        return;
+      }
       // Let the panel paint "Solving..." before the search blocks the page for a moment.
       setTimeout(() => {
         try {
-          const c = entry.challenge;
-          const slots = H.fut.slotsFor(c);
-          if (!slots) throw new Error('This SBC uses a formation the app has not loaded yet. Open the challenge first.');
-          const rules = H.fut.rulesFor(c);
-          const pool = H.fut.clubPool({ ...settings, protectFrom: Number(settings.protectFrom) || 0 });
-          const result = H.solver.solve({
-            slots,
-            rules,
-            pool,
-            requiredSlots: H.fut.requiredSlotsFor(c),
-            market: { enabled: settings.allowMarket },
-            ratingFloat: H.fut.ratingUsesFloat(),
-            thresholds: H.fut.chemThresholds(),
-            seed: Date.now() % 100000,
-          });
-          const players = result.squad.map((s) => s.player);
-          result.eaChem = H.fut.eaChemistry(c.formation, players);
-          result.rules = rules;
-          result.poolSize = pool.length;
-          result.challengeId = entry.id;
-          state.result = result;
-          state.placed = new Set();
-          state.placing = false;
-          state.dockClosed = false;
-          // The squad opens on its own page, from the top; the challenge page is one step back.
-          state.showSquad = true;
-          state.scrollTo = 0;
+          showResult(solveSquad(entry));
         } catch (e) {
           state.error = e.message;
         }
         state.solving = false;
         render();
       }, 30);
+    }
+
+    // Change: keeps that card out of this challenge's suggestions and finds another for its place.
+    // In a squad the other players stay where they are, and a card to buy fills the place when no
+    // club card fits; a Streamlined SBC's cards are picked again without it.
+    function changePlayer(entry, index) {
+      const res = state.result;
+      const player = res.squad[index].player;
+      keptOut(entry.id).set(player.id, player.name);
+      try {
+        if (res.kind === 'score') {
+          state.result = pickScore(entry, res.pool);
+          state.placed = new Set();
+        } else {
+          const fixed = {};
+          res.squad.forEach((s, i) => { if (i !== index && s.player) fixed[i] = s.player; });
+          state.result = solveSquad(entry, { fixed, market: true, iterations: 6000 });
+          state.placed.delete(index);
+        }
+        state.error = null;
+      } catch (e) {
+        state.error = e.message;
+      }
+      render();
+    }
+
+    // The cards kept out with Change, and a way to let FutFox use them again.
+    function keptOutNote(entry) {
+      const out = keptOut(entry.id);
+      if (!out.size) return null;
+      return el('p', { class: 'note' }, [
+        `Kept out: ${Array.from(out.values()).join(', ')}. `,
+        el('button', { class: 'small', type: 'button', text: 'Use them again', onclick: () => { out.clear(); render(); } }),
+      ]);
     }
 
     function setSetting(key, value) {
@@ -923,21 +1325,243 @@
       return r.shortfall === 0 ? { icon: '✓', cls: 'ok', hint: '' } : { icon: '✗', cls: 'bad', hint: `Short by ${r.shortfall}` };
     }
 
+    // The game's SBC points icon and chemistry glyph, shown in place of the words.
+    const pointsIcon = () => {
+      const src = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
+      return src ? el('img', { class: 'pts-icon', src, alt: '' }) : null;
+    };
+    const chemIcon = () => el('span', { class: 'chem-ico', 'aria-hidden': 'true' });
+
+    // A challenge's progress as a small chip: done, or a Streamlined SBC's points so far.
+    function challengeChip(c) {
+      if (c.status === 'COMPLETED') return el('span', { class: 'chip done', text: 'Done' });
+      if (H.fut.isStreamlined(c.challenge)) {
+        const ch = c.challenge;
+        return el('span', { class: 'chip pts', title: 'Points so far', 'aria-label': `${coins(ch.submittedScore || 0)} of ${coins(ch.scoreRequirement || 0)} points` }, [pointsIcon(), `${coins(ch.submittedScore || 0)} / ${coins(ch.scoreRequirement || 0)}`]);
+      }
+      return null;
+    }
+
+    function chooseChallenge(id) {
+      state.menu = null;
+      if (id !== state.selectedId) {
+        state.selectedId = id;
+        state.result = null;
+      }
+      render();
+      const button = panel.querySelector('.menu-btn');
+      if (button) button.focus();
+    }
+
+    // The challenge picker: the browser's own select can't match the panel, and a long list of
+    // challenges reads better grouped by set and searchable. Keys: arrows move, Enter picks, Escape
+    // closes. Moving and typing update the list in place; only opening, closing and picking redraw.
+    function challengeMenu() {
+      const current = selected();
+      const open = Boolean(state.menu);
+      const toggleMenu = () => { state.menu = open ? null : { query: '' }; render(); };
+      const trigger = el('button', {
+        class: 'menu-btn', type: 'button', id: 'futfox-challenge', 'aria-haspopup': 'listbox', 'aria-expanded': String(open),
+        onclick: toggleMenu,
+        onkeydown: (e) => {
+          if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); toggleMenu(); }
+        },
+      }, [
+        el('span', { class: 'menu-text' }, current
+          ? [current.setName !== current.name ? el('span', { class: 'menu-set', text: current.setName }) : null, el('span', { class: 'menu-name', text: current.name })].filter(Boolean)
+          : [el('span', { class: 'menu-name', text: 'Pick a challenge' })]),
+        current ? challengeChip(current) : null,
+        el('span', { class: 'chev', 'aria-hidden': 'true' }),
+      ]);
+      const box = el('div', { class: 'menu' }, [trigger]);
+      if (!open) return box;
+
+      const list = el('ul', { class: 'menu-list', role: 'listbox', id: 'futfox-challenge-list', 'aria-label': 'Challenges', tabindex: '-1' });
+      let options = [];
+      let active = -1;
+      const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      const mark = (i) => {
+        if (options[active]) options[active].node.classList.remove('active');
+        active = Math.max(0, Math.min(i, options.length - 1));
+        const o = options[active];
+        if (!o) return;
+        o.node.classList.add('active');
+        o.node.scrollIntoView({ block: 'nearest' });
+        (search || list).setAttribute('aria-activedescendant', o.node.id);
+      };
+      const fill = () => {
+        const words = fold(state.menu.query).split(/\s+/).filter(Boolean);
+        const shown = state.challenges.filter((c) => words.every((w) => fold(`${c.setName} ${c.name}`).includes(w)));
+        const rows = [];
+        options = [];
+        let set = null;
+        for (const c of shown) {
+          if (c.setId !== set) {
+            set = c.setId;
+            // A set that is a single challenge of the same name needs no heading of its own.
+            const alone = shown.filter((x) => x.setId === c.setId).length === 1 && c.setName === c.name;
+            if (!alone) rows.push(el('li', { class: 'menu-group', role: 'presentation', text: c.setName }));
+          }
+          const node = el('li', {
+            class: 'menu-opt', role: 'option', id: `futfox-challenge-${c.id}`, 'aria-selected': String(c.id === state.selectedId),
+            onpointerdown: (e) => e.preventDefault(),
+            onclick: () => chooseChallenge(c.id),
+          }, [el('span', { class: 'menu-name', text: c.name }), challengeChip(c)]);
+          node.addEventListener('pointermove', () => mark(options.findIndex((o) => o.node === node)));
+          options.push({ id: c.id, node });
+          rows.push(node);
+        }
+        list.replaceChildren(...(rows.length ? rows : [el('li', { class: 'menu-empty', role: 'presentation', text: 'No challenge matches.' })]));
+        active = -1;
+        mark(Math.max(0, options.findIndex((o) => o.id === state.selectedId)));
+      };
+      const keys = (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); mark(active + 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); mark(active - 1); }
+        else if (e.key === 'Home' && !search) { e.preventDefault(); mark(0); }
+        else if (e.key === 'End' && !search) { e.preventDefault(); mark(options.length - 1); }
+        else if (e.key === 'Enter' && options[active]) { e.preventDefault(); chooseChallenge(options[active].id); }
+        else if (e.key === 'Escape' || e.key === 'Tab') {
+          if (e.key === 'Escape') e.preventDefault();
+          state.menu = null;
+          render();
+          if (e.key === 'Escape') panel.querySelector('.menu-btn').focus();
+        }
+      };
+      // A search box only when the list is long enough to need one.
+      const search = state.challenges.length > 6
+        ? el('input', { type: 'search', placeholder: 'Search challenges', 'aria-label': 'Search challenges', 'aria-controls': list.id, value: state.menu.query, oninput: (e) => { state.menu.query = e.target.value; fill(); } })
+        : null;
+      (search || list).addEventListener('keydown', keys);
+      fill();
+      box.append(el('div', { class: 'menu-pop' }, [search, list].filter(Boolean)));
+      // Focus moves into the list once it is on the page.
+      queueMicrotask(() => { if (state.menu && box.isConnected) (search || list).focus({ preventScroll: true }); });
+      return box;
+    }
+
+    // Streamlined SBCs: which cards to use, how many and how many points to reach now, and whether
+    // they come from the club, SBC storage or both; one small card each.
+    // An on/off option: its text on the left, a switch on the right.
+    const switchRow = (key, text, hint) => el('label', { class: 'switch-row', title: hint || null }, [
+      el('span', { text }),
+      el('input', { class: 'switch', type: 'checkbox', role: 'switch', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }),
+    ]);
+    // A div, not a label: clicking a label would press the stepper's first button.
+    const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: label }), control]);
+
+    // A squad SBC's options, in the same cards as a Streamlined SBC's.
+    function squadOptions() {
+      return el('section', {}, [
+        el('h2', { text: 'Options' }),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Which cards' }),
+          el('div', { class: 'pair' }, [
+            // Stored as the lowest rating kept back (0: none), shown as the highest one used.
+            field('Highest rating to use', stepper({ value: Number(settings.protectFrom) ? settings.protectFrom - 1 : 99, min: 40, max: 99, label: 'highest rating to use', onChange: (n) => setSetting('protectFrom', n == null || n >= 99 ? 0 : n + 1) })),
+          ]),
+          el('div', { class: 'switches' }, [
+            switchRow('untradeablesOnly', 'Use untradeable cards only'),
+            switchRow('keepActiveSquad', "Don't use my active squad", 'Players in your active squad are left out'),
+          ]),
+        ]),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Take cards from' }),
+          el('div', { class: 'switches' }, [
+            switchRow('storageFirst', 'SBC storage cards first', 'SBC storage cards go in before club cards'),
+            switchRow('allowMarket', 'Suggest cards to buy when the club falls short'),
+          ]),
+        ]),
+      ]);
+    }
+
+    function streamlinedOptions(entry) {
+      const c = entry.challenge;
+      const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
+      const limit = H.fut.submitLimit();
+      const prefer = (value, text) => el('button', { type: 'button', 'aria-pressed': String(settings.slPrefer === value), text, onclick: () => { setSetting('slPrefer', value); render(); } });
+      return el('section', {}, [
+        el('h2', { text: 'Options' }),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Which cards' }),
+          el('div', { class: 'pair' }, [
+            field('From rating', stepper({ value: settings.slMinRating, min: 40, max: 99, label: 'lowest rating', onChange: (n) => setSetting('slMinRating', n) })),
+            field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) })),
+          ]),
+          el('div', { class: 'switches' }, [
+            switchRow('slKeepSpecial', "Don't use special cards", 'Only common and rare cards are used'),
+            switchRow('untradeablesOnly', 'Use untradeable cards only'),
+            switchRow('keepActiveSquad', "Don't use my active squad", 'Players in your active squad are left out'),
+          ]),
+        ]),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'How many' }),
+          el('div', { class: 'pair' }, [
+            field(`Max cards (up to ${limit})`, stepper({ value: settings.slMaxCards, min: 1, max: limit, label: 'cards', empty: String(limit), onChange: (n) => setSetting('slMaxCards', n) })),
+            field('Points now', stepper({ value: settings.slPoints, min: 1, max: Math.max(1, remaining), step: 500, wide: true, label: 'points', empty: coins(remaining), onChange: (n) => setSetting('slPoints', n) })),
+          ]),
+          el('div', { class: 'segmented full', role: 'group', 'aria-label': 'Favour' }, [prefer('cheapest', 'Fewest coins'), prefer('fewest', 'Fewest cards')]),
+        ]),
+        el('div', { class: 'opt-card' }, [
+          el('h3', { text: 'Take cards from' }),
+          el('div', { class: 'switches' }, [
+            switchRow('slClub', 'Use club cards'),
+            switchRow('slStorage', 'Use SBC storage'),
+            switchRow('storageFirst', 'Storage cards first', 'SBC storage cards go in before club cards'),
+          ]),
+        ]),
+      ]);
+    }
+
+    // While FutFox works out a suggestion: its page, with faded cards pulsing where the cards will go
+    // (a squad's in its formation, locked slots as they are).
+    function solvingPage(entry) {
+      const streamlined = H.fut.isStreamlined(entry.challenge);
+      const skel = (n) => {
+        const card = miniCard({});
+        card.style.animationDelay = `${(n % 5) * 120}ms`;
+        return el('div', { class: 'slot skel' }, [card]);
+      };
+      const slots = streamlined ? null : H.fut.slotsFor(entry.challenge);
+      const required = slots ? new Set(H.fut.requiredSlotsFor(entry.challenge)) : null;
+      const cards = slots
+        ? el('div', { class: 'pitch' }, pitchRows(slots).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => (required.has(i)
+          ? skel(i)
+          : el('div', { class: 'slot locked' }, [miniCard({ position: H.fut.positionName(slots[i].typeId), label: 'Locked' })]))))))
+        : el('div', { class: 'cards' }, [0, 1, 2, 3, 4].map(skel));
+      return [
+        crumbs([[entry.setName || 'Challenge'], [entry.name]], 'SBC'),
+        el('section', { 'aria-busy': 'true' }, [
+          el('h2', { text: streamlined ? 'Suggested cards' : 'Suggested squad' }),
+          el('p', { class: 'muted', role: 'status' }, [spinner(), streamlined ? 'Asking the game which cards this challenge takes…' : 'Finding the cheapest squad in your club…']),
+          cards,
+        ]),
+      ];
+    }
+
     // The suggested squad on its own page, like a Gallery set: the challenge's options are one step back.
     function squadPage(entry) {
       const back = () => { state.showSquad = false; state.scrollTo = state.setupScroll || 0; render(); };
       return [
         crumbs([[entry.setName || 'Challenge', back], [entry.name]], 'SBC'),
-        renderResult(),
-        placeSteps(),
+        state.result.kind === 'score' ? renderScoreResult(entry) : renderResult(entry),
+        placeSteps(state.result.kind === 'score'),
       ];
     }
 
     // FutFox never changes a squad, so the player places the suggestion in the game.
-    function placeSteps() {
+    function placeSteps(streamlined) {
+      const steps = streamlined
+        ? [
+            'In the game, open this challenge and press Start Challenge (or Continue) to reach its card picker.',
+            'Press the button below: FutFox folds into a small list in the corner, each card with its Item Score.',
+            "Tick each card in the game's picker, then in the list. Both list the highest Item Score first.",
+            'Check the points reach the target, then submit it yourself.',
+          ]
+        : null;
       return el('section', {}, [
-        el('h2', { text: 'Place it in the game' }),
-        el('ol', { class: 'steps' }, [
+        el('h2', { text: streamlined ? 'Pick them in the game' : 'Place it in the game' }),
+        el('ol', { class: 'steps' }, steps ? steps.map((text) => el('li', { text })) : [
           el('li', { text: 'Press the button below, or click anywhere in the game: FutFox folds into a small list in the corner while this SBC is open.' }),
           el('li', { text: 'Click a position on the pitch, search your club for that player (Copy puts the name on your clipboard), then tick the player in the list.' }),
           el('li', { text: 'For a card to buy, press Search market (Market in the list), buy one with the rating shown, then place it the same way.' }),
@@ -950,7 +1574,11 @@
       ]);
     }
 
-    function renderResult() {
+    function changeButton(entry, index, name) {
+      return el('button', { class: 'icon-btn', type: 'button', title: 'Change: keep this card and suggest another', 'aria-label': `Change ${name}`, onclick: () => changePlayer(entry, index) }, [swapIcon()]);
+    }
+
+    function renderResult(entry) {
       const res = state.result;
       if (!res) return null;
       const chem = res.eaChem ? res.eaChem.total : res.chemistry;
@@ -959,7 +1587,7 @@
 
       const summary = el('div', { class: 'summary' }, [
         el('span', {}, [el('strong', { text: String(res.rating) }), ' rating']),
-        el('span', {}, [el('strong', { text: String(chem) }), res.eaChem ? ' chemistry' : ' chemistry (estimate)']),
+        el('span', { title: res.eaChem ? 'Chemistry' : "Chemistry, estimated: check it in the squad builder" }, [chemIcon(), el('strong', { text: String(chem) }), ` / ${3 * res.squad.length}`, res.eaChem ? '' : ' (estimate)']),
         el('span', {}, [
           H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
           el('strong', { text: coins(res.cost) }), ' est. coins',
@@ -967,40 +1595,109 @@
         el('span', { class: res.feasible ? 'ok' : 'bad', text: res.feasible ? 'Meets the rules' : 'Could not meet every rule' }),
       ]);
 
-      const rows = res.squad.map((s, i) => {
+      // The SBC's rules on top. A rule about single cards (a club, nation, rarity...) is a button
+      // that picks out the cards meeting it.
+      const focus = state.ruleFocus != null ? res.ruleResults[state.ruleFocus] : null;
+      // The game shows how many players the squad needs (the slots that aren't locked) as a rule
+      // of its own, though it isn't one of the SBC's requirements.
+      const needed = res.required ? res.required.size : res.squad.length;
+      const filled = res.squad.filter((s, i) => s.player && (!res.required || res.required.has(i))).length;
+      const count = el('span', { class: `rule-chip ${filled === needed ? 'ok' : 'bad'}` }, [el('span', { class: 'ri', text: filled === needed ? '✓' : '✗' }), `Number of Players in the Squad: ${needed}`]);
+      const rules = el('div', { class: 'rule-chips' }, [count].concat(res.ruleResults.map((r, n) => {
+        const icon = !r.rule.supported ? '?' : r.shortfall === 0 ? '✓' : '✗';
+        const cls = `rule-chip ${!r.rule.supported ? 'unknown' : r.shortfall === 0 ? 'ok' : 'bad'}`;
+        const text = [el('span', { class: 'ri', text: icon }), r.rule.label];
+        const players = res.squad.map((s) => s.player).filter(Boolean);
+        if (!players.length || H.requirements.cardMeets(r.rule, players[0]) === null) return el('span', { class: cls }, text);
+        return el('button', { type: 'button', class: cls, 'aria-pressed': String(state.ruleFocus === n), title: 'Show the cards that meet this rule', onclick: () => { state.ruleFocus = state.ruleFocus === n ? null : n; render(); } }, text);
+      })));
+
+      // Drawn like the game's cards on its squad screen: each card in its slot's position, then
+      // untradeable, chemistry and Change on one line, then where the card is.
+      const formation = H.fut.slotsFor(entry.challenge) || res.squad.map((s) => ({ typeId: s.typeId, name: H.fut.positionName(s.typeId) }));
+      const cell = (s, i) => {
         const p = s.player;
+        const position = H.fut.positionName(s.typeId);
         if (!p) {
-          return el('tr', {}, [el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }), el('td', { colspan: '5', class: 'muted', text: 'Empty' })]);
+          const locked = res.required && !res.required.has(i);
+          return el('div', { class: 'slot pick locked', title: locked ? 'This slot is locked: the SBC needs no card here' : 'No card fits this slot' }, [
+            miniCard({ position, label: locked ? 'Locked' : 'Empty' }),
+            el('span', { class: 'src', text: locked ? 'Not needed' : 'Nothing fits' }),
+          ]);
         }
-        const isBuy = p.source === 'market';
-        const name = isBuy ? `Buy a ${p.rating}-rated ${H.fut.positionName(s.typeId)}` : p.name;
-        const meta = `${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(isBuy ? p.search.nationId : p.nationId)}`;
-        const tag = isBuy
-          ? el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : el('span', { class: p.untradeable ? 'tag untr' : 'tag', text: p.untradeable ? 'Untradeable' : 'Club' });
-        // A card to buy is no one yet, so it shows as an empty card.
-        const card = isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true });
-        return el('tr', {}, [
-          el('td', { class: 'pos', text: H.fut.positionName(s.typeId) }),
-          el('td', { class: 'card-cell' }, [card]),
-          el('td', { class: 'r', text: String(p.rating) }),
-          el('td', {}, [el('span', { class: 'name', text: name }), el('span', { class: 'meta', text: meta })]),
-          el('td', { class: 'chem', title: `${perPlayer[i]} chemistry`, text: '◆'.repeat(perPlayer[i] || 0) || '–' }),
-          el('td', {}, [tag]),
+        const dim = focus && !H.requirements.cardMeets(focus.rule, p);
+        if (p.source === 'market') {
+          return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `Buy a ${p.rating}-rated ${position}: ${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }, [
+            miniCard({ rating: p.rating, position, name: 'To buy' }),
+            el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) }),
+            el('span', { class: 'src', text: `${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }),
+          ]);
+        }
+        const chem = perPlayer[i] || 0;
+        const plain = p.rarity === 0 || p.rarity === 1;
+        return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `${p.name} ${p.rating} · ${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}` }, [
+          miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position, name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
+          el('div', { class: 'pick-line' }, [
+            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
+            el('span', { class: 'chem-pts', role: 'img', title: `${chem} chemistry`, 'aria-label': `${chem} chemistry` }, [0, 1, 2].map((n) => el('i', { class: n < chem ? 'on' : null }))),
+            changeButton(entry, i, p.name),
+          ]),
+          el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
         ]);
-      });
+      };
+      const pitch = el('div', { class: 'pitch' }, pitchRows(formation).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => cell(res.squad[i], i)))));
 
       return el('section', {}, [
         el('h2', { text: 'Suggested squad' }),
         summary,
-        el('table', {}, [el('tbody', {}, rows)]),
+        rules,
+        pitch,
         buys.length
           ? el('p', { class: 'note', text: `${buys.length} card${buys.length > 1 ? 's' : ''} to buy. "Search market" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.` })
           : null,
         res.eaChem ? null : el('p', { class: 'note', text: buys.length
           ? 'Chemistry is estimated because the squad includes cards to buy. Check it in the squad builder.'
           : "Chemistry is estimated because the game's own count wasn't available. Check it in the squad builder." }),
-        el('p', { class: 'note', text: `Picked from ${res.poolSize} club players. Nothing has been placed in your squad.` }),
+        el('p', { class: 'note', text: `Picked from ${res.poolSize} club and SBC storage players. Nothing has been placed in your squad.` }),
+        keptOutNote(entry),
+      ]);
+    }
+
+    // A Streamlined SBC's picks: cards, not a squad, with the points each one brings.
+    function renderScoreResult(entry) {
+      const res = state.result;
+      const summary = el('div', { class: 'summary' }, [
+        el('span', { title: 'Points' }, [pointsIcon(), el('strong', { text: coins(res.score) }), ` / ${coins(res.need)}`, res.need < res.remaining ? ` (${coins(res.remaining)} left)` : '']),
+        el('span', {}, [el('strong', { text: String(res.picks.length) }), ` of ${res.limit} cards`]),
+        el('span', {}, [
+          H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
+          el('strong', { text: coins(res.cost) }), ' est. coins',
+        ]),
+        res.reached ? el('span', { class: 'ok', text: 'Reaches the target' }) : el('span', { class: 'bad', title: 'Points still missing' }, ['Short by ', pointsIcon(), coins(res.need - res.score)]),
+      ]);
+      // Drawn like the game's own cards, with the line the game's picker shows under each card.
+      const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
+      const cells = res.squad.map((s, i) => {
+        const p = s.player;
+        const plain = p.rarity === 0 || p.rarity === 1;
+        return el('div', { class: 'slot pick' }, [
+          miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position: H.fut.positionName(p.position ?? p.positions[0]), name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
+          el('div', { class: 'pick-line' }, [
+            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
+            points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null,
+            el('span', { title: 'Item Score', text: coins(p.score) }),
+            changeButton(entry, i, p.name),
+          ]),
+          el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
+        ]);
+      });
+      return el('section', {}, [
+        el('h2', { text: 'Suggested cards' }),
+        summary,
+        cells.length ? el('div', { class: 'cards' }, cells) : el('p', { class: 'muted', text: 'No card in your club or SBC storage fits this challenge.' }),
+        res.reached ? null : el('p', { class: 'note', text: `These are your ${res.limit} highest-scoring cards. Submit them to bank their points, then come back for the rest.` }),
+        el('p', { class: 'note', text: `Picked from ${res.poolSize} cards the game's picker lists for this challenge. Nothing has been ticked or submitted.` }),
+        keptOutNote(entry),
       ]);
     }
 
@@ -1073,9 +1770,12 @@
     function clubSection(known) {
       return el('section', {}, [
         el('h2', { text: 'Your club' }),
-        el('p', { class: 'muted', text: state.loading ? `Loading… ${state.loadedCount || 0} players so far` : `${known} players known` }),
-        el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Load my club', disabled: state.loading, onclick: loadClub })]),
-        el('p', { class: 'note', text: 'Reads your club list the same way the Club screen does, one page every few seconds.' }),
+        // One spinner, on the button; the line says how far the load is, or when it last ran.
+        el('p', { class: 'muted', role: 'status', text: state.loading
+          ? `${state.loadedCount || 0} players so far`
+          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}${state.clubLoadedAt ? ` · loaded ${ago(state.clubLoadedAt)}` : ''}` }),
+        el('div', { class: 'row' }, [el('button', { type: 'button', disabled: state.loading, onclick: loadClub }, state.loading ? [spinner(), 'Loading your club…'] : [state.clubLoadedAt ? 'Reload my club' : 'Load my club'])]),
+        el('p', { class: 'note', text: 'Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.' }),
       ]);
     }
 
@@ -1291,7 +1991,7 @@
       return [sweep, still];
     }
 
-    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small, foil, foilArt }) {
+    function miniCard({ rarityId, rating, playerId, position, name, label, missing, small, foil, foilArt, badges }) {
       const bg = rarityId != null && H.fut.cardImage ? H.fut.cardImage(rarityId, rating) : null;
       const face = playerId != null && H.fut.playerFace ? H.fut.playerFace(playerId) : null;
       const plain = bg && (rarityId === 0 || rarityId === 1);
@@ -1304,6 +2004,9 @@
         position ? el('span', { class: 'ps', text: position }) : null,
         name ? el('span', { class: 'nm', text: name }) : null,
         label ? el('span', { class: 'lbl', text: label }) : null,
+        badges && badges.some(Boolean)
+          ? el('span', { class: 'bdg' }, badges.filter(Boolean).map((src) => el('img', { src, alt: '', onerror: (e) => e.target.remove() })))
+          : null,
       ].filter(Boolean));
       return card;
     }
@@ -1392,8 +2095,13 @@
           el('input', { type: 'search', name: 'name', value: p.text, placeholder: 'Player name, 3 letters or more', 'aria-label': 'Player name', autocomplete: 'off', oninput: (e) => typePicker(e.target.value) }),
         ]),
         p.error ? el('p', { class: 'error', text: p.error }) : null,
-        p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row)) : null,
-        p.loading ? el('p', { class: 'muted', role: 'status', text: 'Searching EA…' })
+        p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row))
+          : p.loading ? el('div', { class: 'picks', 'aria-hidden': 'true' }, [0, 1, 2, 3].map((n) => el('div', { class: 'pick-skel' }, [
+            el('span', { class: 'slot skel' }, [Object.assign(miniCard({ small: true }), { style: `animation-delay: ${n * 120}ms` })]),
+            el('span', { class: 'skel-text' }, [skelBar('45%', n), skelBar('30%', n)]),
+          ])))
+          : null,
+        p.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), 'Searching EA…'])
           : !p.cards.length ? el('p', { class: 'muted', text: p.query ? `No card fits this slot for "${p.query}".`
             : !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.'
               : p.cleared ? 'Type 3 letters or more of a player name.' : 'No card fits this slot.' })
@@ -1440,7 +2148,7 @@
           }, [el('span', { class: 'dia', text: g })])),
           s ? el('button', { type: 'button', class: 'link', text: 'Clear', onclick: () => { state.suggest = null; render(); } }) : null,
         ]),
-        s && s.loading ? el('p', { class: 'muted', role: 'status', text: s.total ? `Searching the squad builder list… ${s.done} of ${s.total}` : 'Looking in your club…' }) : null,
+        s && s.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), s.total ? `Searching the squad builder list… ${s.done} of ${s.total}` : 'Looking in your club…']) : null,
         s && s.error ? el('p', { class: 'error', text: `${s.error} Some slots may have no suggestion.` }) : null,
         plan && !plan.adds.length ? el('p', { class: 'note', text: 'No card FutFox can find fits the empty slots.' }) : null,
         plan && plan.adds.length ? el('p', { class: 'sum' }, [
@@ -1511,12 +2219,14 @@
         el('section', {}, [
           el('h2', { text: 'Gallery sets' }),
           el('div', { class: 'row' }, [
-            el('span', { class: 'muted', text: loading ? 'Loading sets…' : data && data.sets.length ? `${data.sets.length} ${data.sets.length === 1 ? 'set' : 'sets'} · updated ${day(data.publishedAt)}` : 'No sets published yet' }),
+            loading ? el('span', { class: 'muted', role: 'status' }, [spinner(), 'Loading sets…']) : el('span', { class: 'muted', text: data && data.sets.length ? `${data.sets.length} ${data.sets.length === 1 ? 'set' : 'sets'} · updated ${day(data.publishedAt)}` : 'No sets published yet' }),
             el('button', { class: 'small', type: 'button', text: 'Refresh sets', disabled: loading, onclick: () => loadSets(true) }),
           ]),
           error ? el('p', { class: 'error', text: error }) : null,
           known ? null : el('p', { class: 'note', text: 'Press Load my club so FutFox can check which cards you have.' }),
-          results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name)))) : null,
+          results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name))))
+            : loading ? el('div', { class: 'sets', 'aria-hidden': 'true' }, [0, 1, 2, 3].map((n) => el('div', { class: 'cat skel', style: `animation-delay: ${n * 120}ms` }, [skelBar('40%', n), el('span', { class: 'skel-text' }, [skelBar('70%', n), skelBar('45%', n)])])))
+            : null,
           results.length ? el('p', { class: 'note', text: 'Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Pick player to choose the card that is in the slot in the game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.' }) : null,
         ]),
         clubSection(known),
@@ -1534,7 +2244,7 @@
     // categories, a category, a set, then picking a player).
     function pageNow(view, entry) {
       if (view === 'gallery') return state.picker && state.openSet != null ? 3 : state.openSet != null ? 2 : state.category != null ? 1 : 0;
-      return state.result && state.showSquad && entry ? 1 : 0;
+      return state.solving || (state.result && state.showSquad) ? (entry ? 1 : 0) : 0;
     }
 
     // Moving to another page: the old page slides out and fades as the new one slides in from the
@@ -1574,6 +2284,7 @@
       const focused = panel.getRootNode().activeElement;
       const typing = focused && focused.matches('.picker input') ? [focused.selectionStart, focused.selectionEnd] : null;
       const entry = selected();
+      const streamlined = Boolean(entry) && H.fut.isStreamlined(entry.challenge);
       const known = H.fut.knownClubItems().length;
       const view = H.fut.galleryEnabled ? settings.view : 'sbc';
       // The Gallery tab shows the Gallery Token until there is an art/gallery.png.
@@ -1587,40 +2298,41 @@
       state.page = page;
       panel.replaceChildren(...[
         grip,
-        el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Close', text: '×', onclick: hidePanel })]),
+        el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Minimize FutFox', title: 'Minimize: fold into the corner', text: '−', onclick: hidePanel })]),
         H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery'), el('span', { class: 'ink', 'aria-hidden': 'true' })]) : null,
         view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
+        : state.solving && entry ? el('div', { class: 'body' }, solvingPage(entry))
         : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
         : el('div', { class: 'body' }, [
           el('section', {}, [
             el('h2', { text: 'Challenge' }),
             state.challenges.length
-              ? el('select', { id: 'futfox-challenge', onchange: (e) => { state.selectedId = Number(e.target.value); state.result = null; render(); } },
-                  state.challenges.map((c) => el('option', { value: String(c.id), selected: c.id === state.selectedId, text: `${c.setName} – ${c.name}${c.status === 'COMPLETED' ? ' (done)' : ''}` })))
+              ? challengeMenu()
               : el('p', { class: 'muted', text: 'Open an SBC set in the app, then press Refresh.' }),
             el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Refresh', onclick: refreshChallenges })]),
           ]),
           entry
             ? el('section', {}, [
                 el('h2', { text: 'Requirements' }),
-                el('ul', { class: 'rules' }, H.fut.rulesFor(entry.challenge).map((rule) => {
-                  // Match by key and value, since rulesFor() builds fresh objects each time.
-                  const resultRule = state.result && state.result.rules.find((r) => r.key === rule.key && r.label === rule.label);
-                  const st = ruleStatus(resultRule || rule);
-                  return el('li', { title: st.hint }, [el('span', { class: st.cls, text: st.icon }), el('span', { text: rule.label + (st.hint ? ` – ${st.hint}` : '') })]);
-                })),
+                el('ul', { class: 'rules' }, [
+                  streamlined
+                    ? el('li', { title: 'Points so far, of the points the challenge needs' }, [pointsIcon(), el('span', { text: `${coins(entry.challenge.submittedScore || 0)} / ${coins(entry.challenge.scoreRequirement || 0)}, up to ${H.fut.submitLimit()} cards a time` })])
+                    : null,
+                  ...H.fut.rulesFor(entry.challenge).map((rule) => {
+                    // The game's picker only lists cards that meet a Streamlined SBC's requirements.
+                    if (streamlined) return el('li', {}, [el('span', { class: 'ok', text: '✓' }), el('span', { text: `${rule.label} – the game only offers cards that meet it` })]);
+                    // Match by key and value, since rulesFor() builds fresh objects each time.
+                    const resultRule = state.result && state.result.rules.find((r) => r.key === rule.key && r.label === rule.label);
+                    const st = ruleStatus(resultRule || rule);
+                    return el('li', { title: st.hint }, [el('span', { class: st.cls, text: st.icon }), el('span', { text: rule.label + (st.hint ? ` – ${st.hint}` : '') })]);
+                  }),
+                ].filter(Boolean)),
               ])
             : null,
-          clubSection(known),
-          el('section', {}, [
-            el('h2', { text: 'Options' }),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-keep', type: 'checkbox', checked: settings.keepActiveSquad, onchange: (e) => setSetting('keepActiveSquad', e.target.checked) }), 'Keep my active squad players']),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-untr', type: 'checkbox', checked: settings.untradeablesOnly, onchange: (e) => setSetting('untradeablesOnly', e.target.checked) }), 'Use untradeables only']),
-            el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
-            el('label', { class: 'check' }, ['Keep players rated', el('input', { id: 'futfox-protect', type: 'number', min: '0', max: '99', value: String(settings.protectFrom), onchange: (e) => setSetting('protectFrom', Number(e.target.value)) }), 'and above']),
-          ]),
+          streamlined ? null : clubSection(known),
+          streamlined ? streamlinedOptions(entry) : squadOptions(),
           el('div', { class: 'row' }, [
-            el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),
+            el('button', { class: 'primary', type: 'button', disabled: !entry || state.solving, onclick: solve }, state.solving ? [spinner(), 'Solving…'] : [streamlined ? 'Find cheapest cards' : 'Find cheapest squad']),
             state.result ? el('button', { type: 'button', text: 'Show the last squad', onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
           ]),
           state.error ? el('p', { class: 'error', text: state.error }) : null,

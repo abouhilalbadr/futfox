@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 
 const { squadRating } = require('../src/core/rating');
 const { computeChemistry, DEFAULT_PROFILES } = require('../src/core/chemistry');
-const { parseRequirement, shortfall, KEY } = require('../src/core/requirements');
+const { parseRequirement, shortfall, cardMeets, KEY } = require('../src/core/requirements');
 
 test('squad rating follows the float formula', () => {
   const ratings = [83, 85, 85, 83, 83, 86, 87, 90, 85, 85, 88];
@@ -80,4 +80,25 @@ test('shortfall measures distance from each rule', () => {
   assert.equal(shortfall(rule(KEY.LEAGUE_ID, 0, [2], 2), ctx), 0);
   assert.equal(shortfall(rule(KEY.PLAYER_RARITY, 0, [1], 2), ctx), 0);
   assert.equal(shortfall(rule(KEY.PLAYER_MIN_OVR, 0, [80]), ctx), 1);
+});
+
+test('counts the cards of a quality for a player level rule', () => {
+  const gold = { quality: 3 };
+  const silver = { quality: 2 };
+  const goldMin7 = parseRequirement({ kvPairs: { _collection: { [KEY.PLAYER_LEVEL]: [3] } }, count: 7, scope: 0 });
+  assert.equal(goldMin7.supported, true);
+  assert.equal(shortfall(goldMin7, { players: [...Array(5).fill(gold), silver, silver] }), 2);
+  assert.equal(shortfall(goldMin7, { players: Array(7).fill(gold) }), 0);
+});
+
+test('cardMeets marks the cards a single-card rule counts and skips squad-wide rules', () => {
+  const rule = (key, values, extra = {}) => parseRequirement({ kvPairs: { _collection: { [key]: values } }, count: 1, scope: 0, ...extra });
+  const card = { nationId: 54, leagueId: 53, clubId: 243, quality: 3, rarity: 1, rating: 84, isIcon: false };
+  assert.equal(cardMeets(rule(KEY.CLUB_ID, [243, 241]), card), true);
+  assert.equal(cardMeets(rule(KEY.NATION_ID, [18]), card), false);
+  assert.equal(cardMeets(rule(KEY.LEAGUE_ID, [53]), card), true);
+  assert.equal(cardMeets(rule(KEY.PLAYER_MIN_OVR, [85]), card), false);
+  assert.equal(cardMeets(rule(KEY.PLAYER_RARITY, [1]), card), true);
+  assert.equal(cardMeets(rule(KEY.TEAM_RATING, [80]), card), null);
+  assert.equal(cardMeets(rule(KEY.SAME_NATION_COUNT, [3]), card), null);
 });

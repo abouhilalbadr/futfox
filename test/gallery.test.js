@@ -50,6 +50,24 @@ test('cards FutFox has seen keep counting after they leave the club; loans are n
   assert.equal('seenAt' in cards[1], false);
 });
 
+test('a copy of a card that left the club is not a second Gallery card', () => {
+  // Cancelo was evolved (83 to 84) and his other copy went into an SBC: still one card.
+  const memory = rememberCards({ cards: {} }, [
+    { id: 11, playerId: 210514, rarityId: 0, rating: 83, name: 'Cancelo', score: 830 },
+    { id: 12, playerId: 210514, rarityId: 3, rating: 86, name: 'Cancelo', score: 2600 },
+    { id: 13, playerId: 210514, rarityId: 0, rating: 83, foil: true, name: 'Cancelo', score: 900 },
+  ], 1);
+  const cards = withRemembered([{ id: 10, playerId: 210514, rarityId: 0, rating: 84, name: 'Cancelo', score: 830 }], memory);
+  // The Team of the Week and the holographic versions are other cards, so they stay.
+  assert.deepEqual(cards.map((c) => c.id), [10, 12, 13]);
+});
+
+test('of two remembered copies of one card, the most recently seen is kept', () => {
+  let memory = rememberCards({ cards: {} }, [{ id: 21, playerId: 5, rarityId: 0, rating: 80, name: 'A', score: 1 }], 1);
+  memory = rememberCards(memory, [{ id: 22, playerId: 5, rarityId: 0, rating: 81, name: 'A', score: 1 }], 2);
+  assert.deepEqual(withRemembered([], memory).map((c) => c.id), [22]);
+});
+
 test('a card remembered before FutFox knew it was a loan is forgotten once it is seen as one', () => {
   let memory = rememberCards({ cards: {} }, [{ id: 7, name: 'Lukeba', score: 4000 }], 1);
   memory = rememberCards(memory, [{ id: 7, name: 'Lukeba', score: 4000, loan: true }], 2);

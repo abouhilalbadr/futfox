@@ -1,8 +1,9 @@
 // Everything that touches the EA FC Web App lives here. It reads the app's in-memory
 // objects (services, repositories) and makes two kinds of request, both only when the user
-// asks: the paged club list ("Load my club") and the squad builder's search for cards the
-// user doesn't own ("Pick player" on a Gallery slot, or "Suggest cards" on a Gallery set, one
-// search per different empty slot). It also reads, without changing them,
+// asks: the paged club list ("Load my club"), the cards a Streamlined SBC's own picker lists
+// ("Find cheapest cards") and the squad builder's search for cards the user doesn't own
+// ("Pick player" on a Gallery slot, or "Suggest cards" on a Gallery set, one search per
+// different empty slot). It also reads, without changing them,
 // the club list replies the Web App receives, for their Gallery marks.
 // It never bids, buys, lists, saves or submits anything.
 (function (root) {
@@ -63,13 +64,25 @@
     return formation.positions.map((p) => ({ typeId: p.typeId, name: p.name }));
   }
 
-  // The challenge whose squad screen is open in the app, or null on any other screen.
+  function currentController() {
+    return attempt(() => root.getAppMain().getRootViewController().getPresentedViewController().getCurrentViewController().getCurrentController(), null);
+  }
+
+  const idOf = (id) => (typeof id === 'number' ? id : null);
+
+  // The challenge whose cards are being placed in the app (a squad screen, or a Streamlined SBC's
+  // card picker), or null on any other screen.
   function openChallengeId() {
-    return attempt(() => {
-      const nav = root.getAppMain().getRootViewController().getPresentedViewController().getCurrentViewController();
-      const id = nav.getCurrentController()._challengeId;
-      return typeof id === 'number' ? id : null;
-    }, null);
+    const screen = currentController();
+    if (!screen) return null;
+    return idOf(screen._challengeId)
+      ?? idOf(attempt(() => screen.workAreaController.getViewModel().getChallenge().id, null));
+  }
+
+  // The challenge the app shows: the one being placed, or the one selected in an open SBC set.
+  function shownChallengeId() {
+    const screen = currentController();
+    return openChallengeId() ?? idOf(attempt(() => screen.sbcViewModel.getSelectedChallengeId(), null));
   }
 
   // Slots the user has to fill. Some SBCs pre-fill "brick" slots or need fewer players.
@@ -144,9 +157,13 @@
       nationId: item.nationId,
       leagueId: item.leagueId,
       clubId: attempt(() => root.repositories.TeamConfig.getLinkedTeam(item.teamId), item.teamId) || item.teamId,
+      // The club on the card itself, for its badge (clubId above is the one chemistry counts).
+      teamId: item.teamId,
       rarity: item.rareflag,
       isIcon: attempt(() => item.isLegend(), false),
       positions: (item.possiblePositions || [item.preferredPosition]).slice(),
+      // The position on the card; possiblePositions is in slot order, not with it first.
+      position: item.preferredPosition,
       profile: chemProfileOf(item),
       untradeable,
       marketAverage,
@@ -180,7 +197,9 @@
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  // The same paged request the Club screen makes, spaced out like a person paging.
+  // The same paged request the Club screen makes, spaced out like a person paging. The Web App
+  // answers each page with every club card it has cached so far, not just that page, so the
+  // length of a reply can't tell the last page; its retrievedAll flag does.
   async function loadClub(onProgress) {
     for (let page = 0; page < CLUB_MAX_PAGES; page++) {
       const criteria = new root.UTSearchCriteriaDTO();
@@ -188,23 +207,94 @@
       criteria.count = CLUB_PAGE_SIZE;
       criteria.offset = page * CLUB_PAGE_SIZE;
       const result = await observe(root.services.Club.search(criteria), 'loading the club');
-      const items = (result.response && result.response.items) || [];
+      const response = result.response || {};
+      const items = response.items || [];
       for (const item of items) loadedItems.set(item.id, item);
       onProgress(loadedItems.size);
-      if (items.length < CLUB_PAGE_SIZE) break;
+      const lastPage = typeof response.retrievedAll === 'boolean' ? response.retrievedAll : items.length < CLUB_PAGE_SIZE;
+      if (lastPage) break;
       await sleep(1500 + Math.random() * 1500);
     }
+    await loadStorage(onProgress);
     return loadedItems.size;
   }
 
-  function clubPool({ prices, keepActiveSquad, protectFrom, untradeablesOnly }) {
+  // Players in SBC storage: duplicates of club cards, kept for SBCs only. Read like the Club
+  // screen's SBC Storage tile does, after the club.
+  const storageItems = new Map();
+  async function loadStorage(onProgress) {
+    if (!attempt(() => root.services.Configuration.checkFeatureEnabled(root.UTServerSettingsRepository.KEY.STORAGE_PILE_ENABLED), true)) return;
+    for (let page = 0; page < CLUB_MAX_PAGES; page++) {
+      await sleep(1000 + Math.random() * 1000);
+      const criteria = new root.UTSearchCriteriaDTO();
+      criteria.type = root.SearchType.PLAYER;
+      criteria.count = CLUB_PAGE_SIZE;
+      criteria.offset = page * CLUB_PAGE_SIZE;
+      const result = await observe(root.services.Item.searchStorageItems(criteria), 'loading SBC storage');
+      const response = result.response || {};
+      const items = (response.items || []).filter((item) => attempt(() => item.isPlayer(), false));
+      for (const item of items) storageItems.set(item.id, item);
+      onProgress(loadedItems.size);
+      if (response.endOfList !== false || items.length < CLUB_PAGE_SIZE) break;
+    }
+  }
+
+  function knownStorageItems() {
+    return Array.from(storageItems.values());
+  }
+
+  // Club and SBC storage players for a squad. A storage card can't go back to the club, so with
+  // storageFirst it costs nothing and is used before its club copy.
+  function clubPool({ prices, keepActiveSquad, protectFrom, untradeablesOnly, storageFirst }) {
     const active = keepActiveSquad ? activeSquad : new Set();
-    return knownClubItems()
-      .filter((item) => !active.has(item.id))
-      .filter((item) => !protectFrom || item.rating < protectFrom)
-      .filter((item) => !untradeablesOnly || isUntradeable(item))
-      .filter(isUsable)
-      .map((item) => toPlayer(item, prices));
+    const keep = (item) => !active.has(item.id)
+      && (!protectFrom || item.rating < protectFrom)
+      && (!untradeablesOnly || isUntradeable(item))
+      && isUsable(item);
+    const storage = knownStorageItems().filter(keep).map((item) => {
+      const player = { ...toPlayer(item, prices), storage: true };
+      return storageFirst ? { ...player, cost: 0 } : player;
+    });
+    return knownClubItems().filter(keep).map((item) => toPlayer(item, prices)).concat(storage);
+  }
+
+  // ---- Streamlined SBCs -------------------------------------------------------------
+
+  // EA's "one-click" challenges: no formation, just cards whose Item Scores add up to a target.
+  function isStreamlined(challenge) {
+    return attempt(() => challenge.isOneClickChallenge(), false);
+  }
+
+  // How many cards one submission takes; the Web App falls back to 30 when the server says nothing.
+  function submitLimit() {
+    return attempt(() => root.services.Configuration.getFeatureSetting(root.UTServerSettingsRepository.KEY.ONE_CLICK_SBC_SUBMIT_LIMIT), 0)
+      || attempt(() => root.UTOneClickSBCWorkAreaViewModel.DEFAULT_PAGE_SIZE, 0) || 30;
+  }
+
+  // The cards the challenge's own picker lists (club, then SBC storage), each with its Item Score,
+  // whether it is in SBC storage and whether it is in the active squad; the panel filters them.
+  // EA only lists cards that meet the challenge's requirements, so they need no checking here.
+  async function streamlinedPool(challenge, { prices } = {}) {
+    const found = new Map();
+    for (const pile of [root.PileSearchType.CLUB, root.PileSearchType.STORAGE]) {
+      for (let page = 0; page < CLUB_MAX_PAGES; page++) {
+        const criteria = new root.UTSearchCriteriaDTO();
+        criteria.sbcChallengeId = challenge.id;
+        criteria.pileSearchType = pile;
+        criteria.count = CLUB_PAGE_SIZE;
+        criteria.offset = page * CLUB_PAGE_SIZE;
+        const result = await observe(root.services.Club.search(criteria), 'reading the cards this SBC takes');
+        const response = result.response || {};
+        const items = response.items || [];
+        for (const item of items) if (!found.has(item.id)) found.set(item.id, { item, storage: pile === root.PileSearchType.STORAGE });
+        const lastPage = typeof response.retrievedAll === 'boolean' ? response.retrievedAll : items.length < CLUB_PAGE_SIZE;
+        if (lastPage) break;
+        await sleep(1500 + Math.random() * 1500);
+      }
+    }
+    return Array.from(found.values())
+      .filter(({ item }) => item.sbsScore > 0 && isUsable(item))
+      .map(({ item, storage }) => ({ ...toPlayer(item, prices), score: item.sbsScore, storage, active: activeSquad.has(item.id) }));
   }
 
   // ---- Gallery ----------------------------------------------------------------------
@@ -448,13 +538,28 @@
   const tokenImage = () => attempt(() => new URL('images/rewards/meta/flat/generic_token.png', root.location.href).href, null);
   // The coin the Web App shows beside your coin balance in its top bar.
   const coinImage = () => attempt(() => new URL('images/coinIcon.png', root.location.href).href, null);
+  // The diamond the Web App shows beside Item Scores and SBC points.
+  const sbcPointsImage = () => attempt(() => new URL('images/sbc/dustpoint.png', root.location.href).href, null);
+  const flagImage = (id) => (id > 0 ? attempt(() => root.AssetLocationUtils.getFlagImageUri(id), null) : null);
+  // The flag, league logo and club badge drawn on a card: the game's dark-ink logos on common and
+  // rare cards (light), its white ones on special cards.
+  function cardBadges(player, { light = false } = {}) {
+    const ink = (uri) => (light ? uri : darkImage(uri));
+    return [
+      flagImage(player.nationId),
+      player.leagueId > 0 ? ink(attempt(() => root.AssetLocationUtils.getLeagueImageUri(player.leagueId), null)) : null,
+      player.teamId > 0 ? ink(attempt(() => root.AssetLocationUtils.getBadgeImageUri(player.teamId), null)) : null,
+    ];
+  }
 
   // ---- Names ------------------------------------------------------------------------
 
+  // The league's full name: its short code (ENG 1, ESP 1) is unclear and shared, as Premier
+  // League and Barclays WSL both are ENG 1.
   function leagueName(id) {
     if (!id || id < 0) return 'Any league';
     const l = attempt(() => root.repositories.TeamConfig.getLeague(id), null);
-    return l ? l.abbreviation || l.name : `League ${id}`;
+    return l ? l.name || l.abbreviation : `League ${id}`;
   }
 
   function nationName(id) {
@@ -489,8 +594,8 @@
   }
 
   H.fut = {
-    isReady, getChallenges, openChallengeId, rulesFor, slotsFor, requiredSlotsFor,
-    knownClubItems, rememberActiveSquad, loadClub, clubPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
-    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
+    isReady, getChallenges, openChallengeId, shownChallengeId, rulesFor, slotsFor, requiredSlotsFor,
+    knownClubItems, knownStorageItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
+    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, sbcPointsImage, cardBadges, searchSlotCards, versionName,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

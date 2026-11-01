@@ -9,7 +9,7 @@
 <link rel="icon" href="/assets/favicon.ico" sizes="any">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<link rel="stylesheet" href="/site.css?v=4">
+<link rel="stylesheet" href="/site.css?v=6">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -31,6 +31,7 @@
       <a href="/#faq">FAQ</a>
       <a class="nav-install" href="/#install">Install</a>
     </nav>
+    <a class="head-install" href="/#install">Install</a>
     <a class="gh-link" href="https://github.com/abouhilalbadr/futfox" aria-label="FutFox on GitHub"><svg aria-hidden="true"><use href="#github"/></svg></a>
   </div>
 </header>
@@ -52,7 +53,7 @@
     <article class="doc">
     <p class="eyebrow">Privacy</p>
     <h1>Privacy policy</h1>
-    <p class="doc-date">Last updated 26 October 2026</p>
+    <p class="doc-date">Last updated 1 November 2026</p>
     <div class="callout">
       <p><strong>The short version:</strong> FutFox is a Chrome extension for the EA SPORTS FC 27 Ultimate Team Web App. It has no account, no analytics and no ads. Apart from a once-a-day download of the public list of Gallery sets, it talks only to EA, the way the Web App does. It does not collect, sell or share any personal data.</p>
     </div>
@@ -63,7 +64,8 @@
     <h2 id="reads">What it reads</h2>
     <ul>
       <li>The SBCs and requirements the Web App has already loaded.</li>
-      <li>Your club list, only when you press <strong>Load my club</strong>. FutFox asks the Web App for it the same way the Club screen does, one page every few seconds. That request goes to EA, like everything else the Web App does.</li>
+      <li>Your club list and your SBC storage, only when you press <strong>Load my club</strong>. FutFox asks the Web App for them the same way the Club screen does, a page at a time with short pauses. That request goes to EA, like everything else the Web App does.</li>
+      <li>The cards a Streamlined SBC's card picker lists for that challenge, with their points, from your club and SBC storage, only when you press <strong>Find cheapest cards</strong>. This also goes to EA, the same way the game's own picker does.</li>
       <li>The squad builder's player list, only when you press <strong>Pick player</strong> on a Gallery slot or a grade under <strong>Suggest cards</strong> on a Gallery set (one search for each different empty slot, a moment apart). This search also goes to EA, the same way the Web App's squad builder does.</li>
     </ul>
     <p>This information stays in your browser. FutFox never sends it anywhere else.</p>
@@ -74,7 +76,7 @@
     <h2 id="stores">What it stores</h2>
     <p>FutFox keeps these in your browser's local storage for the Web App. None of it leaves your computer:</p>
     <ul>
-      <li><code>futfox.settings</code>: your panel options (for example "Keep players rated 87 and above"), the Gallery slots you marked as done in the game and the cards you picked.</li>
+      <li><code>futfox.settings</code>: your panel options (for example "Highest rating to use: 86"), the Gallery slots you marked as done in the game and the cards you picked.</li>
       <li><code>futfox.galleryMemory.…</code>: the Gallery cards FutFox has seen in your club (player, rating, version, club, league, nation and Item Score), one list per Ultimate Team account, so cards you've placed in a set still count.</li>
       <li><code>futfox.gallerySets</code>: a copy of the Gallery sets list, so it's downloaded only once a day.</li>
     </ul>

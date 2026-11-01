@@ -18,6 +18,7 @@
     LEAGUE_ID: 11,
     CLUB_ID: 12,
     LEGEND_COUNT: 15,
+    PLAYER_LEVEL: 17,
     PLAYER_RARITY: 18,
     TEAM_RATING: 19,
     PLAYER_RARITY_GROUP: 25,
@@ -39,7 +40,7 @@
     KEY.SAME_NATION_COUNT, KEY.SAME_LEAGUE_COUNT, KEY.SAME_CLUB_COUNT,
     KEY.NATION_COUNT, KEY.LEAGUE_COUNT, KEY.CLUB_COUNT,
     KEY.NATION_ID, KEY.LEAGUE_ID, KEY.CLUB_ID,
-    KEY.LEGEND_COUNT, KEY.PLAYER_RARITY, KEY.TEAM_RATING,
+    KEY.LEGEND_COUNT, KEY.PLAYER_LEVEL, KEY.PLAYER_RARITY, KEY.TEAM_RATING,
     KEY.PLAYER_MIN_OVR, KEY.PLAYER_EXACT_OVR, KEY.PLAYER_MAX_OVR,
     KEY.CHEMISTRY_POINTS, KEY.ALL_PLAYERS_CHEMISTRY_POINTS,
   ]);
@@ -131,6 +132,9 @@
         return miss(players.filter((p) => rule.ids.includes(p.leagueId)).length, rule.scope, target);
       case KEY.CLUB_ID:
         return miss(players.filter((p) => rule.ids.includes(p.clubId)).length, rule.scope, target);
+      // "Gold: Min. 7 Players": how many cards are of that quality.
+      case KEY.PLAYER_LEVEL:
+        return miss(players.filter((p) => p.quality === rule.value).length, rule.scope, target);
       case KEY.LEGEND_COUNT:
         return miss(players.filter((p) => p.isIcon).length, rule.scope, rule.value);
       case KEY.PLAYER_RARITY: {
@@ -156,7 +160,25 @@
     }
   }
 
-  const api = { KEY, QUALITY, SUPPORTED, qualityOf, parseRequirement, shortfall };
+  // Whether one card counts toward a rule about single cards (a club, nation, league, quality,
+  // rarity or rating), or null for a rule about the whole squad (team rating, chemistry, counts).
+  function cardMeets(rule, p) {
+    switch (rule.key) {
+      case KEY.NATION_ID: return rule.ids.includes(p.nationId);
+      case KEY.LEAGUE_ID: return rule.ids.includes(p.leagueId);
+      case KEY.CLUB_ID: return rule.ids.includes(p.clubId);
+      case KEY.PLAYER_LEVEL: return p.quality === rule.value;
+      case KEY.PLAYER_QUALITY: return rule.count > 0 ? p.quality === rule.value : miss(p.quality, rule.scope, rule.value) === 0;
+      case KEY.LEGEND_COUNT: return !!p.isIcon;
+      case KEY.PLAYER_RARITY: return matchesRarity(p, rule.ids);
+      case KEY.PLAYER_MIN_OVR: return p.rating >= rule.value;
+      case KEY.PLAYER_MAX_OVR: return p.rating <= rule.value;
+      case KEY.PLAYER_EXACT_OVR: return p.rating === rule.value;
+      default: return null;
+    }
+  }
+
+  const api = { KEY, QUALITY, SUPPORTED, qualityOf, parseRequirement, shortfall, cardMeets };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else (root.FutFox = root.FutFox || {}).requirements = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

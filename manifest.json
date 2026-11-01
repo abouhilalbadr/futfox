@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FutFox",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Suggests the cheapest way to complete an SBC from your club. Read-only: it never buys, bids, lists or submits.",
   "icons": {
     "16": "icons/icon16.png",
@@ -21,6 +21,7 @@
         "src/core/rating.js",
         "src/core/chemistry.js",
         "src/core/solver.js",
+        "src/core/streamlined.js",
         "src/core/gallery.js",
         "src/core/bonus-tags.js",
         "src/core/set-match.js",
