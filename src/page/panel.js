@@ -300,6 +300,14 @@
     .field .stepper { display: flex; }
     .field .stepper input, .field .stepper input.wide { flex: 1; width: 0; min-width: 0; }
     .segmented.full { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* On/off options: the text on the left, a switch on the right, one row each. */
+    .switches { display: grid; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #2A2445; cursor: pointer; }
+    .switch-row:first-child { border-top: 0; padding-top: 2px; }
+    input.switch { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 34px; height: 20px; margin: 0; border-radius: 999px; background: #352E55; cursor: pointer; transition: background .15s; }
+    input.switch::before { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #C9C3E0; transition: transform .15s, background .15s; }
+    input.switch:checked { background: #C6FF3D; }
+    input.switch:checked::before { transform: translateX(14px); background: #0B0918; }
   `;
 
   function loadSettings() {
@@ -1267,7 +1275,10 @@
       const c = entry.challenge;
       const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
       const limit = H.fut.submitLimit();
-      const check = (key, text) => el('label', { class: 'check' }, [el('input', { type: 'checkbox', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }), text]);
+      const toggle = (key, text, hint) => el('label', { class: 'switch-row', title: hint || null }, [
+        el('span', { text }),
+        el('input', { class: 'switch', type: 'checkbox', role: 'switch', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }),
+      ]);
       // A div, not a label: clicking a label would press the stepper's first button.
       const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: label }), control]);
       const prefer = (value, text) => el('button', { type: 'button', 'aria-pressed': String(settings.slPrefer === value), text, onclick: () => { setSetting('slPrefer', value); render(); } });
@@ -1279,9 +1290,11 @@
             field('From rating', stepper({ value: settings.slMinRating, min: 40, max: 99, label: 'lowest rating', onChange: (n) => setSetting('slMinRating', n) })),
             field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) })),
           ]),
-          check('slKeepSpecial', 'Keep special cards (use common and rare only)'),
-          check('untradeablesOnly', 'Use untradeables only'),
-          check('keepActiveSquad', 'Keep my active squad players'),
+          el('div', { class: 'switches' }, [
+            toggle('slKeepSpecial', 'Keep special cards', 'Use common and rare cards only'),
+            toggle('untradeablesOnly', 'Untradeables only'),
+            toggle('keepActiveSquad', 'Keep active squad', 'Never use players from your active squad'),
+          ]),
         ]),
         el('div', { class: 'opt-card' }, [
           el('h3', { text: 'How many' }),
@@ -1293,8 +1306,11 @@
         ]),
         el('div', { class: 'opt-card' }, [
           el('h3', { text: 'Take cards from' }),
-          el('div', { class: 'pair' }, [check('slClub', 'Club'), check('slStorage', 'SBC storage')]),
-          check('storageFirst', 'Use SBC storage cards first'),
+          el('div', { class: 'switches' }, [
+            toggle('slClub', 'Use club cards'),
+            toggle('slStorage', 'Use SBC storage'),
+            toggle('storageFirst', 'Storage cards first', 'SBC storage cards go in before club cards'),
+          ]),
         ]),
       ]);
     }
