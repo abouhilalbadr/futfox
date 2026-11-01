@@ -91,7 +91,8 @@
     .tag.buy { background: #2A1F4D; color: #C4B1FF; }
     .tag.untr { background: #1d3327; color: #6fd29a; }
     /* A suggested card: untradeable, points or chemistry and Change on one line, then where it is. */
-    .pick-line { display: flex; align-items: center; gap: 4px; width: 100%; max-width: 160px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    /* As wide as the card's art (about 80% of its box), so the line starts and ends at its corners. */
+    .pick-line { display: flex; align-items: center; gap: 4px; width: 80%; max-width: 128px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .pick-line .pts-icon { width: 14px; height: 14px; }
     .untr-ico { font-family: UltimateTeam-Icons, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #C9C3E0; }
     /* The game's untradeable glyph from its own icon font (the backslash is doubled for the template). */
@@ -101,7 +102,14 @@
     button.icon-btn svg { width: 14px; height: 14px; }
     .pick .src { font-size: 11px; color: #9A93B8; }
     .pick .src.store { color: #8cc4ff; }
-    .pick .chem-n { color: #C6FF3D; }
+    /* A card's chemistry as the game shows it: three diamonds on a round badge, lit for each point. */
+    .chem-pts { position: relative; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #1d272f; border: 1px solid #333d47; }
+    .chem-pts i { position: absolute; font: normal 400 7px/1 UltimateTeam-Icons, sans-serif; color: #fff; opacity: .3; }
+    .chem-pts i::before { content: '\\e031'; }
+    .chem-pts i.on { opacity: 1; }
+    .chem-pts i:nth-child(1) { left: 3px; bottom: 4px; }
+    .chem-pts i:nth-child(2) { left: 50%; top: 3px; transform: translateX(-50%); }
+    .chem-pts i:nth-child(3) { right: 3px; bottom: 4px; }
     button.small { padding: 4px 10px; font-size: 13px; white-space: nowrap; }
     .note { font-size: 13px; color: #9A93B8; }
     .error { color: #f08a7a; }
@@ -1427,7 +1435,7 @@
           miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position, name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
           el('div', { class: 'pick-line' }, [
             p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
-            el('span', { class: 'chem-n', title: `${chem} chemistry`, text: `◆ ${chem}` }),
+            el('span', { class: 'chem-pts', role: 'img', title: `${chem} chemistry`, 'aria-label': `${chem} chemistry` }, [0, 1, 2].map((n) => el('i', { class: n < chem ? 'on' : null }))),
             changeButton(entry, i, p.name),
           ]),
           el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
