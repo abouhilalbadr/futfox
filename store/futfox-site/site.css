@@ -391,3 +391,107 @@ code { background: var(--surface); border: 1px solid var(--line); padding: 1px 6
   .doc-grid { grid-template-columns: minmax(0, 1fr); }
   .toc { position: static; }
 }
+
+/* The squad on a pitch, Streamlined cards and the placing checklist: match src/page/panel.js */
+.tile-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 32px; overflow: hidden; padding-bottom: 0; }
+.tile-split .tile-copy { padding-bottom: 36px; }
+.tile-split h2 { font-size: clamp(28px, 2.8vw, 34px); }
+.tile-split .panel { align-self: end; border-bottom: 0; border-radius: 16px 16px 0 0; }
+.panel-slim .panel-body { padding: 16px 14px 20px; }
+.summary .pt, .reqs .pt, .chip-pts .pt { width: 14px; height: 14px; align-self: center; }
+.summary .chem-ico { width: 14px; height: 14px; align-self: center; color: var(--lime); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--tile); font-size: 11px; color: var(--text-soft); }
+.chip.is-on { border-color: var(--lime); color: var(--text); }
+.pitch { display: grid; gap: 10px; padding: 12px 8px; border: 1px solid #1f3a2a; border-radius: 12px; background: #10201a; }
+.pitch-row { display: flex; justify-content: center; gap: 6px; }
+.slot { display: grid; justify-items: center; gap: 3px; width: 64px; }
+/* A card in the game's shape: rating and position top left, the player, the name across. */
+.fcard {
+  position: relative; display: block; width: 58px; aspect-ratio: 576 / 800; color: #3a2c0c;
+  clip-path: polygon(50% 0, 63% 3.5%, 100% 5%, 100% 90%, 50% 100%, 0 90%, 0 5%, 37% 3.5%);
+  background: linear-gradient(160deg, #f6dc86, #c9a64a);
+}
+.fcard .r { position: absolute; left: 13%; top: 15%; font-size: 15px; font-weight: 800; line-height: 1; }
+.fcard .p { position: absolute; left: 13%; top: 33%; font-size: 8px; font-weight: 700; }
+.fcard svg { position: absolute; right: 8%; top: 12%; width: 52%; aspect-ratio: 1; fill: currentColor; opacity: 0.4; }
+.fcard .n { position: absolute; left: 4%; right: 4%; bottom: 20%; text-align: center; font-size: 8px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fcard.lock { background: var(--line); color: var(--muted); }
+.fcard.lock .lk { left: 0; right: 0; top: 30%; margin: auto; width: 40%; opacity: 0.8; fill: none; }
+.fcard.buy { background: var(--line); color: var(--text-soft); }
+.fcard.xs { width: 22px; flex: none; }
+.slot-line { display: flex; align-items: center; gap: 3px; width: 100%; font-size: 10px; font-variant-numeric: tabular-nums; }
+.slot-line strong { font-size: 11px; }
+.slot-line .pt { width: 11px; height: 11px; }
+/* The game's untradeable mark: a circle with a slash. */
+.untr { position: relative; flex: none; width: 10px; height: 10px; border: 1.5px solid var(--text-soft); border-radius: 50%; }
+.untr::after { content: ""; position: absolute; left: 50%; top: -1px; bottom: -1px; width: 1.5px; margin-left: -0.75px; background: var(--text-soft); transform: rotate(45deg); }
+.cb { position: relative; flex: none; width: 14px; height: 14px; border-radius: 50%; background: #1d272f; border: 1px solid #333d47; }
+.cb i { position: absolute; width: 3px; height: 3px; background: #fff; opacity: 0.3; transform: rotate(45deg); }
+.cb i.on { opacity: 1; }
+.cb i:nth-child(1) { left: 2px; bottom: 3px; } .cb i:nth-child(2) { left: 4.5px; top: 2px; } .cb i:nth-child(3) { right: 2px; bottom: 3px; }
+.sw { margin-left: auto; display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--line-strong); border-radius: 4px; color: var(--text-soft); }
+.sw svg { width: 10px; height: 10px; }
+.src { font-size: 9px; color: var(--muted); }
+.src.store { color: #8cc4ff; }
+.tile-sbc .pitch { gap: 14px; padding: 16px 10px; }
+.tile-sbc .pitch-row { gap: 8px; }
+.tile-sbc .slot { width: 80px; }
+.tile-sbc .fcard { width: 74px; }
+.tile-sbc .fcard .r { font-size: 19px; }
+.tile-sbc .fcard .p, .tile-sbc .fcard .n { font-size: 10px; }
+.cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.cards .slot { width: 76px; }
+.cards .fcard { width: 70px; }
+
+/* How it works: each step's panel, drawn in HTML */
+.how-stage .shot { width: min(100%, 420px); height: fit-content; }
+.mock-toggle { width: auto !important; padding: 28px; border: 0; box-shadow: none; }
+.fab { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 999px; background: var(--panel); border: 1px solid var(--violet); font-weight: 700; box-shadow: 0 12px 40px rgba(139, 92, 246, 0.35); }
+.fab svg { width: 26px; height: 26px; }
+.select.picker { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.select.picker small { display: block; color: var(--muted); font-size: 10px; }
+.chip-pts { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: #22203a; color: var(--lime); font-size: 11px; white-space: nowrap; }
+.reqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.reqs li { display: flex; align-items: center; gap: 8px; }
+.muted-line { color: var(--muted); }
+.muted-line.small { font-size: 11px; }
+.fake-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line-strong); border-radius: 8px; color: var(--muted); }
+.spin { width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.pitch-sm .fcard { width: 52px; }
+.pitch-sm .slot { width: 56px; }
+.dock-mock { display: flex; flex-direction: column; }
+.dock-progress { height: 3px; background: var(--line); }
+.dock-progress i { display: block; height: 100%; background: var(--lime); }
+.dock-head { padding: 10px 14px 4px; font-size: 11px; color: var(--muted); }
+.dock-head strong { color: var(--text); }
+.dock-rows { list-style: none; margin: 0; padding: 0; }
+.dock-rows li { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-top: 1px solid var(--row-line); }
+.dock-rows li:first-child { border-top: 0; }
+.dock-rows .who { flex: 1; min-width: 0; display: grid; }
+.dock-rows small { color: var(--muted); font-size: 11px; }
+.dock-rows em { font-style: normal; color: #8cc4ff; }
+.dock-rows .placed > :not(.tick) { opacity: 0.45; }
+.dock-rows .placed strong { text-decoration: line-through; }
+.ib { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--text-soft); }
+.ib svg { width: 13px; height: 13px; }
+.mkt { padding: 3px 8px; border: 1px solid var(--line-strong); border-radius: 6px; font-size: 11px; }
+.tick { display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--line-strong); border-radius: 50%; color: var(--night); font-size: 11px; font-weight: 800; }
+.tick.on { background: var(--lime); border-color: var(--lime); }
+.dock-foot { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.dock-foot svg { width: 20px; height: 20px; }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
+@media (max-width: 960px) {
+  .tile-split { grid-template-columns: minmax(0, 1fr); }
+  .tile-split .panel { max-width: 360px; width: 100%; justify-self: center; }
+}
+@media (max-width: 640px) {
+  .tile-split .tile-copy { padding-bottom: 0; }
+  .fcard, .tile-sbc .fcard { width: 50px; }
+  .slot, .tile-sbc .slot { width: 54px; }
+  .tile-sbc .fcard .r { font-size: 14px; }
+  .tile-sbc .fcard .p, .tile-sbc .fcard .n { font-size: 8px; }
+  .tile-sbc .pitch-row { gap: 4px; }
+  .pitch-row { gap: 4px; }
+}
