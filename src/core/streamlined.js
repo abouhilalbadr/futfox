@@ -44,18 +44,24 @@
   }
 
   // cards: [{ score, cost, ... }]. Resolves to { picks, score, cost, reached }; when the target
-  // can't be reached within the limit, picks are the highest-scoring cards that fit.
-  function pickForScore({ cards, need, limit = 30 }) {
+  // can't be reached within the limit, picks are the highest-scoring cards that fit. prefer:
+  // 'cheapest' (the fewest coins) or 'fewest' (the fewest cards, then the fewest coins).
+  function pickForScore({ cards, need, limit = 30, prefer = 'cheapest' }) {
     const usable = cards.filter((c) => c.score > 0);
     if (need <= 0) return { picks: [], score: 0, cost: 0, reached: true };
-    const typical = usable.length ? total(usable, 'cost') / usable.length : 0;
+    // At least 1, so the tolls still favour fewer cards when every card is free.
+    const typical = Math.max(1, usable.length ? total(usable, 'cost') / usable.length : 0);
     let best = null;
+    const fewest = prefer === 'fewest';
+    const better = (set, cost) => !best || (fewest
+      ? set.length < best.picks.length || (set.length === best.picks.length && cost < best.cost)
+      : cost < best.cost || (cost === best.cost && set.length < best.picks.length));
     for (const toll of [0, 0.25, 1, 4, 16, 64, 1e6].map((k) => k * typical)) {
       const picks = fill(usable, need, limit, toll);
       if (total(picks, 'score') < need) continue;
       const set = tidy(picks, usable, need);
       const cost = total(set, 'cost');
-      if (!best || cost < best.cost || (cost === best.cost && set.length < best.picks.length)) best = { picks: set, cost };
+      if (better(set, cost)) best = { picks: set, cost };
     }
     if (!best) {
       const picks = usable.slice().sort((a, b) => b.score - a.score || a.cost - b.cost).slice(0, limit);

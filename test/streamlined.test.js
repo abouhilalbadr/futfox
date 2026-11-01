@@ -24,6 +24,14 @@ test('uses fewer, higher-scoring cards when the limit is tight', () => {
   assert.ok(res.score >= 6000);
 });
 
+test('can prefer the fewest cards over the fewest coins', () => {
+  const cards = [card(1, 3000, 5000), card(2, 3000, 5000), card(3, 1000, 100), card(4, 1000, 100), card(5, 1000, 100), card(6, 1000, 100), card(7, 1000, 100), card(8, 1000, 100)];
+  assert.equal(pickForScore({ cards, need: 6000 }).picks.length, 6);
+  const fewest = pickForScore({ cards, need: 6000, prefer: 'fewest' });
+  assert.equal(fewest.picks.length, 2);
+  assert.ok(fewest.score >= 6000);
+});
+
 test('drops cards the target does not need', () => {
   const cards = [card(1, 5000, 100), card(2, 5000, 100), card(3, 20, 1)];
   const res = pickForScore({ cards, need: 9000, limit: 30 });

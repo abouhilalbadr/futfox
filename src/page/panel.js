@@ -254,10 +254,55 @@
     label.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
     label.file:focus-within { outline: 2px solid #8B5CF6; }
     footer { padding: 10px 16px; border-top: 1px solid #2A2445; font-size: 13px; color: #9A93B8; }
+    /* The challenge picker: a button that opens a searchable list grouped by SBC set. */
+    .menu { position: relative; }
+    .menu-btn { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; }
+    .menu-btn:hover, .menu-btn[aria-expanded=true] { border-color: #8B5CF6; }
+    .menu-text { flex: 1; min-width: 0; display: grid; }
+    .menu-set, .menu-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .menu-set { font-size: 12px; color: #9A93B8; }
+    .menu-name { font-weight: 600; }
+    .chev { flex: none; width: 10px; height: 10px; border: solid #9A93B8; border-width: 0 2px 2px 0; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+    .menu-btn[aria-expanded=true] .chev { transform: translateY(2px) rotate(-135deg); }
+    .menu-pop { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; display: grid; gap: 6px; padding: 6px;
+      background: #141029; border: 1px solid #352E55; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+    .menu-pop input { width: 100%; background: #1B1733; color: inherit; border: 1px solid #352E55; border-radius: 6px; padding: 7px 8px; font: inherit; }
+    .menu-list { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; }
+    .menu-group { padding: 8px 8px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #6E6790; }
+    .menu-opt { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; }
+    .menu-opt.active { background: #231D40; }
+    .menu-opt .menu-name { flex: 1; min-width: 0; font-weight: 500; }
+    .menu-opt[aria-selected=true] .menu-name { color: #C6FF3D; font-weight: 600; }
+    .menu-empty { padding: 10px 8px; color: #9A93B8; }
+    .chip { flex: none; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .chip.done { background: #1d3327; color: #6fd29a; }
+    .chip.pts { background: #22203a; color: #C6FF3D; }
+    /* Number boxes with their own - and + buttons instead of the browser's spinner. */
+    .stepper { display: inline-flex; align-items: stretch; border: 1px solid #352E55; border-radius: 6px; background: #1B1733; }
+    .stepper:focus-within { border-color: #8B5CF6; }
+    .stepper button { border: 0; background: none; padding: 0 10px; color: #9A93B8; font-size: 16px; line-height: 1; }
+    .stepper button:not(:disabled):hover { color: #fff; }
+    .stepper input { width: 52px; border: 0; background: none; color: inherit; font: inherit; text-align: center; padding: 6px 0; font-variant-numeric: tabular-nums; }
+    .stepper input:focus-visible { outline: none; }
+    .stepper input.wide { width: 76px; }
+    .stepper input::placeholder { color: #6E6790; }
+    .opt-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .segmented { display: inline-flex; border: 1px solid #352E55; border-radius: 6px; overflow: hidden; }
+    .segmented button { border: 0; border-radius: 0; padding: 6px 12px; background: #1B1733; color: #9A93B8; }
+    .segmented button + button { border-left: 1px solid #352E55; }
+    .segmented button[aria-pressed=true] { background: #2A2445; color: #fff; font-weight: 600; }
+    .opt-group { display: grid; gap: 8px; padding-top: 4px; }
+    .opt-group > .muted { font-size: 13px; }
   `;
 
   function loadSettings() {
-    const defaults = { keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc' };
+    const defaults = {
+      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc',
+      // Streamlined SBCs: the rating range, the most cards a time (empty: the game's limit), the
+      // points to reach now (empty: all that's left), where cards come from and what to favour.
+      slMinRating: 45, slMaxRating: 86, slMaxCards: null, slPoints: null,
+      slClub: true, slStorage: true, slStorageFirst: true, slKeepSpecial: false, slPrefer: 'cheapest',
+    };
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
     } catch (e) {
@@ -286,6 +331,35 @@
   }
 
   const coins = (n) => Math.round(n).toLocaleString('en-US');
+
+  // A number box with - and + buttons. Empty is allowed when `empty` names what it means
+  // (shown as the placeholder); onChange gets a number, or null for empty.
+  function stepper({ value, min, max, step = 1, label, empty, wide, onChange }) {
+    const clamp = (n) => Math.min(max, Math.max(min, n));
+    const input = el('input', { type: 'text', inputmode: 'numeric', 'aria-label': label, class: wide ? 'wide' : null, value: value == null ? '' : String(value), placeholder: empty || '' });
+    const set = (n) => {
+      const next = n == null ? null : clamp(Math.round(n));
+      input.value = next == null ? '' : String(next);
+      onChange(next);
+    };
+    const current = () => (input.value.trim() === '' ? null : Number(input.value.replace(/[^\d]/g, '')));
+    input.addEventListener('change', () => {
+      const n = current();
+      set(n == null || Number.isNaN(n) ? (empty ? null : value) : n);
+    });
+    input.addEventListener('keydown', (e) => {
+      const dir = { ArrowUp: 1, ArrowDown: -1 }[e.key];
+      if (!dir) return;
+      e.preventDefault();
+      set((current() ?? (dir > 0 ? min - step : max + step)) + dir * step);
+    });
+    const bump = (dir) => set((current() ?? (dir > 0 ? min - step : max + step)) + dir * step);
+    return el('span', { class: 'stepper' }, [
+      el('button', { type: 'button', tabindex: '-1', 'aria-label': `Less ${label}`, text: '−', onclick: () => bump(-1) }),
+      input,
+      el('button', { type: 'button', tabindex: '-1', 'aria-label': `More ${label}`, text: '+', onclick: () => bump(1) }),
+    ]);
+  }
 
   // The FutFox mark (brand/logo/futfox-symbol.svg), built with DOM calls so it needs no innerHTML.
   const FOX_HEAD = 'M128 102L101.59 86.75L63.59 20.93L39 112.7L11.2 160.85L60.82 189.5L100.62 200.16L128 227.54L155.38 200.16'
@@ -577,8 +651,22 @@
 
     function hidePanel() {
       open = false;
+      state.menu = null;
       sync();
     }
+
+    // A press anywhere else in the panel closes the challenge list, without redrawing the panel so
+    // the press still reaches what it was on.
+    panel.addEventListener('pointerdown', (e) => {
+      if (!state.menu) return;
+      const box = panel.querySelector('.menu');
+      if (box && e.composedPath().includes(box)) return;
+      state.menu = null;
+      const pop = box && box.querySelector('.menu-pop');
+      if (pop) pop.remove();
+      const button = box && box.querySelector('.menu-btn');
+      if (button) button.setAttribute('aria-expanded', 'false');
+    });
 
     toggle.addEventListener('click', openPanel);
 
@@ -704,8 +792,14 @@
       ].filter(Boolean);
     }
 
+    // Follows the challenge the game shows; otherwise keeps the one picked here while it is listed.
     function refreshChallenges() {
       state.challenges = H.fut.getChallenges();
+      const shown = H.fut.shownChallengeId();
+      if (shown != null && shown !== state.selectedId && state.challenges.some((c) => c.id === shown)) {
+        state.selectedId = shown;
+        state.result = null;
+      }
       const stillThere = state.challenges.some((c) => c.id === state.selectedId);
       if (!stillThere) {
         const open = state.challenges.find((c) => c.status !== 'COMPLETED');
@@ -774,19 +868,33 @@
       return result;
     }
 
-    // The cheapest cards for a Streamlined SBC, from the cards its own picker lists (pool).
+    // The cheapest cards for a Streamlined SBC, from the cards its own picker lists (pool), within
+    // the Streamlined options.
     function pickScore(entry, pool) {
       const c = entry.challenge;
       const out = keptOut(entry.id);
-      const cards = pool.filter((p) => !out.has(p.id));
-      const need = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
-      const limit = H.fut.submitLimit();
-      const pick = H.streamlined.pickForScore({ cards, need, limit });
+      const min = Number(settings.slMinRating) || 0;
+      const max = Number(settings.slMaxRating) || 99;
+      const cards = pool
+        .filter((p) => !out.has(p.id))
+        .filter((p) => (p.storage ? settings.slStorage : settings.slClub))
+        .filter((p) => p.rating >= min && p.rating <= max)
+        .filter((p) => !settings.keepActiveSquad || !p.active)
+        .filter((p) => !settings.untradeablesOnly || p.untradeable)
+        // Common and rare cards only: special versions are worth keeping.
+        .filter((p) => !settings.slKeepSpecial || p.rarity <= 1)
+        // A card in SBC storage can't go back to the club, so using it first costs nothing.
+        .map((p) => (settings.slStorageFirst && p.storage ? { ...p, cost: 0 } : p));
+      const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
+      const need = Number(settings.slPoints) > 0 ? Math.min(Number(settings.slPoints), remaining) : remaining;
+      const limit = Math.min(H.fut.submitLimit(), Number(settings.slMaxCards) || Infinity);
+      const pick = H.streamlined.pickForScore({ cards, need, limit, prefer: settings.slPrefer });
       return {
         ...pick,
         kind: 'score',
         challengeId: entry.id,
         need,
+        remaining,
         limit,
         pool,
         poolSize: cards.length,
@@ -794,6 +902,18 @@
         ruleResults: [],
         squad: pick.picks.map((player) => ({ player, typeId: null })),
       };
+    }
+
+    // The cards a Streamlined SBC takes, asked of the game once and reused while the challenge's
+    // progress is unchanged, so trying other options is instant.
+    let streamlinedCache = null;
+    async function streamlinedCards(entry) {
+      const c = entry.challenge;
+      const key = `${entry.id}:${c.submittedScore || 0}`;
+      if (streamlinedCache && streamlinedCache.key === key && Date.now() - streamlinedCache.at < 5 * 60 * 1000) return streamlinedCache.pool;
+      const pool = await H.fut.streamlinedPool(c, { prices: settings.prices });
+      streamlinedCache = { key, at: Date.now(), pool };
+      return pool;
     }
 
     function showResult(result) {
@@ -816,7 +936,7 @@
       render();
       if (H.fut.isStreamlined(entry.challenge)) {
         // EA's picker lists the cards a Streamlined SBC takes; FutFox asks it, then picks.
-        H.fut.streamlinedPool(entry.challenge, poolOptions())
+        streamlinedCards(entry)
           .then((pool) => showResult(pickScore(entry, pool)), (e) => { state.error = e.message; })
           .then(() => { state.solving = false; render(); });
         return;
@@ -1026,6 +1146,149 @@
       return r.shortfall === 0 ? { icon: '✓', cls: 'ok', hint: '' } : { icon: '✗', cls: 'bad', hint: `Short by ${r.shortfall}` };
     }
 
+    // A challenge's progress as a small chip: done, or a Streamlined SBC's points so far.
+    function challengeChip(c) {
+      if (c.status === 'COMPLETED') return el('span', { class: 'chip done', text: 'Done' });
+      if (H.fut.isStreamlined(c.challenge)) {
+        const ch = c.challenge;
+        return el('span', { class: 'chip pts', text: `${coins(ch.submittedScore || 0)} / ${coins(ch.scoreRequirement || 0)} pts` });
+      }
+      return null;
+    }
+
+    function chooseChallenge(id) {
+      state.menu = null;
+      if (id !== state.selectedId) {
+        state.selectedId = id;
+        state.result = null;
+      }
+      render();
+      const button = panel.querySelector('.menu-btn');
+      if (button) button.focus();
+    }
+
+    // The challenge picker: the browser's own select can't match the panel, and a long list of
+    // challenges reads better grouped by set and searchable. Keys: arrows move, Enter picks, Escape
+    // closes. Moving and typing update the list in place; only opening, closing and picking redraw.
+    function challengeMenu() {
+      const current = selected();
+      const open = Boolean(state.menu);
+      const toggleMenu = () => { state.menu = open ? null : { query: '' }; render(); };
+      const trigger = el('button', {
+        class: 'menu-btn', type: 'button', id: 'futfox-challenge', 'aria-haspopup': 'listbox', 'aria-expanded': String(open),
+        onclick: toggleMenu,
+        onkeydown: (e) => {
+          if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); toggleMenu(); }
+        },
+      }, [
+        el('span', { class: 'menu-text' }, current
+          ? [el('span', { class: 'menu-set', text: current.setName }), el('span', { class: 'menu-name', text: current.name })]
+          : [el('span', { class: 'menu-name', text: 'Pick a challenge' })]),
+        current ? challengeChip(current) : null,
+        el('span', { class: 'chev', 'aria-hidden': 'true' }),
+      ]);
+      const box = el('div', { class: 'menu' }, [trigger]);
+      if (!open) return box;
+
+      const list = el('ul', { class: 'menu-list', role: 'listbox', id: 'futfox-challenge-list', 'aria-label': 'Challenges', tabindex: '-1' });
+      let options = [];
+      let active = -1;
+      const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      const mark = (i) => {
+        if (options[active]) options[active].node.classList.remove('active');
+        active = Math.max(0, Math.min(i, options.length - 1));
+        const o = options[active];
+        if (!o) return;
+        o.node.classList.add('active');
+        o.node.scrollIntoView({ block: 'nearest' });
+        (search || list).setAttribute('aria-activedescendant', o.node.id);
+      };
+      const fill = () => {
+        const words = fold(state.menu.query).split(/\s+/).filter(Boolean);
+        const shown = state.challenges.filter((c) => words.every((w) => fold(`${c.setName} ${c.name}`).includes(w)));
+        const rows = [];
+        options = [];
+        let set = null;
+        for (const c of shown) {
+          if (c.setId !== set) {
+            set = c.setId;
+            rows.push(el('li', { class: 'menu-group', role: 'presentation', text: c.setName }));
+          }
+          const node = el('li', {
+            class: 'menu-opt', role: 'option', id: `futfox-challenge-${c.id}`, 'aria-selected': String(c.id === state.selectedId),
+            onpointerdown: (e) => e.preventDefault(),
+            onclick: () => chooseChallenge(c.id),
+          }, [el('span', { class: 'menu-name', text: c.name }), challengeChip(c)]);
+          node.addEventListener('pointermove', () => mark(options.findIndex((o) => o.node === node)));
+          options.push({ id: c.id, node });
+          rows.push(node);
+        }
+        list.replaceChildren(...(rows.length ? rows : [el('li', { class: 'menu-empty', role: 'presentation', text: 'No challenge matches.' })]));
+        active = -1;
+        mark(Math.max(0, options.findIndex((o) => o.id === state.selectedId)));
+      };
+      const keys = (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); mark(active + 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); mark(active - 1); }
+        else if (e.key === 'Home' && !search) { e.preventDefault(); mark(0); }
+        else if (e.key === 'End' && !search) { e.preventDefault(); mark(options.length - 1); }
+        else if (e.key === 'Enter' && options[active]) { e.preventDefault(); chooseChallenge(options[active].id); }
+        else if (e.key === 'Escape' || e.key === 'Tab') {
+          if (e.key === 'Escape') e.preventDefault();
+          state.menu = null;
+          render();
+          if (e.key === 'Escape') panel.querySelector('.menu-btn').focus();
+        }
+      };
+      // A search box only when the list is long enough to need one.
+      const search = state.challenges.length > 6
+        ? el('input', { type: 'search', placeholder: 'Search challenges', 'aria-label': 'Search challenges', 'aria-controls': list.id, value: state.menu.query, oninput: (e) => { state.menu.query = e.target.value; fill(); } })
+        : null;
+      (search || list).addEventListener('keydown', keys);
+      fill();
+      box.append(el('div', { class: 'menu-pop' }, [search, list].filter(Boolean)));
+      // Focus moves into the list once it is on the page.
+      queueMicrotask(() => { if (state.menu && box.isConnected) (search || list).focus({ preventScroll: true }); });
+      return box;
+    }
+
+    // Streamlined SBCs: which cards to use, how many and how many points to reach now.
+    function streamlinedOptions(entry) {
+      const c = entry.challenge;
+      const remaining = Math.max(0, (c.scoreRequirement || 0) - (c.submittedScore || 0));
+      const limit = H.fut.submitLimit();
+      const check = (key, text) => el('label', { class: 'check' }, [el('input', { type: 'checkbox', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }), text]);
+      const prefer = (value, text) => el('button', { type: 'button', 'aria-pressed': String(settings.slPrefer === value), text, onclick: () => { setSetting('slPrefer', value); render(); } });
+      return el('section', {}, [
+        el('h2', { text: 'Options' }),
+        el('div', { class: 'opt-row' }, [
+          'Use cards rated',
+          stepper({ value: settings.slMinRating, min: 40, max: 99, label: 'lowest rating', onChange: (n) => setSetting('slMinRating', n) }),
+          'to',
+          stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) }),
+        ]),
+        el('div', { class: 'opt-row' }, [
+          'Use at most',
+          stepper({ value: settings.slMaxCards, min: 1, max: limit, label: 'cards', empty: String(limit), onChange: (n) => setSetting('slMaxCards', n) }),
+          `cards (the game takes up to ${limit} a time)`,
+        ]),
+        el('div', { class: 'opt-row' }, [
+          'Reach',
+          stepper({ value: settings.slPoints, min: 1, max: Math.max(1, remaining), step: 500, wide: true, label: 'points', empty: coins(remaining), onChange: (n) => setSetting('slPoints', n) }),
+          'points now',
+        ]),
+        el('div', { class: 'opt-row' }, ['Favour', el('div', { class: 'segmented', role: 'group', 'aria-label': 'Favour' }, [prefer('cheapest', 'Fewest coins'), prefer('fewest', 'Fewest cards')])]),
+        el('div', { class: 'opt-group' }, [
+          el('span', { class: 'muted', text: 'Take cards from' }),
+          el('div', { class: 'opt-row' }, [check('slClub', 'Club'), check('slStorage', 'SBC storage')]),
+          check('slStorageFirst', 'Use SBC storage cards first'),
+          check('slKeepSpecial', 'Keep special cards (use common and rare only)'),
+          check('untradeablesOnly', 'Use untradeables only'),
+          check('keepActiveSquad', 'Keep my active squad players'),
+        ]),
+      ]);
+    }
+
     // The suggested squad on its own page, like a Gallery set: the challenge's options are one step back.
     function squadPage(entry) {
       const back = () => { state.showSquad = false; state.scrollTo = state.setupScroll || 0; render(); };
@@ -1124,7 +1387,7 @@
     function renderScoreResult(entry) {
       const res = state.result;
       const summary = el('div', { class: 'summary' }, [
-        el('span', {}, [el('strong', { text: coins(res.score) }), ` of ${coins(res.need)} points`]),
+        el('span', {}, [el('strong', { text: coins(res.score) }), ` of ${coins(res.need)} points`, res.need < res.remaining ? ` (${coins(res.remaining)} left)` : '']),
         el('span', {}, [el('strong', { text: String(res.picks.length) }), ` of ${res.limit} cards`]),
         el('span', {}, [
           H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
@@ -1746,8 +2009,7 @@
           el('section', {}, [
             el('h2', { text: 'Challenge' }),
             state.challenges.length
-              ? el('select', { id: 'futfox-challenge', onchange: (e) => { state.selectedId = Number(e.target.value); state.result = null; render(); } },
-                  state.challenges.map((c) => el('option', { value: String(c.id), selected: c.id === state.selectedId, text: `${c.setName} – ${c.name}${c.status === 'COMPLETED' ? ' (done)' : ''}` })))
+              ? challengeMenu()
               : el('p', { class: 'muted', text: 'Open an SBC set in the app, then press Refresh.' }),
             el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Refresh', onclick: refreshChallenges })]),
           ]),
@@ -1770,12 +2032,12 @@
               ])
             : null,
           streamlined ? null : clubSection(known),
-          el('section', {}, [
+          streamlined ? streamlinedOptions(entry) : el('section', {}, [
             el('h2', { text: 'Options' }),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-keep', type: 'checkbox', checked: settings.keepActiveSquad, onchange: (e) => setSetting('keepActiveSquad', e.target.checked) }), 'Keep my active squad players']),
             el('label', { class: 'check' }, [el('input', { id: 'futfox-untr', type: 'checkbox', checked: settings.untradeablesOnly, onchange: (e) => setSetting('untradeablesOnly', e.target.checked) }), 'Use untradeables only']),
-            streamlined ? null : el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
-            el('label', { class: 'check' }, ['Keep players rated', el('input', { id: 'futfox-protect', type: 'number', min: '0', max: '99', value: String(settings.protectFrom), onchange: (e) => setSetting('protectFrom', Number(e.target.value)) }), 'and above']),
+            el('label', { class: 'check' }, [el('input', { id: 'futfox-market', type: 'checkbox', checked: settings.allowMarket, onchange: (e) => setSetting('allowMarket', e.target.checked) }), 'Suggest cards to buy when the club falls short']),
+            el('div', { class: 'opt-row' }, ['Keep players rated', stepper({ value: settings.protectFrom, min: 0, max: 99, label: 'rating to keep', onChange: (n) => setSetting('protectFrom', n) }), 'and above']),
           ]),
           el('div', { class: 'row' }, [
             el('button', { class: 'primary', type: 'button', text: state.solving ? 'Solving…' : streamlined ? 'Find cheapest cards' : 'Find cheapest squad', disabled: !entry || state.solving, onclick: solve }),

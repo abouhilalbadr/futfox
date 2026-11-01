@@ -64,13 +64,25 @@
     return formation.positions.map((p) => ({ typeId: p.typeId, name: p.name }));
   }
 
-  // The challenge whose squad screen is open in the app, or null on any other screen.
+  function currentController() {
+    return attempt(() => root.getAppMain().getRootViewController().getPresentedViewController().getCurrentViewController().getCurrentController(), null);
+  }
+
+  const idOf = (id) => (typeof id === 'number' ? id : null);
+
+  // The challenge whose cards are being placed in the app (a squad screen, or a Streamlined SBC's
+  // card picker), or null on any other screen.
   function openChallengeId() {
-    return attempt(() => {
-      const nav = root.getAppMain().getRootViewController().getPresentedViewController().getCurrentViewController();
-      const id = nav.getCurrentController()._challengeId;
-      return typeof id === 'number' ? id : null;
-    }, null);
+    const screen = currentController();
+    if (!screen) return null;
+    return idOf(screen._challengeId)
+      ?? idOf(attempt(() => screen.workAreaController.getViewModel().getChallenge().id, null));
+  }
+
+  // The challenge the app shows: the one being placed, or the one selected in an open SBC set.
+  function shownChallengeId() {
+    const screen = currentController();
+    return openChallengeId() ?? idOf(attempt(() => screen.sbcViewModel.getSelectedChallengeId(), null));
   }
 
   // Slots the user has to fill. Some SBCs pre-fill "brick" slots or need fewer players.
@@ -225,10 +237,10 @@
       || attempt(() => root.UTOneClickSBCWorkAreaViewModel.DEFAULT_PAGE_SIZE, 0) || 30;
   }
 
-  // The cards the challenge's own picker lists (club, then SBC storage), each with its Item Score.
+  // The cards the challenge's own picker lists (club, then SBC storage), each with its Item Score,
+  // whether it is in SBC storage and whether it is in the active squad; the panel filters them.
   // EA only lists cards that meet the challenge's requirements, so they need no checking here.
-  async function streamlinedPool(challenge, { prices, keepActiveSquad, protectFrom, untradeablesOnly }) {
-    const active = keepActiveSquad ? activeSquad : new Set();
+  async function streamlinedPool(challenge, { prices } = {}) {
     const found = new Map();
     for (const pile of [root.PileSearchType.CLUB, root.PileSearchType.STORAGE]) {
       for (let page = 0; page < CLUB_MAX_PAGES; page++) {
@@ -247,11 +259,8 @@
       }
     }
     return Array.from(found.values())
-      .filter(({ item }) => item.sbsScore > 0 && !active.has(item.id))
-      .filter(({ item }) => !protectFrom || item.rating < protectFrom)
-      .filter(({ item }) => !untradeablesOnly || isUntradeable(item))
-      .filter(({ item }) => isUsable(item))
-      .map(({ item, storage }) => ({ ...toPlayer(item, prices), score: item.sbsScore, storage }));
+      .filter(({ item }) => item.sbsScore > 0 && isUsable(item))
+      .map(({ item, storage }) => ({ ...toPlayer(item, prices), score: item.sbsScore, storage, active: activeSquad.has(item.id) }));
   }
 
   // ---- Gallery ----------------------------------------------------------------------
@@ -536,7 +545,7 @@
   }
 
   H.fut = {
-    isReady, getChallenges, openChallengeId, rulesFor, slotsFor, requiredSlotsFor,
+    isReady, getChallenges, openChallengeId, shownChallengeId, rulesFor, slotsFor, requiredSlotsFor,
     knownClubItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
     leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, searchSlotCards, versionName,
   };
