@@ -335,7 +335,11 @@
     .menu-empty { padding: 10px 8px; color: #9A93B8; }
     .chip { flex: none; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: #2A2445; color: #C9C3E0; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .chip.done { background: #1d3327; color: #6fd29a; }
-    .chip.pts { background: #22203a; color: #C6FF3D; }
+    .chip.pts { display: inline-flex; align-items: center; gap: 3px; background: #22203a; color: #C6FF3D; }
+    .chip .pts-icon { width: 11px; height: 11px; }
+    .summary .pts-icon, .rules .pts-icon { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
+    .chem-ico { font: normal 400 13px/1 UltimateTeam-Icons, sans-serif; margin-right: 4px; color: #C6FF3D; }
+    .chem-ico::before { content: '\\e030'; }
     /* Number boxes with their own - and + buttons instead of the browser's spinner. */
     .stepper { display: inline-flex; align-items: stretch; border: 1px solid #352E55; border-radius: 6px; background: #1B1733; }
     .stepper:focus-within { border-color: #8B5CF6; }
@@ -1308,12 +1312,19 @@
       return r.shortfall === 0 ? { icon: '✓', cls: 'ok', hint: '' } : { icon: '✗', cls: 'bad', hint: `Short by ${r.shortfall}` };
     }
 
+    // The game's SBC points icon and chemistry glyph, shown in place of the words.
+    const pointsIcon = () => {
+      const src = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
+      return src ? el('img', { class: 'pts-icon', src, alt: '' }) : null;
+    };
+    const chemIcon = () => el('span', { class: 'chem-ico', 'aria-hidden': 'true' });
+
     // A challenge's progress as a small chip: done, or a Streamlined SBC's points so far.
     function challengeChip(c) {
       if (c.status === 'COMPLETED') return el('span', { class: 'chip done', text: 'Done' });
       if (H.fut.isStreamlined(c.challenge)) {
         const ch = c.challenge;
-        return el('span', { class: 'chip pts', text: `${coins(ch.submittedScore || 0)} / ${coins(ch.scoreRequirement || 0)} pts` });
+        return el('span', { class: 'chip pts', title: 'Points so far', 'aria-label': `${coins(ch.submittedScore || 0)} of ${coins(ch.scoreRequirement || 0)} points` }, [pointsIcon(), `${coins(ch.submittedScore || 0)} / ${coins(ch.scoreRequirement || 0)}`]);
       }
       return null;
     }
@@ -1563,7 +1574,7 @@
 
       const summary = el('div', { class: 'summary' }, [
         el('span', {}, [el('strong', { text: String(res.rating) }), ' rating']),
-        el('span', {}, [el('strong', { text: String(chem) }), res.eaChem ? ' chemistry' : ' chemistry (estimate)']),
+        el('span', { title: res.eaChem ? 'Chemistry' : "Chemistry, estimated: check it in the squad builder" }, [chemIcon(), el('strong', { text: String(chem) }), ` / ${3 * res.squad.length}`, res.eaChem ? '' : ' (estimate)']),
         el('span', {}, [
           H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
           el('strong', { text: coins(res.cost) }), ' est. coins',
@@ -1643,13 +1654,13 @@
     function renderScoreResult(entry) {
       const res = state.result;
       const summary = el('div', { class: 'summary' }, [
-        el('span', {}, [el('strong', { text: coins(res.score) }), ` of ${coins(res.need)} points`, res.need < res.remaining ? ` (${coins(res.remaining)} left)` : '']),
+        el('span', { title: 'Points' }, [pointsIcon(), el('strong', { text: coins(res.score) }), ` / ${coins(res.need)}`, res.need < res.remaining ? ` (${coins(res.remaining)} left)` : '']),
         el('span', {}, [el('strong', { text: String(res.picks.length) }), ` of ${res.limit} cards`]),
         el('span', {}, [
           H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
           el('strong', { text: coins(res.cost) }), ' est. coins',
         ]),
-        el('span', { class: res.reached ? 'ok' : 'bad', text: res.reached ? 'Reaches the target' : `Short by ${coins(res.need - res.score)} points` }),
+        res.reached ? el('span', { class: 'ok', text: 'Reaches the target' }) : el('span', { class: 'bad', title: 'Points still missing' }, ['Short by ', pointsIcon(), coins(res.need - res.score)]),
       ]);
       // Drawn like the game's own cards, with the line the game's picker shows under each card.
       const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
@@ -2292,7 +2303,7 @@
                 el('h2', { text: 'Requirements' }),
                 el('ul', { class: 'rules' }, [
                   streamlined
-                    ? el('li', {}, [el('span', { class: 'muted', text: '◆' }), el('span', { text: `Item Score: ${coins(entry.challenge.submittedScore || 0)} of ${coins(entry.challenge.scoreRequirement || 0)} points, up to ${H.fut.submitLimit()} cards a time` })])
+                    ? el('li', { title: 'Points so far, of the points the challenge needs' }, [pointsIcon(), el('span', { text: `${coins(entry.challenge.submittedScore || 0)} / ${coins(entry.challenge.scoreRequirement || 0)}, up to ${H.fut.submitLimit()} cards a time` })])
                     : null,
                   ...H.fut.rulesFor(entry.challenge).map((rule) => {
                     // The game's picker only lists cards that meet a Streamlined SBC's requirements.
