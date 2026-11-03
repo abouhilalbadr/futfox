@@ -51,7 +51,7 @@ test('every phrase the page scripts translate has an Arabic version', () => {
 
 test('the placing steps and the bonus tags have Arabic versions', () => {
   const panel = fs.readFileSync(path.join(__dirname, '../src/page/panel.js'), 'utf8');
-  const steps = panel.match(/const steps = streamlined\s*\?\s*\[([\s\S]*?)\]/)[1].match(/'(?:\\.|[^'])*'|"(?:\\.|[^"])*"/g).map((s) => s.slice(1, -1).replace(/\\'/g, "'"));
+  const steps = panel.match(/const steps = streamlined\s*\?\s*\[([\s\S]*?)\]/)[1].match(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g).map((s) => s.slice(1, -1).replace(/\\'/g, "'"));
   for (const text of steps) assert.ok(I.AR[text], text);
   for (const tag of require('../src/core/bonus-tags').TAGS) {
     assert.ok(I.AR[tag.name] != null, tag.name);
