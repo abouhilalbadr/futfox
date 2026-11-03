@@ -3,7 +3,7 @@
   Renders the real FutFox Gallery set page (src/) with an example club and set, for the website's
   Gallery image. Only the Web App layer (FutFox.fut) is replaced; the panel and set matching are the
   shipped code. Every card is drawn on EA's Team of the Week card frame; the players are made up, so
-  they have no faces. Use: scripts/capture-screens.sh.
+  they have no faces. Add #ar for the Arabic panel. Use: scripts/capture-screens.sh.
 -->
 <html lang="en">
 <head>
@@ -23,8 +23,9 @@
       slots: new Array(10).fill(rule),
     }],
   }));
-  localStorage.setItem('futfox.settings', JSON.stringify({ view: 'gallery' }));
+  localStorage.setItem('futfox.settings', JSON.stringify({ view: 'gallery', lang: location.hash === '#ar' ? 'ar' : 'en' }));
 </script>
+<script src="../../src/core/i18n.js"></script>
 <script src="../../src/core/requirements.js"></script>
 <script src="../../src/core/rating.js"></script>
 <script src="../../src/core/chemistry.js"></script>
@@ -56,6 +57,9 @@
   ].map(card).map((c) => ({ ...c, id: c.defId, owners: null }));
   FutFox.fut = {
     galleryEnabled: true,
+    language: () => 'en',
+    shownChallengeId: () => null,
+    knownStorageItems: () => [],
     knownClubItems: () => club,
     galleryCards: () => club,
     leagueLogo: () => null,
@@ -85,6 +89,9 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const button = (text) => [...shadow.querySelectorAll('button')].find((b) => b.textContent.includes(text));
   shadow.querySelector('.toggle').click();
+  await wait(200);
+  // FutFox opens on the Club tab until the club is loaded; the Gallery is the third tab.
+  shadow.querySelectorAll('.tabs [role="tab"]')[2].click();
   await wait(200);
   button('Example League').click();
   await wait(200);

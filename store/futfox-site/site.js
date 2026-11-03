@@ -83,3 +83,26 @@
     });
   });
 })();
+
+// "Watch the film": open the popup, load the wide or the tall film for this screen and play it; stop it on close.
+(function () {
+  const dialog = document.getElementById('film');
+  const open = document.querySelector('.btn-film');
+  if (!dialog || !open || !dialog.showModal) return;
+  const video = dialog.querySelector('video');
+  open.addEventListener('click', () => {
+    const tall = window.matchMedia('(max-aspect-ratio: 3/4)').matches;
+    const shape = tall ? 'tall' : 'wide';
+    dialog.classList.toggle('is-tall', tall);
+    if (video.dataset.shape !== shape) {
+      video.dataset.shape = shape;
+      video.poster = video.dataset[shape + 'Poster'];
+      video.src = video.dataset[shape];
+    }
+    dialog.showModal();
+    video.play().catch(() => {});
+  });
+  dialog.querySelector('.film-close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => video.pause());
+})();

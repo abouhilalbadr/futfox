@@ -4,11 +4,19 @@
   'use strict';
 
   const H = root.FutFox;
+  const { t, plural, parts } = H.i18n;
   const STORE_KEY = 'futfox.settings';
 
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; }
+    /* Scroll bars in the panel's colours: a thin rounded thumb on no track, lighter on hover and
+       violet while dragged. */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #352E55; background-clip: padding-box; border: 3px solid transparent; border-radius: 999px; min-height: 40px; }
+    ::-webkit-scrollbar-thumb:hover { background-color: #4A4170; }
+    ::-webkit-scrollbar-thumb:active { background-color: #8B5CF6; }
     .toggle { position: fixed; right: 24px; bottom: 24px; z-index: 2147483000; border: 0; border-radius: 999px;
       padding: 8px 16px 8px 10px; font: 700 14px/1 system-ui, sans-serif; letter-spacing: .04em; cursor: pointer;
       display: flex; align-items: center; gap: 8px; background: #0E0B1F; color: #fff; box-shadow: 0 0 0 1px #8B5CF6, 0 4px 14px rgba(0,0,0,.35); }
@@ -42,7 +50,8 @@
     /* A checklist: progress on top, then one row per card (small card, name, where to find it,
        Copy and a round tick), placed rows faded. */
     .dock-progress { flex: none; height: 3px; background: #2A2445; }
-    .dock-progress i { display: block; height: 100%; background: #C6FF3D; transition: width .2s; }
+    /* Full width, scaled to the share placed, so a tick can grow it smoothly. */
+    .dock-progress i { display: block; height: 100%; background: #C6FF3D; transform-origin: left; }
     .dock-head { padding: 8px 12px 4px; font-size: 12px; color: #9A93B8; }
     .dock-head strong { color: #e7ebf2; font-weight: 600; }
     .dock-bar { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 8px; }
@@ -59,18 +68,20 @@
     .dock-bar .dock-row { flex: 1; }
     .dock-row .card.small { width: 26px; }
     .dock-row .who { flex: 1; min-width: 0; display: grid; }
-    .dock .name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
-    .dock .name .r { margin-right: 6px; }
+    .dock .name { position: relative; justify-self: start; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+    /* Isolated, so in Arabic the rating sits before a Latin name instead of running into it. */
+    .dock .name .r { margin-inline-end: 6px; unicode-bidi: isolate; }
     .dock .sub { font-size: 12px; color: #9A93B8; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .dock .sub .store { color: #8cc4ff; }
     .dock .sub .pts { color: #e7ebf2; font-weight: 600; }
-    .dock .sub .pts-icon { width: 12px; height: 12px; margin-right: 3px; vertical-align: -2px; }
+    .dock .sub .pts-icon { width: 12px; height: 12px; margin-inline-end: 3px; vertical-align: -2px; }
     .dock .icon-btn { margin: 0; width: 28px; height: 28px; }
     .dock button.tick { flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid #352E55; background: none; display: grid; place-items: center; color: #0B0918; font-size: 13px; font-weight: 800; line-height: 1; }
     .dock button.tick:hover { border-color: #C6FF3D; }
     .dock button.tick[aria-checked=true] { background: #C6FF3D; border-color: #C6FF3D; }
     .dock-row.placed > :not(.tick) { opacity: .45; }
-    .dock-row.placed .name { text-decoration: line-through; }
+    /* A line through the name, drawn from the left when the card is ticked. */
+    .dock-row.placed .name::after { content: ""; position: absolute; left: 0; right: 0; top: 52%; height: 1.5px; background: currentColor; transform-origin: left; }
     .dock-bar .done { flex: 1; color: #6fd29a; }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #2A2445; }
     h1 { margin: 0; font-size: 18px; font-weight: 700; }
@@ -92,7 +103,7 @@
     input[type=checkbox] { accent-color: #C6FF3D; }
     .muted { color: #9A93B8; }
     ul.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-    ol.steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: #C9C3E0; }
+    ol.steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 6px; color: #C9C3E0; }
     ul.rules li { display: grid; grid-template-columns: 22px 1fr; gap: 6px; }
     .ok { color: #6fd29a; } .bad { color: #f08a7a; } .unknown { color: #e8c45a; }
     .summary { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; border-radius: 8px; background: #1B1733; font-variant-numeric: tabular-nums; }
@@ -113,7 +124,7 @@
     .untr-ico { font-family: UltimateTeam-Icons, sans-serif; font-weight: 400; font-size: 14px; line-height: 1; color: #C9C3E0; }
     /* The game's untradeable glyph from its own icon font (the backslash is doubled for the template). */
     .untr-ico::before { content: '\\e0ea'; }
-    button.icon-btn { margin-left: auto; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; color: #C9C3E0; }
+    button.icon-btn { margin-inline-start: auto; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; color: #C9C3E0; }
     button.icon-btn:hover { border-color: #8B5CF6; color: #fff; }
     button.icon-btn svg { width: 14px; height: 14px; }
     .pick .src { font-size: 11px; color: #9A93B8; }
@@ -154,7 +165,7 @@
     .cat { display: grid; gap: 14px; align-content: space-between; min-width: 0; text-align: left; padding: 14px 16px; border: 1px solid #2A2445; border-radius: 10px; background: #1B1733; }
     .cat:hover, .cat:focus-visible { border-color: #8B5CF6; outline: none; }
     .cat-top { display: flex; align-items: center; gap: 8px; }
-    .cat .logos { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+    .cat .logos { display: flex; align-items: center; gap: 10px; margin-inline-end: auto; min-width: 0; }
     .cat .logos img { height: 36px; max-width: 48px; object-fit: contain; }
     .cat .logos .letter { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #2A2445; color: #C9C3E0; font-weight: 700; }
     .cat .tokens { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -187,7 +198,7 @@
     .pic .letter { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #2A2445; color: #C9C3E0; font-weight: 700; font-size: 16px; }
     .tabs button { display: inline-flex; align-items: center; gap: 6px; }
     .tabs img, .tabs svg { width: 16px; height: 16px; }
-    .summary .coin { width: 18px; height: 18px; vertical-align: -3px; margin-right: 5px; }
+    .summary .coin { width: 18px; height: 18px; vertical-align: -3px; margin-inline-end: 5px; }
     .set-head .name { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
     .set-head .count { font-weight: 700; font-variant-numeric: tabular-nums; }
     .set-head .meta, .set-head .bar { grid-column: 2 / -1; }
@@ -257,13 +268,20 @@
     @keyframes futfox-shine { from { background-position: 100% 0; } to { background-position: 0% 0; } }
     /* Busy: a spinning ring beside the text, and faded cards pulsing where the result will go.
        Only rotation and opacity move, so they keep going while a squad search blocks the page. */
-    .spin { display: inline-block; flex: none; width: 12px; height: 12px; margin-right: 8px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: futfox-spin .7s linear infinite; }
+    .spin { display: inline-block; flex: none; width: 12px; height: 12px; margin-inline-end: 8px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: futfox-spin .7s linear infinite; }
     .muted .spin, p .spin { color: #C6FF3D; }
     .slot.skel .card, .skel-box, .cat.skel { animation: futfox-pulse 1.2s ease-in-out infinite; }
     .skel-box { display: block; height: 10px; border-radius: 5px; background: #2A2445; }
     .cat.skel { min-height: 150px; }
     .pick-skel { display: flex; align-items: center; gap: 12px; padding: 6px 12px 6px 8px; border: 1px solid #2A2445; border-radius: 8px; }
     .skel-text { display: grid; gap: 8px; flex: 1; }
+    /* Loading the club: one bordered line with the spinner, and a counter that climbs page by page. */
+    .club-loading { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #352E55; border-radius: 6px; color: #C9C3E0; }
+    .club-loading .spin { margin-inline-end: 0; color: #C6FF3D; }
+    .club-loading .club-count { margin-inline-start: auto; color: #9A93B8; font-variant-numeric: tabular-nums; }
+    .club-pointer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px dashed #352E55; border-radius: 8px; font-size: 13px; color: #C9C3E0; }
+    button.load { transition: transform .1s; }
+    button.load:active { transform: scale(.97); }
     @keyframes futfox-spin { to { transform: rotate(360deg); } }
     @keyframes futfox-pulse { 50% { opacity: .35; } }
     @media (prefers-reduced-motion: reduce) {
@@ -291,14 +309,14 @@
     /* Suggest: pick a grade (its diamond), and the cards that would reach it fill the empty slots. */
     .suggest { display: grid; gap: 8px; margin-bottom: 12px; }
     .suggest .aim { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-    .suggest .aim .label { font-size: 13px; color: #C9C3E0; margin-right: 4px; }
+    .suggest .aim .label { font-size: 13px; color: #C9C3E0; margin-inline-end: 4px; }
     button.aimg { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: none; border-color: #2A2445; border-radius: 8px; }
     button.aimg:hover, button.aimg:focus-visible { border-color: #8B5CF6; }
     button.aimg[aria-pressed="true"] { border-color: #C6FF3D; background: #221D3D; }
     .suggest .sum { font-size: 13px; color: #C9C3E0; font-variant-numeric: tabular-nums; }
     .suggest .sum strong.reached { color: #C6FF3D; }
     .slot.suggested .card { outline: 1.5px dashed #C6FF3D; outline-offset: 3px; border-radius: 4px; }
-    .slot .cap.sug { color: #C6FF3D; font-weight: 700; }
+    .slot .cap.sug { color: #C6FF3D; font-weight: 700; direction: ltr; unicode-bidi: isolate; }
     .slot .src { font-size: 10px; color: #C4B1FF; white-space: nowrap; }
     .slot .src.club { color: #6FD29A; }
     button.link:hover { color: #fff; }
@@ -338,8 +356,8 @@
     .chip.done { background: #1d3327; color: #6fd29a; }
     .chip.pts { display: inline-flex; align-items: center; gap: 3px; background: #22203a; color: #C6FF3D; }
     .chip .pts-icon { width: 11px; height: 11px; }
-    .summary .pts-icon, .rules .pts-icon { width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
-    .chem-ico { font: normal 400 13px/1 UltimateTeam-Icons, sans-serif; margin-right: 4px; color: #C6FF3D; }
+    .summary .pts-icon, .rules .pts-icon { width: 14px; height: 14px; margin-inline-end: 4px; vertical-align: -2px; }
+    .chem-ico { font: normal 400 13px/1 UltimateTeam-Icons, sans-serif; margin-inline-end: 4px; color: #C6FF3D; }
     .chem-ico::before { content: '\\e030'; }
     /* Number boxes with their own - and + buttons instead of the browser's spinner. */
     .stepper { display: inline-flex; align-items: stretch; border: 1px solid #352E55; border-radius: 6px; background: #1B1733; }
@@ -353,6 +371,8 @@
     .segmented { display: inline-flex; border: 1px solid #352E55; border-radius: 6px; overflow: hidden; }
     .segmented button { border: 0; border-radius: 0; padding: 6px 12px; background: #1B1733; color: #9A93B8; }
     .segmented button + button { border-left: 1px solid #352E55; }
+    /* On the Club tab the language switch is only as wide as its three choices. */
+    section > .segmented { justify-self: start; }
     .segmented button[aria-pressed=true] { background: #2A2445; color: #fff; font-weight: 600; }
     /* SBC options: small cards, each a 2-column grid of equal fields and a list of switches. */
     .opt-card { display: grid; gap: 10px; padding: 12px; border: 1px solid #2A2445; border-radius: 10px; background: #15112A; }
@@ -371,11 +391,20 @@
     input.switch::before { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #C9C3E0; transition: transform .15s, background .15s; }
     input.switch:checked { background: #C6FF3D; }
     input.switch:checked::before { transform: translateX(14px); background: #0B0918; }
+    /* Arabic: right to left. Cards and the pitch keep the game's own left and right; letter spacing
+       would break the joined Arabic letters. */
+    [dir=rtl] .card, [dir=rtl] .pitch { direction: ltr; }
+    [dir=rtl] h2, [dir=rtl] h3, [dir=rtl] .tag, [dir=rtl] .menu-group { letter-spacing: 0; }
+    [dir=rtl] .dock-progress i, [dir=rtl] .dock-row.placed .name::after { transform-origin: right; }
+    [dir=rtl] .cat, [dir=rtl] .set-head, [dir=rtl] .menu-btn, [dir=rtl] button.pick { text-align: right; }
+    [dir=rtl] input.switch::before { left: auto; right: 3px; }
+    [dir=rtl] input.switch:checked::before { transform: translateX(-14px); }
+    [dir=rtl] .segmented button + button { border-left: 0; border-right: 1px solid #352E55; }
   `;
 
   function loadSettings() {
     const defaults = {
-      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc',
+      keepActiveSquad: true, protectFrom: 87, allowMarket: true, untradeablesOnly: false, view: 'sbc', lang: 'auto',
       // Streamlined SBCs: the rating range, the most cards a time (empty: the game's limit), the
       // points to reach now (empty: all that's left), where cards come from and what to favour.
       slMinRating: 45, slMaxRating: 86, slMaxCards: null, slPoints: null,
@@ -506,9 +535,9 @@
     });
     const bump = (dir) => set((current() ?? (dir > 0 ? min - step : max + step)) + dir * step);
     return el('span', { class: 'stepper' }, [
-      el('button', { type: 'button', tabindex: '-1', 'aria-label': `Less ${label}`, text: '−', onclick: () => bump(-1) }),
+      el('button', { type: 'button', tabindex: '-1', 'aria-label': t('Less {label}', { label }), text: '−', onclick: () => bump(-1) }),
       input,
-      el('button', { type: 'button', tabindex: '-1', 'aria-label': `More ${label}`, text: '+', onclick: () => bump(1) }),
+      el('button', { type: 'button', tabindex: '-1', 'aria-label': t('More {label}', { label }), text: '+', onclick: () => bump(1) }),
     ]);
   }
 
@@ -566,6 +595,16 @@
   // Lime when the tag is active, grey when not; the medals keep their metal.
   const METAL = { Bronze: '#C8834A', Silver: '#D5DAE3', Golden: '#E8C45A' };
 
+  function clubIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    for (const [k, v] of Object.entries({ viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(k, v);
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', TAG_ICONS['Same Club'][0]);
+    svg.append(path);
+    return svg;
+  }
+
   function tagIcon(name, active) {
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
@@ -589,7 +628,7 @@
     const save = () => { settings.panelWidth = clamp(panel.getBoundingClientRect().width); saveSettings(settings); };
     apply(settings.panelWidth || DEFAULT_WIDTH);
 
-    const grip = el('div', { class: 'grip', role: 'separator', 'aria-orientation': 'vertical', 'aria-label': 'Resize FutFox', tabindex: '0', title: 'Drag to resize' });
+    const grip = el('div', { class: 'grip', role: 'separator', 'aria-orientation': 'vertical', 'aria-label': t('Resize FutFox'), tabindex: '0', title: t('Drag to resize') });
     grip.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       grip.setPointerCapture(e.pointerId);
@@ -670,6 +709,8 @@
     const places = settings.places || (settings.places = {});
     // A spot kept as plain pixels from the top left (before corners) belongs to another screen.
     if (places[key] && !places[key].corner) delete places[key];
+    // Heights used to be kept in pixels, often a smaller window's height; it is a share of the window now.
+    if (places[key] && places[key].h) delete places[key].h;
     let start = null;
     let dragged = false;
     // Whether the last press was on the part that picks it up; the element holds the pointer from
@@ -686,8 +727,10 @@
         for (const prop of ['left', 'top', 'right', 'bottom', 'width', 'height']) node.style[prop] = '';
         return;
       }
-      if (at.w) node.style.width = `${Math.min(at.w, window.innerWidth)}px`;
-      if (at.h) node.style.height = `${Math.min(at.h, window.innerHeight)}px`;
+      // The width in pixels, the height as a share of the window (full height when none is kept), so
+      // it fits any screen.
+      node.style.width = at.w ? `${Math.min(at.w, window.innerWidth)}px` : '';
+      node.style.height = at.hr ? `${Math.round(Math.min(at.hr, 1) * window.innerHeight)}px` : '';
       // Its layout size, not the box on screen, which is scaled while it animates in.
       const r = { width: node.offsetWidth, height: node.offsetHeight };
       const left = at.corner[1] === 'l' ? at.dx : window.innerWidth - at.dx - r.width;
@@ -754,10 +797,15 @@
     window.addEventListener('resize', place);
     place();
 
-    // Keeps the size the panel is resized to from its corner.
+    // Keeps the size the panel is resized to from its corner. A panel as tall as the window keeps no
+    // height, so it fills any window; one squeezed by a narrower window keeps the width chosen before.
     function keepSize(w, h) {
-      if (!places[key] || !w || !h) return;
-      places[key] = { ...places[key], w: Math.round(w), h: Math.round(h) };
+      const at = places[key];
+      if (!at || !w || !h) return;
+      const squeezed = w >= window.innerWidth - 1 && at.w > w;
+      const hr = Math.round((h / window.innerHeight) * 1000) / 1000;
+      const { hr: _, ...rest } = at;
+      places[key] = { ...rest, w: squeezed ? at.w : Math.round(w), ...(hr < 0.98 ? { hr } : {}) };
       saveSettings(settings);
     }
     return { place, keepSize };
@@ -772,8 +820,8 @@
     const settings = loadSettings();
     const state = { challenges: [], selectedId: null, result: null, keptOut: new Map(), loading: false, error: null, solving: false, sets: { data: null, loading: false, error: null }, category: null, openSet: null, scrolls: {}, scrollTo: null };
 
-    const toggle = el('button', { class: 'toggle', type: 'button', title: 'Drag to move. Double-click to put it back.' }, [foxIcon(), 'FutFox']);
-    const dock = el('aside', { class: 'dock', hidden: true, 'aria-label': 'Place the squad' });
+    const toggle = el('button', { class: 'toggle', type: 'button', title: t('Drag to move. Double-click to put it back.') }, [foxIcon(), 'FutFox']);
+    const dock = el('aside', { class: 'dock', hidden: true, 'aria-label': t('Place the squad') });
     const panel = el('aside', { class: 'panel', hidden: true, 'aria-label': 'FutFox' });
     shadow.append(toggle, dock, panel);
     const grip = resizeGrip(panel, settings);
@@ -794,8 +842,24 @@
 
     let open = false;
 
-    function openPanel() {
+    // The game's language (Arabic when the Web App is in Arabic) unless one is chosen in Options.
+    function applyLang() {
+      const chosen = settings.lang === 'en' || settings.lang === 'ar' ? settings.lang : H.fut.language() === 'ar' ? 'ar' : 'en';
+      H.i18n.setLang(chosen);
+      for (const node of [panel, dock]) {
+        node.setAttribute('dir', H.i18n.dir());
+        node.setAttribute('lang', chosen);
+      }
+      toggle.title = t('Drag to move. Double-click to put it back.');
+      panel.setAttribute('aria-label', 'FutFox');
+      dock.setAttribute('aria-label', t('Place the squad'));
+    }
+
+    function openPanel(view) {
       open = true;
+      const next = view || (!state.clubLoadedAt ? 'club' : H.fut.shownChallengeId() != null ? 'sbc' : settings.view);
+      if (next !== settings.view) setSetting('view', next);
+      if (next === 'gallery' && !state.sets.data && !state.sets.loading) loadSets(false);
       // Closing the placing list hides it until FutFox is opened again; closing the panel then
       // folds back into the list while the squad's SBC is open.
       state.dockClosed = false;
@@ -822,7 +886,7 @@
       if (button) button.setAttribute('aria-expanded', 'false');
     });
 
-    toggle.addEventListener('click', openPanel);
+    toggle.addEventListener('click', () => openPanel());
 
     // A click anywhere in the game folds the panel away, so the game's own boxes on the right are free.
     document.addEventListener('pointerdown', (e) => {
@@ -912,51 +976,76 @@
       const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
       // A Streamlined SBC's card has no position: its points show there, with the game's points icon.
       const where = s.typeId != null ? H.fut.positionName(s.typeId)
-        : el('span', { class: 'pts', title: 'Item Score' }, [points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null, coins(p.score)]);
-      const name = isBuy ? `Buy a ${p.rating} ${H.fut.positionName(s.typeId)}` : p.name;
+        : el('span', { class: 'pts', title: t('Item Score') }, [points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null, coins(p.score)]);
+      const name = isBuy ? t('Buy a {rating} {position}', { rating: p.rating, position: H.fut.positionName(s.typeId) }) : p.name;
       const placed = state.placed.has(i);
-      return el('div', { class: `dock-row${placed ? ' placed' : ''}` }, [
+      return el('div', { class: `dock-row${placed ? ' placed' : ''}`, 'data-i': String(i) }, [
         isBuy ? miniCard({ small: true }) : miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, small: true }),
         el('span', { class: 'who' }, [
           el('span', { class: 'name', title: name }, isBuy ? [name] : [el('span', { class: 'r', text: String(p.rating) }), name]),
           // The game's picker has separate Club and SBC Storage tabs, so say which one to look in.
-          el('span', { class: 'sub' }, isBuy ? [where, ' · Market'] : [where, ' · ', el('span', { class: p.storage ? 'store' : null, text: p.storage ? 'SBC storage' : 'Club' })]),
+          el('span', { class: 'sub' }, isBuy ? [where, ` · ${t('Market')}`] : [where, ' · ', el('span', { class: p.storage ? 'store' : null, text: t(p.storage ? 'SBC storage' : 'Club') })]),
         ]),
         isBuy
-          ? el('button', { type: 'button', text: 'Market', onclick: () => H.fut.openMarketSearch(p.search) })
-          : el('button', { class: 'icon-btn', type: 'button', title: 'Copy the name to search your club', 'aria-label': `Copy ${p.name}`, onclick: (e) => copyName(p.name, e.currentTarget) }, [copyIcon()]),
-        el('button', { class: 'tick', type: 'button', role: 'checkbox', 'aria-checked': String(placed), 'aria-label': `${name} placed`, title: placed ? 'Placed' : 'Tick once it is in the game', text: placed ? '✓' : '', onclick: () => tick(i) }),
+          ? el('button', { type: 'button', text: t('Market'), onclick: () => H.fut.openMarketSearch(p.search) })
+          : el('button', { class: 'icon-btn', type: 'button', title: t('Copy the name to search your club'), 'aria-label': t('Copy {name}', { name: p.name }), onclick: (e) => copyName(p.name, e.currentTarget) }, [copyIcon()]),
+        el('button', { class: 'tick', type: 'button', role: 'checkbox', 'aria-checked': String(placed), 'aria-label': t('{name} placed', { name }), title: t(placed ? 'Placed' : 'Tick once it is in the game'), text: placed ? '✓' : '', onclick: () => tick(i) }),
       ]);
     }
 
     // Folded, it is one line with the next player to place, small enough to sit under the game's
     // right-hand column; unfolded, every player shows above that line.
     function placingList() {
+      applyLang();
       const res = state.result;
       const rows = res.squad.map((s, i) => ({ s, i })).filter(({ s }) => s.player);
       const done = rows.filter(({ i }) => state.placed.has(i)).length;
       const next = rows.find(({ i }) => !state.placed.has(i));
+      const share = (n) => (rows.length ? n / rows.length : 0);
       const tick = (i) => {
-        if (state.placed.has(i)) state.placed.delete(i);
-        else state.placed.add(i);
+        const adding = !state.placed.has(i);
+        if (adding) state.placed.add(i);
+        else state.placed.delete(i);
         renderDock();
+        if (!reducedMotion()) animateTick(i, adding, share(done), share(done + (adding ? 1 : -1)));
       };
-      const progress = el('div', { class: 'dock-progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(rows.length), 'aria-valuenow': String(done), 'aria-label': 'Cards placed' }, [
-        el('i', { style: `width: ${rows.length ? (done / rows.length) * 100 : 0}%` }),
+      const progress = el('div', { class: 'dock-progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(rows.length), 'aria-valuenow': String(done), 'aria-label': t('Cards placed') }, [
+        el('i', { style: `transform: scaleX(${share(done)})` }),
       ]);
+      const allDone = el('span', { class: 'done', text: t('All placed: check it and submit') });
       return [
         progress,
-        state.dockOpen ? el('div', { class: 'dock-head' }, [el('strong', { text: 'Placing' }), ` ${done} of ${rows.length} · tick each card once it's in the game`]) : null,
+        state.dockOpen ? el('div', { class: 'dock-head' }, [el('strong', { text: t('Placing') }), ` ${t("{done} of {total} · tick each card once it's in the game", { done, total: rows.length })}`]) : null,
         state.dockOpen ? el('ul', { class: 'dock-list' }, rows.map(({ s, i }) => el('li', {}, [placingRow(s, i, tick)]))) : null,
         el('div', { class: 'dock-bar' }, [
-          el('button', { class: 'fox-btn', type: 'button', title: 'Open FutFox', 'aria-label': 'Open FutFox', onclick: () => { state.showSquad = true; state.scrollTo = 0; openPanel(); } }, [foxIcon()]),
-          state.dockOpen ? el('span', { class: 'count', text: `${done} of ${rows.length} placed` })
-            : next ? placingRow(next.s, next.i, tick)
-              : el('span', { class: 'done', text: 'All placed: check it and submit' }),
-          el('button', { class: 'icon-btn', type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), 'aria-label': state.dockOpen ? 'Hide the list' : 'Show every card', title: state.dockOpen ? 'Hide the list' : 'Show every card', onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }, [chevronIcon(!state.dockOpen)]),
-          el('button', { class: 'close', type: 'button', 'aria-label': 'Close the list', title: 'Close the list', text: '×', onclick: () => { state.placing = false; state.dockClosed = true; sync(); } }),
+          el('button', { class: 'fox-btn', type: 'button', title: t('Open FutFox'), 'aria-label': t('Open FutFox'), onclick: () => { state.showSquad = true; state.scrollTo = 0; openPanel('sbc'); } }, [foxIcon()]),
+          !next ? allDone
+            : state.dockOpen ? el('span', { class: 'count', text: t('{done} of {total} placed', { done, total: rows.length }) })
+              : placingRow(next.s, next.i, tick),
+          el('button', { class: 'icon-btn', type: 'button', 'aria-expanded': String(Boolean(state.dockOpen)), 'aria-label': t(state.dockOpen ? 'Hide the list' : 'Show every card'), title: t(state.dockOpen ? 'Hide the list' : 'Show every card'), onclick: () => { state.dockOpen = !state.dockOpen; renderDock(); } }, [chevronIcon(!state.dockOpen)]),
+          el('button', { class: 'close', type: 'button', 'aria-label': t('Close the list'), title: t('Close the list'), text: '×', onclick: () => { state.placing = false; state.dockClosed = true; sync(); } }),
         ]),
       ].filter(Boolean);
+    }
+
+    // After a tick redraws the card: the round tick pops, the row fades and a line is drawn through
+    // the name, the progress bar grows from `from` to `to`, and "All placed" rises in with the last
+    // one. Unticking only eases the bar and the row back.
+    function animateTick(i, adding, from, to) {
+      const bar = dock.querySelector('.dock-progress i');
+      if (bar) bar.animate([{ transform: `scaleX(${from})` }, { transform: `scaleX(${to})` }], { duration: 360, easing: EASE });
+      const row = dock.querySelector(`.dock-list .dock-row[data-i="${i}"]`);
+      if (row) {
+        const rest = [...row.children].filter((node) => !node.classList.contains('tick'));
+        rest.forEach((node) => node.animate([{ opacity: adding ? 1 : 0.45 }, {}], { duration: 220, easing: 'ease-out' }));
+      }
+      if (!adding) return;
+      const button = row && row.querySelector('button.tick');
+      if (button) button.animate([{ transform: 'scale(.6)' }, { transform: 'scale(1.18)', offset: 0.6 }, { transform: 'none' }], { duration: 320, easing: EASE });
+      const name = row && row.querySelector('.name');
+      if (name) name.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 280, delay: 60, easing: EASE, fill: 'backwards', pseudoElement: '::after' });
+      const done = dock.querySelector('.dock-bar .done');
+      if (done) done.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 120, easing: EASE, fill: 'backwards' });
     }
 
     // Follows the challenge the game shows; otherwise keeps the one picked here while it is listed.
@@ -983,19 +1072,38 @@
     // When something happened, for "loaded just now", "loaded 5 min ago" or "loaded at 14:05".
     function ago(ms) {
       const min = Math.floor((Date.now() - ms) / 60000);
-      if (min < 1) return 'just now';
-      if (min < 60) return `${min} min ago`;
-      return `at ${new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      if (min < 1) return t('just now');
+      if (min < 60) return t('{n} min ago', { n: min });
+      return t('at {time}', { time: new Date(ms).toLocaleTimeString(H.i18n.locale(), { hour: '2-digit', minute: '2-digit' }) });
+    }
+
+    // The club loads a page at a time, so the counter climbs to each page's total instead of jumping.
+    let climbing = 0;
+    function climbCount() {
+      if (climbing) return;
+      const step = () => {
+        const target = state.loadedCount || 0;
+        const shown = state.shownCount || 0;
+        if (!state.loading || shown >= target) { climbing = 0; return; }
+        state.shownCount = reducedMotion() ? target : Math.min(target, shown + Math.max(1, Math.ceil((target - shown) / 8)));
+        const count = panel.querySelector('.club-count');
+        if (count) count.textContent = t('{players} so far', { players: plural('player', state.shownCount) });
+        climbing = requestAnimationFrame(step);
+      };
+      climbing = requestAnimationFrame(step);
     }
 
     async function loadClub() {
       state.loading = true;
       state.error = null;
+      state.loadedCount = 0;
+      state.shownCount = 0;
       render();
       try {
         await H.fut.loadClub((n) => {
           state.loadedCount = n;
           render();
+          climbCount();
         });
         state.clubLoadedAt = Date.now();
       } catch (e) {
@@ -1003,6 +1111,12 @@
       }
       state.loading = false;
       render();
+      // The finished line and Reload my club rise in where the loading line was.
+      if (state.clubLoadedAt && !state.error && !reducedMotion()) {
+        panel.querySelectorAll('.club-actions > *').forEach((node, n) => node.animate(
+          [{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }],
+          { duration: 260, delay: n * 60, easing: EASE, fill: 'backwards' }));
+      }
     }
 
     // Cards the player kept out of a challenge's suggestions with Change: { id → name } per challenge.
@@ -1020,7 +1134,7 @@
     function solveSquad(entry, { fixed, market = settings.allowMarket, iterations } = {}) {
       const c = entry.challenge;
       const slots = H.fut.slotsFor(c);
-      if (!slots) throw new Error('This SBC uses a formation the app has not loaded yet. Open the challenge first.');
+      if (!slots) throw new Error(t('This SBC uses a formation the app has not loaded yet. Open the challenge first.'));
       const out = keptOut(entry.id);
       const rules = H.fut.rulesFor(c);
       const pool = H.fut.clubPool(poolOptions()).filter((p) => !out.has(p.id));
@@ -1161,8 +1275,8 @@
       const out = keptOut(entry.id);
       if (!out.size) return null;
       return el('p', { class: 'note' }, [
-        `Kept out: ${Array.from(out.values()).join(', ')}. `,
-        el('button', { class: 'small', type: 'button', text: 'Use them again', onclick: () => { out.clear(); render(); } }),
+        t('Kept out: {names}. ', { names: Array.from(out.values()).join(', ') }),
+        el('button', { class: 'small', type: 'button', text: t('Use them again'), onclick: () => { out.clear(); render(); } }),
       ]);
     }
 
@@ -1318,11 +1432,11 @@
     }
 
     function ruleStatus(rule) {
-      if (!rule.supported) return { icon: '?', cls: 'unknown', hint: 'Not checked by FutFox yet. Check it yourself.' };
+      if (!rule.supported) return { icon: '?', cls: 'unknown', hint: t('Not checked by FutFox yet. Check it yourself.') };
       if (!state.result) return { icon: '•', cls: 'muted', hint: '' };
       const r = state.result.ruleResults.find((x) => x.rule === rule);
       if (!r) return { icon: '•', cls: 'muted', hint: '' };
-      return r.shortfall === 0 ? { icon: '✓', cls: 'ok', hint: '' } : { icon: '✗', cls: 'bad', hint: `Short by ${r.shortfall}` };
+      return r.shortfall === 0 ? { icon: '✓', cls: 'ok', hint: '' } : { icon: '✗', cls: 'bad', hint: t('Short by {n}', { n: r.shortfall }) };
     }
 
     // The game's SBC points icon and chemistry glyph, shown in place of the words.
@@ -1334,10 +1448,10 @@
 
     // A challenge's progress as a small chip: done, or a Streamlined SBC's points so far.
     function challengeChip(c) {
-      if (c.status === 'COMPLETED') return el('span', { class: 'chip done', text: 'Done' });
+      if (c.status === 'COMPLETED') return el('span', { class: 'chip done', text: t('Done') });
       if (H.fut.isStreamlined(c.challenge)) {
         const ch = c.challenge;
-        return el('span', { class: 'chip pts', title: 'Points so far', 'aria-label': `${coins(ch.submittedScore || 0)} of ${coins(ch.scoreRequirement || 0)} points` }, [pointsIcon(), `${coins(ch.submittedScore || 0)} / ${coins(ch.scoreRequirement || 0)}`]);
+        return el('span', { class: 'chip pts', title: t('Points so far'), 'aria-label': t('{done} of {total} points', { done: coins(ch.submittedScore || 0), total: coins(ch.scoreRequirement || 0) }) }, [pointsIcon(), `${coins(ch.submittedScore || 0)} / ${coins(ch.scoreRequirement || 0)}`]);
       }
       return null;
     }
@@ -1369,14 +1483,14 @@
       }, [
         el('span', { class: 'menu-text' }, current
           ? [current.setName !== current.name ? el('span', { class: 'menu-set', text: current.setName }) : null, el('span', { class: 'menu-name', text: current.name })].filter(Boolean)
-          : [el('span', { class: 'menu-name', text: 'Pick a challenge' })]),
+          : [el('span', { class: 'menu-name', text: t('Pick a challenge') })]),
         current ? challengeChip(current) : null,
         el('span', { class: 'chev', 'aria-hidden': 'true' }),
       ]);
       const box = el('div', { class: 'menu' }, [trigger]);
       if (!open) return box;
 
-      const list = el('ul', { class: 'menu-list', role: 'listbox', id: 'futfox-challenge-list', 'aria-label': 'Challenges', tabindex: '-1' });
+      const list = el('ul', { class: 'menu-list', role: 'listbox', id: 'futfox-challenge-list', 'aria-label': t('Challenges'), tabindex: '-1' });
       let options = [];
       let active = -1;
       const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -1411,7 +1525,7 @@
           options.push({ id: c.id, node });
           rows.push(node);
         }
-        list.replaceChildren(...(rows.length ? rows : [el('li', { class: 'menu-empty', role: 'presentation', text: 'No challenge matches.' })]));
+        list.replaceChildren(...(rows.length ? rows : [el('li', { class: 'menu-empty', role: 'presentation', text: t('No challenge matches.') })]));
         active = -1;
         mark(Math.max(0, options.findIndex((o) => o.id === state.selectedId)));
       };
@@ -1430,7 +1544,7 @@
       };
       // A search box only when the list is long enough to need one.
       const search = state.challenges.length > 6
-        ? el('input', { type: 'search', placeholder: 'Search challenges', 'aria-label': 'Search challenges', 'aria-controls': list.id, value: state.menu.query, oninput: (e) => { state.menu.query = e.target.value; fill(); } })
+        ? el('input', { type: 'search', placeholder: t('Search challenges'), 'aria-label': t('Search challenges'), 'aria-controls': list.id, value: state.menu.query, oninput: (e) => { state.menu.query = e.target.value; fill(); } })
         : null;
       (search || list).addEventListener('keydown', keys);
       fill();
@@ -1443,22 +1557,22 @@
     // Streamlined SBCs: which cards to use, how many and how many points to reach now, and whether
     // they come from the club, SBC storage or both; one small card each.
     // An on/off option: its text on the left, a switch on the right.
-    const switchRow = (key, text, hint) => el('label', { class: 'switch-row', title: hint || null }, [
-      el('span', { text }),
+    const switchRow = (key, text, hint) => el('label', { class: 'switch-row', title: hint ? t(hint) : null }, [
+      el('span', { text: t(text) }),
       el('input', { class: 'switch', type: 'checkbox', role: 'switch', checked: settings[key], onchange: (e) => setSetting(key, e.target.checked) }),
     ]);
     // A div, not a label: clicking a label would press the stepper's first button.
-    const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: label }), control]);
+    const field = (label, control) => el('div', { class: 'field' }, [el('span', { text: t(label) }), control]);
 
     // A squad SBC's options, in the same cards as a Streamlined SBC's.
     function squadOptions() {
       return el('section', {}, [
-        el('h2', { text: 'Options' }),
+        el('h2', { text: t('Options') }),
         el('div', { class: 'opt-card' }, [
-          el('h3', { text: 'Which cards' }),
+          el('h3', { text: t('Which cards') }),
           el('div', { class: 'pair' }, [
             // Stored as the lowest rating kept back (0: none), shown as the highest one used.
-            field('Highest rating to use', stepper({ value: Number(settings.protectFrom) ? settings.protectFrom - 1 : 99, min: 40, max: 99, label: 'highest rating to use', onChange: (n) => setSetting('protectFrom', n == null || n >= 99 ? 0 : n + 1) })),
+            field('Highest rating to use', stepper({ value: Number(settings.protectFrom) ? settings.protectFrom - 1 : 99, min: 40, max: 99, label: t('Highest rating to use'), onChange: (n) => setSetting('protectFrom', n == null || n >= 99 ? 0 : n + 1) })),
           ]),
           el('div', { class: 'switches' }, [
             switchRow('untradeablesOnly', 'Use untradeable cards only'),
@@ -1466,11 +1580,23 @@
           ]),
         ]),
         el('div', { class: 'opt-card' }, [
-          el('h3', { text: 'Take cards from' }),
+          el('h3', { text: t('Take cards from') }),
           el('div', { class: 'switches' }, [
             switchRow('storageFirst', 'SBC storage cards first', 'SBC storage cards go in before club cards'),
             switchRow('allowMarket', 'Suggest cards to buy when the club falls short'),
           ]),
+        ]),
+      ]);
+    }
+
+    // The panel's language: the game's own (Arabic when the Web App is in Arabic), or English or Arabic.
+    function languageSection() {
+      const choice = (value, text, lang) => el('button', { type: 'button', lang, 'aria-pressed': String((settings.lang || 'auto') === value), text,
+        onclick: () => { setSetting('lang', value); render(); if (isShown(dock)) renderDock(); } });
+      return el('section', {}, [
+        el('h2', { text: t('Language') }),
+        el('div', { class: 'segmented', role: 'group', 'aria-label': t('Language') }, [
+          choice('auto', t('Same as the game')), choice('en', 'English', 'en'), choice('ar', 'العربية', 'ar'),
         ]),
       ]);
     }
@@ -1481,12 +1607,12 @@
       const limit = H.fut.submitLimit();
       const prefer = (value, text) => el('button', { type: 'button', 'aria-pressed': String(settings.slPrefer === value), text, onclick: () => { setSetting('slPrefer', value); render(); } });
       return el('section', {}, [
-        el('h2', { text: 'Options' }),
+        el('h2', { text: t('Options') }),
         el('div', { class: 'opt-card' }, [
-          el('h3', { text: 'Which cards' }),
+          el('h3', { text: t('Which cards') }),
           el('div', { class: 'pair' }, [
-            field('From rating', stepper({ value: settings.slMinRating, min: 40, max: 99, label: 'lowest rating', onChange: (n) => setSetting('slMinRating', n) })),
-            field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: 'highest rating', onChange: (n) => setSetting('slMaxRating', n) })),
+            field('From rating', stepper({ value: settings.slMinRating, min: 40, max: 99, label: t('Lowest rating'), onChange: (n) => setSetting('slMinRating', n) })),
+            field('To rating', stepper({ value: settings.slMaxRating, min: 40, max: 99, label: t('Highest rating'), onChange: (n) => setSetting('slMaxRating', n) })),
           ]),
           el('div', { class: 'switches' }, [
             switchRow('slKeepSpecial', "Don't use special cards", 'Only common and rare cards are used'),
@@ -1495,15 +1621,15 @@
           ]),
         ]),
         el('div', { class: 'opt-card' }, [
-          el('h3', { text: 'How many' }),
+          el('h3', { text: t('How many') }),
           el('div', { class: 'pair' }, [
-            field(`Max cards (up to ${limit})`, stepper({ value: settings.slMaxCards, min: 1, max: limit, label: 'cards', empty: String(limit), onChange: (n) => setSetting('slMaxCards', n) })),
-            field('Points now', stepper({ value: settings.slPoints, min: 1, max: Math.max(1, remaining), step: 500, wide: true, label: 'points', empty: coins(remaining), onChange: (n) => setSetting('slPoints', n) })),
+            field(t('Max cards (up to {n})', { n: limit }), stepper({ value: settings.slMaxCards, min: 1, max: limit, label: t('Cards'), empty: String(limit), onChange: (n) => setSetting('slMaxCards', n) })),
+            field('Points now', stepper({ value: settings.slPoints, min: 1, max: Math.max(1, remaining), step: 500, wide: true, label: t('Points'), empty: coins(remaining), onChange: (n) => setSetting('slPoints', n) })),
           ]),
-          el('div', { class: 'segmented full', role: 'group', 'aria-label': 'Favour' }, [prefer('cheapest', 'Fewest coins'), prefer('fewest', 'Fewest cards')]),
+          el('div', { class: 'segmented full', role: 'group', 'aria-label': t('Favour') }, [prefer('cheapest', t('Fewest coins')), prefer('fewest', t('Fewest cards'))]),
         ]),
         el('div', { class: 'opt-card' }, [
-          el('h3', { text: 'Take cards from' }),
+          el('h3', { text: t('Take cards from') }),
           el('div', { class: 'switches' }, [
             switchRow('slClub', 'Use club cards'),
             switchRow('slStorage', 'Use SBC storage'),
@@ -1527,13 +1653,13 @@
       const cards = slots
         ? el('div', { class: 'pitch' }, pitchRows(slots).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => (required.has(i)
           ? skel(i)
-          : el('div', { class: 'slot locked' }, [miniCard({ position: H.fut.positionName(slots[i].typeId), label: 'Locked' })]))))))
+          : el('div', { class: 'slot locked' }, [miniCard({ position: H.fut.positionName(slots[i].typeId), label: t('Locked') })]))))))
         : el('div', { class: 'cards' }, [0, 1, 2, 3, 4].map(skel));
       return [
-        crumbs([[entry.setName || 'Challenge'], [entry.name]], 'SBC'),
+        crumbs([[entry.setName || t('Challenge')], [entry.name]], 'SBC'),
         el('section', { 'aria-busy': 'true' }, [
-          el('h2', { text: streamlined ? 'Suggested cards' : 'Suggested squad' }),
-          el('p', { class: 'muted', role: 'status' }, [spinner(), streamlined ? 'Asking the game which cards this challenge takes…' : 'Finding the cheapest squad in your club…']),
+          el('h2', { text: t(streamlined ? 'Suggested cards' : 'Suggested squad') }),
+          el('p', { class: 'muted', role: 'status' }, [spinner(), t(streamlined ? 'Asking the game which cards this challenge takes…' : 'Finding the cheapest squad in your club…')]),
           cards,
         ]),
       ];
@@ -1543,7 +1669,7 @@
     function squadPage(entry) {
       const back = () => { state.showSquad = false; state.scrollTo = state.setupScroll || 0; render(); };
       return [
-        crumbs([[entry.setName || 'Challenge', back], [entry.name]], 'SBC'),
+        crumbs([[entry.setName || t('Challenge'), back], [entry.name]], 'SBC'),
         state.result.kind === 'score' ? renderScoreResult(entry) : renderResult(entry),
         placeSteps(state.result.kind === 'score'),
       ];
@@ -1560,22 +1686,22 @@
           ]
         : null;
       return el('section', {}, [
-        el('h2', { text: streamlined ? 'Pick them in the game' : 'Place it in the game' }),
-        el('ol', { class: 'steps' }, steps ? steps.map((text) => el('li', { text })) : [
-          el('li', { text: 'Press the button below, or click anywhere in the game: FutFox folds into a small list in the corner while this SBC is open.' }),
-          el('li', { text: 'Click a position on the pitch, search your club for that player (Copy puts the name on your clipboard), then tick the player in the list.' }),
-          el('li', { text: 'For a card to buy, press Search market (Market in the list), buy one with the rating shown, then place it the same way.' }),
-          el('li', { text: 'When every position is filled, check the rating and chemistry in the SBC screen, then submit it yourself.' }),
+        el('h2', { text: t(streamlined ? 'Pick them in the game' : 'Place it in the game') }),
+        el('ol', { class: 'steps' }, steps ? steps.map((text) => el('li', { text: t(text) })) : [
+          el('li', { text: t('Press the button below, or click anywhere in the game: FutFox folds into a small list in the corner while this SBC is open.') }),
+          el('li', { text: t('Click a position on the pitch, search your club for that player (Copy puts the name on your clipboard), then tick the player in the list.') }),
+          el('li', { text: t('For a card to buy, press Search market (Market in the list), buy one with the rating shown, then place it the same way.') }),
+          el('li', { text: t('When every position is filled, check the rating and chemistry in the SBC screen, then submit it yourself.') }),
         ]),
-        el('p', { class: 'note', text: 'In the way? Drag the list, the FutFox button or this panel by its top bar anywhere on the screen. A double-click puts it back.' }),
+        el('p', { class: 'note', text: t('In the way? Drag the list, the FutFox button or this panel by its top bar anywhere on the screen. A double-click puts it back.') }),
         el('div', { class: 'row' }, [
-          el('button', { class: 'primary', type: 'button', text: 'Place it in the game', onclick: () => { state.placing = true; state.dockClosed = false; hidePanel(); } }),
+          el('button', { class: 'primary', type: 'button', text: t('Place it in the game'), onclick: () => { state.placing = true; state.dockClosed = false; hidePanel(); } }),
         ]),
       ]);
     }
 
     function changeButton(entry, index, name) {
-      return el('button', { class: 'icon-btn', type: 'button', title: 'Change: keep this card and suggest another', 'aria-label': `Change ${name}`, onclick: () => changePlayer(entry, index) }, [swapIcon()]);
+      return el('button', { class: 'icon-btn', type: 'button', title: t('Change: keep this card and suggest another'), 'aria-label': t('Change {name}', { name }), onclick: () => changePlayer(entry, index) }, [swapIcon()]);
     }
 
     function renderResult(entry) {
@@ -1586,13 +1712,13 @@
       const buys = res.squad.filter((s) => s.player && s.player.source === 'market');
 
       const summary = el('div', { class: 'summary' }, [
-        el('span', {}, [el('strong', { text: String(res.rating) }), ' rating']),
-        el('span', { title: res.eaChem ? 'Chemistry' : "Chemistry, estimated: check it in the squad builder" }, [chemIcon(), el('strong', { text: String(chem) }), ` / ${3 * res.squad.length}`, res.eaChem ? '' : ' (estimate)']),
+        el('span', {}, parts('{n} rating', { n: el('strong', { text: String(res.rating) }) })),
+        el('span', { title: t(res.eaChem ? 'Chemistry' : 'Chemistry, estimated: check it in the squad builder') }, [chemIcon(), el('strong', { text: String(chem) }), ` / ${3 * res.squad.length}`, res.eaChem ? '' : t(' (estimate)')]),
         el('span', {}, [
           H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
-          el('strong', { text: coins(res.cost) }), ' est. coins',
+          ...parts('{n} est. coins', { n: el('strong', { text: coins(res.cost) }) }),
         ]),
-        el('span', { class: res.feasible ? 'ok' : 'bad', text: res.feasible ? 'Meets the rules' : 'Could not meet every rule' }),
+        el('span', { class: res.feasible ? 'ok' : 'bad', text: t(res.feasible ? 'Meets the rules' : 'Could not meet every rule') }),
       ]);
 
       // The SBC's rules on top. A rule about single cards (a club, nation, rarity...) is a button
@@ -1602,14 +1728,14 @@
       // of its own, though it isn't one of the SBC's requirements.
       const needed = res.required ? res.required.size : res.squad.length;
       const filled = res.squad.filter((s, i) => s.player && (!res.required || res.required.has(i))).length;
-      const count = el('span', { class: `rule-chip ${filled === needed ? 'ok' : 'bad'}` }, [el('span', { class: 'ri', text: filled === needed ? '✓' : '✗' }), `Number of Players in the Squad: ${needed}`]);
+      const count = el('span', { class: `rule-chip ${filled === needed ? 'ok' : 'bad'}` }, [el('span', { class: 'ri', text: filled === needed ? '✓' : '✗' }), t('Number of Players in the Squad: {n}', { n: needed })]);
       const rules = el('div', { class: 'rule-chips' }, [count].concat(res.ruleResults.map((r, n) => {
         const icon = !r.rule.supported ? '?' : r.shortfall === 0 ? '✓' : '✗';
         const cls = `rule-chip ${!r.rule.supported ? 'unknown' : r.shortfall === 0 ? 'ok' : 'bad'}`;
         const text = [el('span', { class: 'ri', text: icon }), r.rule.label];
         const players = res.squad.map((s) => s.player).filter(Boolean);
         if (!players.length || H.requirements.cardMeets(r.rule, players[0]) === null) return el('span', { class: cls }, text);
-        return el('button', { type: 'button', class: cls, 'aria-pressed': String(state.ruleFocus === n), title: 'Show the cards that meet this rule', onclick: () => { state.ruleFocus = state.ruleFocus === n ? null : n; render(); } }, text);
+        return el('button', { type: 'button', class: cls, 'aria-pressed': String(state.ruleFocus === n), title: t('Show the cards that meet this rule'), onclick: () => { state.ruleFocus = state.ruleFocus === n ? null : n; render(); } }, text);
       })));
 
       // Drawn like the game's cards on its squad screen: each card in its slot's position, then
@@ -1620,16 +1746,16 @@
         const position = H.fut.positionName(s.typeId);
         if (!p) {
           const locked = res.required && !res.required.has(i);
-          return el('div', { class: 'slot pick locked', title: locked ? 'This slot is locked: the SBC needs no card here' : 'No card fits this slot' }, [
-            miniCard({ position, label: locked ? 'Locked' : 'Empty' }),
-            el('span', { class: 'src', text: locked ? 'Not needed' : 'Nothing fits' }),
+          return el('div', { class: 'slot pick locked', title: t(locked ? 'This slot is locked: the SBC needs no card here' : 'No card fits this slot') }, [
+            miniCard({ position, label: t(locked ? 'Locked' : 'Empty') }),
+            el('span', { class: 'src', text: t(locked ? 'Not needed' : 'Nothing fits') }),
           ]);
         }
         const dim = focus && !H.requirements.cardMeets(focus.rule, p);
         if (p.source === 'market') {
-          return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `Buy a ${p.rating}-rated ${position}: ${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }, [
-            miniCard({ rating: p.rating, position, name: 'To buy' }),
-            el('button', { class: 'small market', type: 'button', text: 'Search market', onclick: () => H.fut.openMarketSearch(p.search) }),
+          return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: t('Buy a {rating}-rated {position}: {league} · {nation}', { rating: p.rating, position, league: H.fut.leagueName(p.search.leagueId), nation: H.fut.nationName(p.search.nationId) }) }, [
+            miniCard({ rating: p.rating, position, name: t('To buy') }),
+            el('button', { class: 'small market', type: 'button', text: t('Search market'), onclick: () => H.fut.openMarketSearch(p.search) }),
             el('span', { class: 'src', text: `${H.fut.leagueName(p.search.leagueId)} · ${H.fut.nationName(p.search.nationId)}` }),
           ]);
         }
@@ -1638,27 +1764,27 @@
         return el('div', { class: `slot pick${dim ? ' dim' : ''}`, title: `${p.name} ${p.rating} · ${H.fut.leagueName(p.leagueId)} · ${H.fut.nationName(p.nationId)}` }, [
           miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position, name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
           el('div', { class: 'pick-line' }, [
-            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
-            el('span', { class: 'chem-pts', role: 'img', title: `${chem} chemistry`, 'aria-label': `${chem} chemistry` }, [0, 1, 2].map((n) => el('i', { class: n < chem ? 'on' : null }))),
+            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: t('Untradeable'), 'aria-label': t('Untradeable') }) : null,
+            el('span', { class: 'chem-pts', role: 'img', title: t('{n} chemistry', { n: chem }), 'aria-label': t('{n} chemistry', { n: chem }) }, [0, 1, 2].map((n) => el('i', { class: n < chem ? 'on' : null }))),
             changeButton(entry, i, p.name),
           ]),
-          el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
+          el('span', { class: p.storage ? 'src store' : 'src', text: t(p.storage ? 'SBC storage' : 'Club') }),
         ]);
       };
       const pitch = el('div', { class: 'pitch' }, pitchRows(formation).map((row) => el('div', { class: 'pitch-row' }, row.map((i) => cell(res.squad[i], i)))));
 
       return el('section', {}, [
-        el('h2', { text: 'Suggested squad' }),
+        el('h2', { text: t('Suggested squad') }),
         summary,
         rules,
         pitch,
         buys.length
-          ? el('p', { class: 'note', text: `${buys.length} card${buys.length > 1 ? 's' : ''} to buy. "Search market" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.` })
+          ? el('p', { class: 'note', text: t("{cards} to buy. \"Search market\" fills in quality, position, league and nation; the market has no rating filter, so pick a card with the rating shown. You press Search and choose what to buy. Prices for cards you don't own are rough estimates.", { cards: plural('card', buys.length) }) })
           : null,
-        res.eaChem ? null : el('p', { class: 'note', text: buys.length
+        res.eaChem ? null : el('p', { class: 'note', text: t(buys.length
           ? 'Chemistry is estimated because the squad includes cards to buy. Check it in the squad builder.'
-          : "Chemistry is estimated because the game's own count wasn't available. Check it in the squad builder." }),
-        el('p', { class: 'note', text: `Picked from ${res.poolSize} club and SBC storage players. Nothing has been placed in your squad.` }),
+          : "Chemistry is estimated because the game's own count wasn't available. Check it in the squad builder.") }),
+        el('p', { class: 'note', text: t('Picked from {players} in your club and SBC storage. Nothing has been placed in your squad.', { players: plural('player', res.poolSize) }) }),
         keptOutNote(entry),
       ]);
     }
@@ -1667,13 +1793,13 @@
     function renderScoreResult(entry) {
       const res = state.result;
       const summary = el('div', { class: 'summary' }, [
-        el('span', { title: 'Points' }, [pointsIcon(), el('strong', { text: coins(res.score) }), ` / ${coins(res.need)}`, res.need < res.remaining ? ` (${coins(res.remaining)} left)` : '']),
-        el('span', {}, [el('strong', { text: String(res.picks.length) }), ` of ${res.limit} cards`]),
+        el('span', { title: t('Points') }, [pointsIcon(), el('strong', { text: coins(res.score) }), ` / ${coins(res.need)}`, res.need < res.remaining ? t(' ({n} left)', { n: coins(res.remaining) }) : '']),
+        el('span', {}, parts('{n} of {cards}', { n: el('strong', { text: String(res.picks.length) }), cards: plural('card', res.limit) })),
         el('span', {}, [
           H.fut.coinImage && H.fut.coinImage() ? el('img', { class: 'coin', src: H.fut.coinImage(), alt: '' }) : null,
-          el('strong', { text: coins(res.cost) }), ' est. coins',
+          ...parts('{n} est. coins', { n: el('strong', { text: coins(res.cost) }) }),
         ]),
-        res.reached ? el('span', { class: 'ok', text: 'Reaches the target' }) : el('span', { class: 'bad', title: 'Points still missing' }, ['Short by ', pointsIcon(), coins(res.need - res.score)]),
+        res.reached ? el('span', { class: 'ok', text: t('Reaches the target') }) : el('span', { class: 'bad', title: t('Points still missing') }, parts('Short by {n}', { n: [pointsIcon(), coins(res.need - res.score)] })),
       ]);
       // Drawn like the game's own cards, with the line the game's picker shows under each card.
       const points = H.fut.sbcPointsImage && H.fut.sbcPointsImage();
@@ -1683,20 +1809,20 @@
         return el('div', { class: 'slot pick' }, [
           miniCard({ rarityId: p.rarity, rating: p.rating, playerId: p.playerId, position: H.fut.positionName(p.position ?? p.positions[0]), name: p.name, badges: H.fut.cardBadges(p, { light: plain }) }),
           el('div', { class: 'pick-line' }, [
-            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: 'Untradeable', 'aria-label': 'Untradeable' }) : null,
+            p.untradeable ? el('span', { class: 'untr-ico', role: 'img', title: t('Untradeable'), 'aria-label': t('Untradeable') }) : null,
             points ? el('img', { class: 'pts-icon', src: points, alt: '' }) : null,
-            el('span', { title: 'Item Score', text: coins(p.score) }),
+            el('span', { title: t('Item Score'), text: coins(p.score) }),
             changeButton(entry, i, p.name),
           ]),
-          el('span', { class: p.storage ? 'src store' : 'src', text: p.storage ? 'SBC storage' : 'Club' }),
+          el('span', { class: p.storage ? 'src store' : 'src', text: t(p.storage ? 'SBC storage' : 'Club') }),
         ]);
       });
       return el('section', {}, [
-        el('h2', { text: 'Suggested cards' }),
+        el('h2', { text: t('Suggested cards') }),
         summary,
-        cells.length ? el('div', { class: 'cards' }, cells) : el('p', { class: 'muted', text: 'No card in your club or SBC storage fits this challenge.' }),
-        res.reached ? null : el('p', { class: 'note', text: `These are your ${res.limit} highest-scoring cards. Submit them to bank their points, then come back for the rest.` }),
-        el('p', { class: 'note', text: `Picked from ${res.poolSize} cards the game's picker lists for this challenge. Nothing has been ticked or submitted.` }),
+        cells.length ? el('div', { class: 'cards' }, cells) : el('p', { class: 'muted', text: t('No card in your club or SBC storage fits this challenge.') }),
+        res.reached ? null : el('p', { class: 'note', text: t('These are your {cards} with the highest Item Score. Submit them to bank their points, then come back for the rest.', { cards: plural('card', res.limit) }) }),
+        el('p', { class: 'note', text: t("Picked from {cards} the game's picker lists for this challenge. Nothing has been ticked or submitted.", { cards: plural('card', res.poolSize) }) }),
         keptOutNote(entry),
       ]);
     }
@@ -1711,17 +1837,17 @@
       const picks = Object.values(settings.galleryPicked || {}).reduce((n, slots) => n + Object.keys(slots).length, 0);
       const msg = state.dataMessage;
       return el('section', {}, [
-        el('h2', { text: 'Saved in this browser' }),
-        el('p', { class: 'muted', text: [`${cards} ${cards === 1 ? 'card' : 'cards'} remembered`, `${picks} ${picks === 1 ? 'card' : 'cards'} picked`, ticks ? `${ticks} ${ticks === 1 ? 'slot' : 'slots'} ticked done in game` : null].filter(Boolean).join(' · ') }),
+        el('h2', { text: t('Saved in this browser') }),
+        el('p', { class: 'muted', text: [t('{cards} remembered', { cards: plural('card', cards) }), t('{cards} picked', { cards: plural('card', picks) }), ticks ? t('{slots} ticked done in game', { slots: plural('slot', ticks) }) : null].filter(Boolean).join(' · ') }),
         el('div', { class: 'row' }, [
-          el('button', { type: 'button', text: 'Export', disabled: !cards && !ticks && !picks, onclick: exportGalleryData }),
+          el('button', { type: 'button', text: t('Export'), disabled: !cards && !ticks && !picks, onclick: exportGalleryData }),
           el('label', { class: 'file' }, [
-            el('input', { type: 'file', accept: '.json,application/json', 'aria-label': 'Import a FutFox Gallery data file', onchange: (e) => importGalleryData(e.target.files[0]) }),
-            el('span', { text: 'Import' }),
+            el('input', { type: 'file', accept: '.json,application/json', 'aria-label': t('Import a FutFox Gallery data file'), onchange: (e) => importGalleryData(e.target.files[0]) }),
+            el('span', { text: t('Import') }),
           ]),
         ]),
         msg ? el('p', { class: msg.kind === 'bad' ? 'error' : 'note', role: 'status', text: msg.text }) : null,
-        el('p', { class: 'note', text: 'Only this browser keeps these. Export a copy to move them to another browser or keep them safe; importing adds to what is here and keeps your picks.' }),
+        el('p', { class: 'note', text: t('Only this browser keeps these. Export a copy to move them to another browser or keep them safe; importing adds to what is here and keeps your picks.') }),
       ]);
     }
 
@@ -1733,7 +1859,7 @@
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       const picks = Object.values(data.picked).reduce((n, slots) => n + Object.keys(slots).length, 0);
-      state.dataMessage = { kind: 'ok', text: `Exported ${data.cards.length} cards, ${picks} picked cards and ${Object.values(data.done).reduce((n, l) => n + l.length, 0)} ticked slots.` };
+      state.dataMessage = { kind: 'ok', text: t('Exported {cards}, {picks} picked and {slots} ticked.', { cards: plural('card', data.cards.length), picks: plural('card', picks), slots: plural('slot', Object.values(data.done).reduce((n, l) => n + l.length, 0)) }) };
       render();
     }
 
@@ -1743,9 +1869,9 @@
       try {
         read = H.gallery.readExport(JSON.parse(await file.text()));
       } catch (e) {
-        read = { error: `${file.name} isn't a FutFox Gallery data file (it isn't JSON).` };
+        read = { error: t("{file} isn't a FutFox Gallery data file (it isn't JSON).", { file: file.name }) };
       }
-      if (read.error) { state.dataMessage = { kind: 'bad', text: read.error }; return render(); }
+      if (read.error) { state.dataMessage = { kind: 'bad', text: t(read.error) }; return render(); }
       const { memory, persona } = H.fut.galleryMemory();
       const merged = H.gallery.mergeMemory(memory, read.memory);
       const done = H.gallery.mergeDone(settings.galleryDone, read.done);
@@ -1759,23 +1885,35 @@
       H.fut.replaceGalleryMemory(merged);
       setSetting('galleryDone', done);
       setSetting('galleryPicked', picked);
-      const other = read.persona && String(read.persona) !== String(persona) ? ' The file comes from another EA account; its cards now count for this one.' : '';
+      const other = read.persona && String(read.persona) !== String(persona) ? t(' The file comes from another EA account; its cards now count for this one.') : '';
       const added = cards || ticks || picks
-        ? `Added ${cards} ${cards === 1 ? 'card' : 'cards'}, ${picks} picked ${picks === 1 ? 'card' : 'cards'} and ${ticks} ticked ${ticks === 1 ? 'slot' : 'slots'}.`
-        : 'Nothing new: everything in the file was already here.';
+        ? t('Added {cards}, {picks} picked and {slots} ticked.', { cards: plural('card', cards), picks: plural('card', picks), slots: plural('slot', ticks) })
+        : t('Nothing new: everything in the file was already here.');
       state.dataMessage = { kind: 'ok', text: `${added}${other}` };
       render();
     }
 
     function clubSection(known) {
       return el('section', {}, [
-        el('h2', { text: 'Your club' }),
-        // One spinner, on the button; the line says how far the load is, or when it last ran.
-        el('p', { class: 'muted', role: 'status', text: state.loading
-          ? `${state.loadedCount || 0} players so far`
-          : `${known} players known${H.fut.knownStorageItems().length ? ` · ${H.fut.knownStorageItems().length} in SBC storage` : ''}${state.clubLoadedAt ? ` · loaded ${ago(state.clubLoadedAt)}` : ''}` }),
-        el('div', { class: 'row' }, [el('button', { type: 'button', disabled: state.loading, onclick: loadClub }, state.loading ? [spinner(), 'Loading your club…'] : [state.clubLoadedAt ? 'Reload my club' : 'Load my club'])]),
-        el('p', { class: 'note', text: 'Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.' }),
+        el('h2', { text: t('Your club') }),
+        // As in the video: Load my club (lime until the club is loaded) with what FutFox knows beside
+        // it; while it loads, one line with the spinner and how many players so far; then Reload my
+        // club with how many players and when.
+        state.loading
+          ? el('div', { class: 'club-loading' }, [
+            spinner(),
+            el('span', { role: 'status', text: t('Loading your club…') }),
+            el('span', { class: 'club-count', text: t('{players} so far', { players: plural('player', state.shownCount || 0) }) }),
+          ])
+          : el('div', { class: 'row club-actions' }, [
+            el('button', { class: state.clubLoadedAt ? 'load' : 'load primary', type: 'button', onclick: loadClub }, [t(state.clubLoadedAt ? 'Reload my club' : 'Load my club')]),
+            el('span', { class: 'muted club-status', role: 'status', text: [
+              state.clubLoadedAt ? plural('player', known) : t('{players} known', { players: plural('player', known) }),
+              H.fut.knownStorageItems().length ? t('{n} in SBC storage', { n: H.fut.knownStorageItems().length }) : null,
+              state.clubLoadedAt ? t('loaded {when}', { when: ago(state.clubLoadedAt) }) : null,
+            ].filter(Boolean).join(' · ') }),
+          ]),
+        el('p', { class: 'note', text: t('Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.') }),
       ]);
     }
 
@@ -1786,25 +1924,25 @@
       try {
         state.sets.data = await H.gallerySource.load({ force });
       } catch (e) {
-        state.sets.error = e.message || String(e);
+        state.sets.error = t(e.message || String(e));
         state.sets.data = state.sets.data || H.gallerySource.cached();
       }
       state.sets.loading = false;
       render();
     }
 
-    const day = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const day = (ms) => new Date(ms).toLocaleDateString(H.i18n.locale(), { day: 'numeric', month: 'short' });
 
     function slotLine(slot) {
-      if (slot.kind === 'card') return { rating: slot.rating == null ? '' : String(slot.rating), name: slot.name || `Player ${slot.playerId}`, meta: slot.version || 'Any version' };
+      if (slot.kind === 'card') return { rating: slot.rating == null ? '' : String(slot.rating), name: slot.name || t('Player {id}', { id: slot.playerId }), meta: slot.version || t('Any version') };
       const parts = [
         slot.version,
-        slot.leagueIds && slot.leagueIds.length && slot.leagueIds.map((id) => H.fut.leagueName(id)).join(' or '),
+        slot.leagueIds && slot.leagueIds.length && slot.leagueIds.map((id) => H.fut.leagueName(id)).join(t(' or ')),
         slot.leagueId != null && H.fut.leagueName(slot.leagueId),
         slot.nationId != null && H.fut.nationName(slot.nationId),
         slot.minRating != null && `${slot.minRating}+`,
       ];
-      return { rating: '', name: slot.label, meta: parts.filter(Boolean).join(' · ') || 'Any card' };
+      return { rating: '', name: slot.label, meta: parts.filter(Boolean).join(' · ') || t('Any card') };
     }
 
     // A category's or set's picture: its own art from art/ first, then the Web App's club badge or
@@ -1838,9 +1976,9 @@
       return el(tag, { class: 'set-head', ...attrs }, [
         pictureEl('set', res.name, res.slots.map((e) => e.slot)),
         el('span', { class: 'name', text: res.name }),
-        el('span', { class: 'count', text: `${res.have} of ${res.total}` }),
+        el('span', { class: 'count', text: t('{have} of {total}', { have: res.have, total: res.total }) }),
         el('span', { class: 'bar', 'aria-hidden': 'true' }, [el('span', { style: `width:${Math.round((100 * res.have) / (res.total || 1))}%` })]),
-        el('span', { class: 'meta', text: [res.grade ? `Grade ${res.grade} with your cards` : null, res.unsure ? `${res.unsure} to check` : null].filter(Boolean).join(' · ') || `${res.total - res.have} missing` }),
+        el('span', { class: 'meta', text: [res.grade ? t('Grade {grade} with your cards', { grade: res.grade }) : null, res.unsure ? t('{n} to check', { n: res.unsure }) : null].filter(Boolean).join(' · ') || t('{n} missing', { n: res.total - res.have }) }),
       ]);
     }
 
@@ -1848,6 +1986,7 @@
     // Going down remembers where the list was scrolled; going back returns there.
     const OTHER = 'Other';
     const categoryOf = (res) => res.group || OTHER;
+    const shownCategory = (name) => (name === OTHER ? t(OTHER) : name);
     const level = () => (state.openSet != null ? 'set' : state.category != null ? 'category' : 'home');
 
     function go(category, setId) {
@@ -1865,10 +2004,10 @@
     function crumbs(parts, label = 'Gallery') {
       const items = [];
       parts.forEach(([text, onclick], i) => {
-        if (i) items.push(el('span', { class: 'sep', 'aria-hidden': 'true', text: '›' }));
-        items.push(onclick ? el('button', { type: 'button', class: 'small', text: i ? text : `← ${text}`, onclick }) : el('span', { class: 'current', 'aria-current': 'page', text }));
+        if (i) items.push(el('span', { class: 'sep', 'aria-hidden': 'true', text: H.i18n.dir() === 'rtl' ? '‹' : '›' }));
+        items.push(onclick ? el('button', { type: 'button', class: 'small', text: i ? text : `${H.i18n.dir() === 'rtl' ? '→' : '←'} ${text}`, onclick }) : el('span', { class: 'current', 'aria-current': 'page', text }));
       });
-      return el('nav', { class: 'crumbs', 'aria-label': label }, items);
+      return el('nav', { class: 'crumbs', 'aria-label': t(label) }, items);
     }
 
     // Gallery Tokens a set gives: every grade's token reward, and the ones of the grades your cards reach
@@ -1904,13 +2043,13 @@
       const logos = categoryLogos(name, sets);
       const pictured = sets.map((r) => H.setMatch.picture(r.slots.map((e) => e.slot)) || {});
       const sub = rest.join(' / ')
-        || (pictured.every((p) => p.club != null) ? 'Explore club collections'
-          : pictured.every((p) => p.leagues) ? 'Explore league collections'
-            : `${(logos.from.length ? logos.from : sets.map((r) => r.name)).slice(0, 2).join(', ')}${sets.length > 2 ? ' & more' : ''}`);
+        || (pictured.every((p) => p.club != null) ? t('Explore club collections')
+          : pictured.every((p) => p.leagues) ? t('Explore league collections')
+            : `${(logos.from.length ? logos.from : sets.map((r) => r.name)).slice(0, 2).join(', ')}${sets.length > 2 ? t(' & more') : ''}`);
       const tokens = sets.map(setTokens).reduce((t, s) => ({ earned: t.earned + s.earned, total: t.total + s.total }), { earned: 0, total: 0 });
       const grades = H.setMatch.GRADES.map((g) => {
         const n = sets.filter((r) => r.grade === g).length;
-        return el('span', { class: `grade g-${g}${n ? '' : ' none'}`, title: `${n} ${n === 1 ? 'set' : 'sets'} at grade ${g} with your cards` }, [
+        return el('span', { class: `grade g-${g}${n ? '' : ' none'}`, title: t('{sets} at grade {grade} with your cards', { sets: plural('set', n), grade: g }) }, [
           el('span', { class: 'dia', text: g }),
           el('span', { class: 'n', text: String(n) }),
         ]);
@@ -1919,17 +2058,17 @@
       return el('button', { type: 'button', class: 'cat', onclick: () => go(name, null) }, [
         el('span', { class: 'cat-top' }, [
           el('span', { class: 'logos', 'aria-hidden': 'true' }, logos.urls.length ? logos.urls.map(logo) : [el('span', { class: 'letter', text: title.trim().charAt(0).toUpperCase() })]),
-          tokens.total ? el('span', { class: 'tokens', title: 'Gallery Tokens your cards earn, of all this category gives' }, [
+          tokens.total ? el('span', { class: 'tokens', title: t('Gallery Tokens your cards earn, of all this category gives') }, [
             tokenSrc() ? el('img', { src: tokenSrc(), alt: '' }) : null,
             el('strong', { text: coins(tokens.earned) }),
             el('span', { class: 'muted', text: ` / ${coins(tokens.total)}` }),
           ]) : null,
-          el('span', { class: 'chip', text: `${sets.length} ${sets.length === 1 ? 'set' : 'sets'}` }),
+          el('span', { class: 'chip', text: plural('set', sets.length) }),
         ]),
         el('span', { class: 'grades' }, grades),
         el('span', { class: 'cat-foot' }, [
-          el('span', {}, [el('span', { class: 'cat-name', text: title }), el('span', { class: 'cat-sub', text: sub })]),
-          el('span', { class: 'go', 'aria-hidden': 'true', text: '↗' }),
+          el('span', {}, [el('span', { class: 'cat-name', text: title === OTHER ? t(OTHER) : title }), el('span', { class: 'cat-sub', text: sub })]),
+          el('span', { class: 'go', 'aria-hidden': 'true', text: H.i18n.dir() === 'rtl' ? '↖' : '↗' }),
         ]),
       ]);
     }
@@ -1945,31 +2084,31 @@
       const next = graded.find((g) => res.score < res.grades[g]);
       const from = res.grade ? res.grades[res.grade] : 0;
       const tokens = setTokens(res);
-      const scoreHint = res.bonus ? `${coins(res.baseScore)} from your matching cards + ${coins(res.bonus)} from bonus tags` : 'From your matching cards';
-      const reward = (g) => (tokensIn(res.rewards[g]) ? `${tokensIn(res.rewards[g])} tokens` : res.rewards[g] || 'its reward');
+      const scoreHint = res.bonus ? t('{base} from your matching cards + {bonus} from bonus tags', { base: coins(res.baseScore), bonus: coins(res.bonus) }) : t('From your matching cards');
+      const reward = (g) => (tokensIn(res.rewards[g]) ? plural('token', tokensIn(res.rewards[g])) : res.rewards[g] || t('its reward'));
       const steps = graded.map((g) => {
         const reached = res.score >= res.grades[g];
-        return el('div', { class: `step g-${g}${reached ? '' : ' none'}${g === res.grade ? ' current' : ''}`, title: `Grade ${g}: from ${coins(res.grades[g])} Item Score${res.rewards[g] ? `, gives ${res.rewards[g]}` : ''}` }, [
+        return el('div', { class: `step g-${g}${reached ? '' : ' none'}${g === res.grade ? ' current' : ''}`, title: `${t('Grade {grade}: from {n} Item Score', { grade: g, n: coins(res.grades[g]) })}${res.rewards[g] ? t(', gives {reward}', { reward: res.rewards[g] }) : ''}` }, [
           el('span', { class: 'dia', text: g }),
           el('span', { class: 'n', text: coins(res.grades[g]) }),
           el('span', { class: 'gives' }, tokensIn(res.rewards[g])
             ? [tokenSrc() ? el('img', { src: tokenSrc(), alt: '' }) : null, String(tokensIn(res.rewards[g]))]
-            : [res.rewards[g] ? 'Reward' : '–']),
+            : [res.rewards[g] ? t('Reward') : '–']),
         ]);
       });
       return el('section', { class: 'grade-panel' }, [
         el('div', { class: 'grade-top' }, [
           el('span', { class: `grade big g-${res.grade || 'D'}${res.grade ? '' : ' none'}`, 'aria-hidden': 'true' }, [el('span', { class: 'dia', text: res.grade || '–' })]),
           el('div', { class: 'grade-text' }, [
-            el('span', { class: 'muted', text: [`${res.name} · ${res.have} of ${res.total} cards`, res.unsure ? `${res.unsure} to check` : null].filter(Boolean).join(' · ') }),
-            el('span', { class: 'score', title: scoreHint }, [scoreIcon(), el('strong', { text: coins(res.score) }), el('span', { class: 'muted', text: ' Item Score' })]),
-            el('span', { text: res.grade ? `Grade ${res.grade}${tokens.earned ? ` · ${coins(tokens.earned)} tokens earned` : ''}` : graded.length ? 'No grade yet' : 'This set has no grades listed' }),
+            el('span', { class: 'muted', text: [t('{name} · {have} of {cards}', { name: res.name, have: res.have, cards: plural('card', res.total) }), res.unsure ? t('{n} to check', { n: res.unsure }) : null].filter(Boolean).join(' · ') }),
+            el('span', { class: 'score', title: scoreHint }, [scoreIcon(), el('strong', { text: coins(res.score) }), el('span', { class: 'muted', text: ` ${t('Item Score')}` })]),
+            el('span', { text: res.grade ? `${t('Grade {grade}', { grade: res.grade })}${tokens.earned ? t(' · {tokens} earned', { tokens: plural('token', tokens.earned) }) : ''}` : t(graded.length ? 'No grade yet' : 'This set has no grades listed') }),
           ]),
         ]),
         next ? el('div', { class: 'to-next' }, [
           el('span', { class: 'bar', 'aria-hidden': 'true' }, [el('span', { style: `width:${Math.round((100 * (res.score - from)) / (res.grades[next] - from))}%` })]),
-          el('span', { class: 'note', text: `${coins(res.grades[next] - res.score)} more Item Score for grade ${next} and ${reward(next)}` }),
-        ]) : graded.length ? el('p', { class: 'note', text: 'Top grade reached.' }) : null,
+          el('span', { class: 'note', text: t('{n} more Item Score for grade {grade} and {reward}', { n: coins(res.grades[next] - res.score), grade: next, reward: reward(next) }) }),
+        ]) : graded.length ? el('p', { class: 'note', text: t('Top grade reached.') }) : null,
         steps.length ? el('div', { class: 'ladder' }, steps) : null,
       ]);
     }
@@ -2019,41 +2158,41 @@
       const version = slot.rarityIds && slot.rarityIds.length ? slot.rarityIds[0] : slot.rarityId;
       const about = el('span', { class: 'sr', text: [line.name, line.meta].join(', ') });
       const link = (text, title, onclick) => el('button', { type: 'button', class: 'link', text, title, onclick });
-      const pick = (text) => link(text, 'Choose the card that is in this slot in the game, so it counts with its Item Score', () => openPicker(res, entry));
+      const pick = (text) => link(t(text), t('Choose the card that is in this slot in the game, so it counts with its Item Score'), () => openPicker(res, entry));
       if (card) {
-        const status = entry.picked ? { cls: 'ok', text: '✓ Picked', hint: 'You picked this card as the one in this slot in the game' }
-          : entry.unsure ? { cls: 'unknown', text: '? Check in game', hint: "This slot's version has no number yet, so FutFox can't check it: check this card in the game" }
-          : card.remembered ? { cls: 'ok', text: '✓ Seen earlier', hint: 'FutFox saw this card in your club before; it still counts in the Gallery' }
-          : { cls: 'ok', text: '✓ In your club', hint: 'In your club' };
+        const status = entry.picked ? { cls: 'ok', text: t('✓ Picked'), hint: t('You picked this card as the one in this slot in the game') }
+          : entry.unsure ? { cls: 'unknown', text: t('? Check in game'), hint: t("This slot's version has no number yet, so FutFox can't check it: check this card in the game") }
+          : card.remembered ? { cls: 'ok', text: t('✓ Seen earlier'), hint: t('FutFox saw this card in your club before; it still counts in the Gallery') }
+          : { cls: 'ok', text: t('✓ In your club'), hint: t('In your club') };
         const position = card.positions && card.positions.length ? H.fut.positionName(card.positions[0]) : null;
-        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYours: ${card.name} ${card.rating}${card.foil ? ' Holographic' : ''}, ${coins(card.score || 0)} Item Score. ${status.hint}` }, [
+        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\n${t('Yours: {card}, {score} Item Score.', { card: `${card.name} ${card.rating}${card.foil ? ` ${t('Holographic')}` : ''}`, score: coins(card.score || 0) })} ${status.hint}` }, [
           about,
           miniCard({ rarityId: card.rarityId, rating: card.rating, playerId: card.playerId, position, name: card.name, foil: card.foil, foilArt: card.foilArt }),
           el('span', { class: `cap ${status.cls}`, text: status.text }),
-          entry.picked ? el('span', { class: 'acts' }, [pick('Change'), link('Remove', 'Count this slot as missing again', () => setPicked(res.id, entry.index, null))]) : null,
+          entry.picked ? el('span', { class: 'acts' }, [pick('Change'), link(t('Remove'), t('Count this slot as missing again'), () => setPicked(res.id, entry.index, null))]) : null,
         ]);
       }
       if (entry.done) {
-        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\nYou marked this slot as done in the game` }, [
+        return el('div', { class: 'slot', title: `${line.name} · ${line.meta}\n${t('You marked this slot as done in the game')}` }, [
           about,
-          miniCard({ rarityId: version, rating: slot.rating, label: '✓ Done in game' }),
-          el('span', { class: 'acts' }, [pick('Pick'), link('Undo', 'Count this slot as missing again', () => toggleDone(res.id, entry.index))]),
+          miniCard({ rarityId: version, rating: slot.rating, label: t('✓ Done in game') }),
+          el('span', { class: 'acts' }, [pick('Pick'), link(t('Undo'), t('Count this slot as missing again'), () => toggleDone(res.id, entry.index))]),
         ]);
       }
       if (suggestion) {
         const c = suggestion.card;
         const club = c.source === 'club';
         const position = c.positions && c.positions.length ? H.fut.positionName(c.positions[0]) : null;
-        return el('div', { class: 'slot suggested', title: `Suggested for ${line.name}: ${c.name} ${c.rating}${c.foil ? ' Holographic' : ''}, ${coins(c.score || 0)} Item Score, ${club ? 'in your club' : 'from the squad builder list'}` }, [
+        return el('div', { class: 'slot suggested', title: t('Suggested for {slot}: {card}, {score} Item Score, {where}', { slot: line.name, card: `${c.name} ${c.rating}${c.foil ? ` ${t('Holographic')}` : ''}`, score: coins(c.score || 0), where: t(club ? 'in your club' : 'from the squad builder list') }) }, [
           about,
           miniCard({ rarityId: c.rarityId, rating: c.rating, playerId: c.playerId, position, name: c.name, foil: c.foil, foilArt: c.foilArt }),
           el('span', { class: 'cap sug', text: `+${coins(suggestion.gain)}` }),
-          el('span', { class: `src${club ? ' club' : ''}`, text: club ? 'In your club' : 'Squad builder' }),
+          el('span', { class: `src${club ? ' club' : ''}`, text: t(club ? 'In your club' : 'Squad builder') }),
           pick('Pick player'),
         ]);
       }
       const exact = slot.kind === 'card';
-      return el('div', { class: 'slot', title: `Missing: ${line.name} · ${line.meta}` }, [
+      return el('div', { class: 'slot', title: t('Missing: {slot}', { slot: `${line.name} · ${line.meta}` }) }, [
         about,
         miniCard({ rarityId: version, rating: exact ? slot.rating : slot.minRating, playerId: exact ? slot.playerId : null, name: exact ? line.name : null, label: exact ? null : line.name, missing: true }),
         pick('Pick player'),
@@ -2071,9 +2210,9 @@
           miniCard({ rarityId: c.rarityId, rating: c.rating, playerId: c.playerId, small: true, foil: c.foil, foilArt: c.foilArt }),
           el('span', { class: 'pick-text' }, [
             el('span', { class: 'name', text: `${c.name} ${c.rating}` }),
-            el('span', { class: 'meta', text: [version, c.foil ? 'Holographic' : null, H.fut.leagueName(c.leagueId), H.fut.nationName(c.nationId)].filter(Boolean).join(' · ') }),
+            el('span', { class: 'meta', text: [version, c.foil ? t('Holographic') : null, H.fut.leagueName(c.leagueId), H.fut.nationName(c.nationId)].filter(Boolean).join(' · ') }),
           ]),
-          el('span', { class: 'pick-score' }, [el('strong', {}, [scoreIcon(), coins(c.score || 0)]), el('span', { class: 'muted', text: 'Item Score' })]),
+          el('span', { class: 'pick-score' }, [el('strong', {}, [scoreIcon(), coins(c.score || 0)]), el('span', { class: 'muted', text: t('Item Score') })]),
         ]);
       };
       // Enter searches at once, even a name shorter than 3 letters.
@@ -2087,12 +2226,12 @@
       };
       return el('div', { class: 'picker' }, [
         el('div', { class: 'picker-head' }, [
-          el('span', { class: 'name', text: `Slot ${p.index + 1}: ${line.name}` }),
+          el('span', { class: 'name', text: t('Slot {n}: {name}', { n: p.index + 1, name: line.name }) }),
           el('span', { class: 'meta', text: line.meta }),
-          el('span', { class: 'note', text: 'Pick the card that is in this slot in the game. Its Item Score and bonus tags then count for the set. Same card twice? Pick the one with the Item Score the game shows.' }),
+          el('span', { class: 'note', text: t('Pick the card that is in this slot in the game. Its Item Score and bonus tags then count for the set. Same card twice? Pick the one with the Item Score the game shows.') }),
         ]),
         el('form', { class: 'row', role: 'search', onsubmit: submit }, [
-          el('input', { type: 'search', name: 'name', value: p.text, placeholder: 'Player name, 3 letters or more', 'aria-label': 'Player name', autocomplete: 'off', oninput: (e) => typePicker(e.target.value) }),
+          el('input', { type: 'search', name: 'name', value: p.text, placeholder: t('Player name, 3 letters or more'), 'aria-label': t('Player name'), autocomplete: 'off', oninput: (e) => typePicker(e.target.value) }),
         ]),
         p.error ? el('p', { class: 'error', text: p.error }) : null,
         p.cards.length ? el('div', { class: 'picks' }, p.cards.map(row))
@@ -2101,24 +2240,24 @@
             el('span', { class: 'skel-text' }, [skelBar('45%', n), skelBar('30%', n)]),
           ])))
           : null,
-        p.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), 'Searching EA…'])
-          : !p.cards.length ? el('p', { class: 'muted', text: p.query ? `No card fits this slot for "${p.query}".`
-            : !searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.'
-              : p.cleared ? 'Type 3 letters or more of a player name.' : 'No card fits this slot.' })
-            : p.more ? el('button', { type: 'button', class: 'small', text: 'Show more', onclick: () => searchPicker(true) }) : null,
-        el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Cancel', onclick: closePicker })]),
+        p.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), t('Searching EA…')])
+          : !p.cards.length ? el('p', { class: 'muted', text: p.query ? t('No card fits this slot for "{query}".', { query: p.query })
+            : t(!searchable(p.slot) ? 'Type a name: this slot takes any card, so FutFox needs a name to search.'
+              : p.cleared ? 'Type 3 letters or more of a player name.' : 'No card fits this slot.') })
+            : p.more ? el('button', { type: 'button', class: 'small', text: t('Show more'), onclick: () => searchPicker(true) }) : null,
+        el('div', { class: 'row' }, [el('button', { type: 'button', text: t('Cancel'), onclick: closePicker })]),
       ]);
     }
 
     // A bonus tag the set's cards reach, or one a card or two short of its first tier.
-    function tagCard(t) {
-      return el('div', { class: `tagc${t.tier ? '' : ' near'}`, title: t.rule }, [
-        tagIcon(t.name, Boolean(t.tier)),
+    function tagCard(tag) {
+      return el('div', { class: `tagc${tag.tier ? '' : ' near'}`, title: t(tag.rule) }, [
+        tagIcon(tag.name, Boolean(tag.tier)),
         el('span', {}, [
-          el('strong', { text: t.tier ? `${t.name} +${t.tier.percent}%` : t.name }),
-          el('span', { class: 'meta', text: t.tier
-            ? [`${t.count} cards`, t.next ? `${t.next.count} for +${t.next.percent}%` : 'top tier'].join(' · ')
-            : `${t.count} of ${t.next.count} cards for +${t.next.percent}%` }),
+          el('strong', { text: tag.tier ? `${t(tag.name)} +${tag.tier.percent}%` : t(tag.name) }),
+          el('span', { class: 'meta', text: tag.tier
+            ? [plural('card', tag.count), tag.next ? t('{count} for +{percent}%', tag.next) : t('top tier')].join(' · ')
+            : t('{n} of {cards} for +{percent}%', { n: tag.count, cards: plural('card', tag.next.count), percent: tag.next.percent }) }),
         ]),
       ]);
     }
@@ -2140,23 +2279,23 @@
       const press = (g) => (s && (s.options || s.loading) ? aimFor(res, g) : suggestCards(res, g));
       const best = plan && !plan.reached ? H.setMatch.gradeFor(plan.score, res.grades) : null;
       return el('div', { class: 'suggest' }, [
-        el('div', { class: 'aim', role: 'group', 'aria-label': 'Suggest cards for a grade' }, [
-          el('span', { class: 'label', text: 'Suggest cards for' }),
+        el('div', { class: 'aim', role: 'group', 'aria-label': t('Suggest cards for a grade') }, [
+          el('span', { class: 'label', text: t('Suggest cards for') }),
           ...above.map((g) => el('button', {
-            type: 'button', class: `aimg g-${g}`, 'aria-pressed': String(Boolean(s) && s.grade === g), 'aria-label': `Grade ${g}`,
-            title: `Grade ${g}: ${coins(res.grades[g])} Item Score`, onclick: () => press(g),
+            type: 'button', class: `aimg g-${g}`, 'aria-pressed': String(Boolean(s) && s.grade === g), 'aria-label': t('Grade {grade}', { grade: g }),
+            title: t('Grade {grade}: {n} Item Score', { grade: g, n: coins(res.grades[g]) }), onclick: () => press(g),
           }, [el('span', { class: 'dia', text: g })])),
-          s ? el('button', { type: 'button', class: 'link', text: 'Clear', onclick: () => { state.suggest = null; render(); } }) : null,
+          s ? el('button', { type: 'button', class: 'link', text: t('Clear'), onclick: () => { state.suggest = null; render(); } }) : null,
         ]),
-        s && s.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), s.total ? `Searching the squad builder list… ${s.done} of ${s.total}` : 'Looking in your club…']) : null,
-        s && s.error ? el('p', { class: 'error', text: `${s.error} Some slots may have no suggestion.` }) : null,
-        plan && !plan.adds.length ? el('p', { class: 'note', text: 'No card FutFox can find fits the empty slots.' }) : null,
+        s && s.loading ? el('p', { class: 'muted', role: 'status' }, [spinner(), s.total ? t('Searching the squad builder list… {done} of {total}', { done: s.done, total: s.total }) : t('Looking in your club…')]) : null,
+        s && s.error ? el('p', { class: 'error', text: t('{error} Some slots may have no suggestion.', { error: s.error }) }) : null,
+        plan && !plan.adds.length ? el('p', { class: 'note', text: t('No card FutFox can find fits the empty slots.') }) : null,
         plan && plan.adds.length ? el('p', { class: 'sum' }, [
-          `${plan.adds.length} of ${missing} empty slot${missing === 1 ? '' : 's'} filled: ${coins(plan.from)} → ${coins(plan.score)} Item Score${plan.bonus > res.bonus ? ' with bonus tags' : ''} · `,
-          plan.reached ? el('strong', { class: 'reached', text: `Grade ${plan.grade} ✓` }) : el('strong', { text: `Grade ${plan.grade} is out of reach${best ? `: grade ${best} at most` : ''}` }),
+          `${t('{n} of {slots} filled: {from} → {to} Item Score', { n: plan.adds.length, slots: plural('empty slot', missing), from: coins(plan.from), to: coins(plan.score) })}${plan.bonus > res.bonus ? t(' with bonus tags') : ''} · `,
+          plan.reached ? el('strong', { class: 'reached', text: t('Grade {grade} ✓', { grade: plan.grade }) }) : el('strong', { text: `${t('Grade {grade} is out of reach', { grade: plan.grade })}${best ? t(': grade {grade} at most', { grade: best }) : ''}` }),
         ]) : null,
-        plan && plan.adds.length && plan.unfilled ? el('p', { class: 'note', text: `${plan.unfilled} slot${plan.unfilled === 1 ? ' has' : 's have'} no card to suggest, and the set is only complete with all ${res.total} filled. Use Pick player on ${plan.unfilled === 1 ? 'it' : 'them'}.` }) : null,
-        plan ? el('p', { class: 'note', text: 'Suggestions only: place the cards in the game yourself, then use Pick player on their slots.' }) : null,
+        plan && plan.adds.length && plan.unfilled ? el('p', { class: 'note', text: t('No card to suggest for {slots}, and the set is only complete with all {total} filled. Use Pick player there.', { slots: plural('slot', plan.unfilled), total: res.total }) }) : null,
+        plan ? el('p', { class: 'note', text: t('Suggestions only: place the cards in the game yourself, then use Pick player on their slots.') }) : null,
       ]);
     }
 
@@ -2173,12 +2312,12 @@
       return el('div', { class: 'set-page' }, [
         gradePanel(res),
         el('section', {}, [
-          el('h3', { text: `Cards · ${res.have} of ${res.total}${missing ? ` · ${missing} missing` : ''}` }),
+          el('h3', { text: `${t('Cards · {have} of {total}', { have: res.have, total: res.total })}${missing ? t(' · {n} missing', { n: missing }) : ''}` }),
           suggestBar(res, plan),
           el('div', { class: 'cards' }, entries.map((e) => slotCell(res, e, suggested.get(e.index)))),
         ]),
         active.length || close.length ? el('section', {}, [
-          el('h3', { text: res.bonus ? `Bonus tags · +${coins(res.bonus)} Item Score` : 'Bonus tags' }),
+          el('h3', { text: res.bonus ? t('Bonus tags · +{n} Item Score', { n: coins(res.bonus) }) : t('Bonus tags') }),
           el('div', { class: 'tags' }, active.concat(close).map(tagCard)),
         ]) : null,
       ]);
@@ -2191,21 +2330,21 @@
       if (open && state.picker && state.picker.setId === open.id) {
         const category = categoryOf(open);
         return [el('section', {}, [
-          crumbs([['Categories', () => { state.picker = null; go(null, null); }], [category, () => { state.picker = null; go(category, null); }], [open.name, closePicker], ['Pick player']]),
+          crumbs([[t('Categories'), () => { state.picker = null; go(null, null); }], [shownCategory(category), () => { state.picker = null; go(category, null); }], [open.name, closePicker], [t('Pick player')]]),
           pickerView(open),
         ])];
       }
       if (open) {
         const category = categoryOf(open);
         return [el('section', {}, [
-          crumbs([['Categories', () => go(null, null)], [category, () => go(category, null)], [open.name]]),
+          crumbs([[t('Categories'), () => go(null, null)], [shownCategory(category), () => go(category, null)], [open.name]]),
           setPage(open),
         ])];
       }
       const inCategory = state.category != null ? results.filter((r) => categoryOf(r) === state.category) : [];
       if (inCategory.length) {
         return [el('section', {}, [
-          crumbs([['Categories', () => go(null, null)], [state.category]]),
+          crumbs([[t('Categories'), () => go(null, null)], [shownCategory(state.category)]]),
           el('div', { class: 'sets' }, inCategory.map(setCard)),
         ])];
       }
@@ -2216,23 +2355,36 @@
       }
       const names = [...categories.keys()].sort((a, b) => (a === OTHER) - (b === OTHER) || a.localeCompare(b));
       return [
+        known ? null : clubPointer('Load your club in the Club tab so FutFox can check which cards you have.'),
         el('section', {}, [
-          el('h2', { text: 'Gallery sets' }),
+          el('h2', { text: t('Gallery sets') }),
           el('div', { class: 'row' }, [
-            loading ? el('span', { class: 'muted', role: 'status' }, [spinner(), 'Loading sets…']) : el('span', { class: 'muted', text: data && data.sets.length ? `${data.sets.length} ${data.sets.length === 1 ? 'set' : 'sets'} · updated ${day(data.publishedAt)}` : 'No sets published yet' }),
-            el('button', { class: 'small', type: 'button', text: 'Refresh sets', disabled: loading, onclick: () => loadSets(true) }),
+            loading ? el('span', { class: 'muted', role: 'status' }, [spinner(), t('Loading sets…')]) : el('span', { class: 'muted', text: data && data.sets.length ? t('{sets} · updated {day}', { sets: plural('set', data.sets.length), day: day(data.publishedAt) }) : t('No sets published yet') }),
+            el('button', { class: 'small', type: 'button', text: t('Refresh sets'), disabled: loading, onclick: () => loadSets(true) }),
           ]),
           error ? el('p', { class: 'error', text: error }) : null,
-          known ? null : el('p', { class: 'note', text: 'Press Load my club so FutFox can check which cards you have.' }),
-          results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name))))
+                    results.length ? el('div', { class: 'sets' }, names.map((name) => categoryCard(name, categories.get(name))))
             : loading ? el('div', { class: 'sets', 'aria-hidden': 'true' }, [0, 1, 2, 3].map((n) => el('div', { class: 'cat skel', style: `animation-delay: ${n * 120}ms` }, [skelBar('40%', n), el('span', { class: 'skel-text' }, [skelBar('70%', n), skelBar('45%', n)])])))
             : null,
-          results.length ? el('p', { class: 'note', text: 'Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Pick player to choose the card that is in the slot in the game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.' }) : null,
+          results.length ? el('p', { class: 'note', text: t('Cards match on player, rating and version. "?" means FutFox can\'t check the version for that slot, so check it in the game. Cards you sold or used in an SBC still count in the Gallery: FutFox keeps every card it has seen in your club in this browser, and for older ones press Pick player to choose the card that is in the slot in the game. Loan cards never count. Bonus tags are worked out from the cards FutFox would use. Build and submit sets in the game.') }) : null,
         ]),
-        clubSection(known),
-        savedDataSection(),
       ];
     }
+
+    // A note on the SBC and Gallery tabs while the club isn't loaded, with a way to the Club tab.
+    function clubPointer(text) {
+      return el('div', { class: 'club-pointer' }, [
+        el('span', { text: t(text) }),
+        el('button', { class: 'small', type: 'button', text: t('Open Club'), onclick: () => setView('club') }),
+      ]);
+    }
+
+    // The Club tab: loading the club, what FutFox keeps in this browser, and the language.
+    function renderClub(known) {
+      return [clubSection(known), savedDataSection(), languageSection()];
+    }
+
+    const TABS = ['club', 'sbc', 'gallery'];
 
     function setView(view) {
       setSetting('view', view);
@@ -2243,6 +2395,7 @@
     // Where the panel is: its tab, and how deep in it (the challenge, then its squad; the Gallery's
     // categories, a category, a set, then picking a player).
     function pageNow(view, entry) {
+      if (view === 'club') return 0;
       if (view === 'gallery') return state.picker && state.openSet != null ? 3 : state.openSet != null ? 2 : state.category != null ? 1 : 0;
       return state.solving || (state.result && state.showSquad) ? (entry ? 1 : 0) : 0;
     }
@@ -2253,7 +2406,7 @@
       Object.assign(old.style, { position: 'absolute', left: '0', right: '0', top: `${next.offsetTop}px`, height: `${next.offsetHeight}px`, pointerEvents: 'none' });
       panel.append(old);
       old.scrollTop = oldScroll;
-      const dx = 36 * dir;
+      const dx = 36 * dir * (H.i18n.dir() === 'rtl' ? -1 : 1);
       old.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-dx}px)` }],
         { duration: 170, easing: 'cubic-bezier(.4, 0, 1, 1)', fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
       next.animate([{ opacity: 0, transform: `translateX(${dx}px)` }, { opacity: 1, transform: 'none' }],
@@ -2275,6 +2428,7 @@
     }
 
     function render() {
+      applyLang();
       // Rebuilding the panel keeps the scroll position, unless a set was just opened or closed.
       const before = panel.querySelector('.body');
       const oldScroll = before ? before.scrollTop : 0;
@@ -2286,9 +2440,10 @@
       const entry = selected();
       const streamlined = Boolean(entry) && H.fut.isStreamlined(entry.challenge);
       const known = H.fut.knownClubItems().length;
-      const view = H.fut.galleryEnabled ? settings.view : 'sbc';
+      const view = TABS.includes(settings.view) && (settings.view !== 'gallery' || H.fut.galleryEnabled) ? settings.view : 'sbc';
       // The Gallery tab shows the Gallery Token until there is an art/gallery.png.
       const tabIcon = (name) => {
+        if (name === 'club' && !ART.club) return clubIcon();
         const src = ART[name] || (name === 'gallery' ? ART.token : null);
         return src ? el('img', { src, alt: '' }) : null;
       };
@@ -2298,29 +2453,30 @@
       state.page = page;
       panel.replaceChildren(...[
         grip,
-        el('header', { title: 'Drag to move. Double-click to put it back.' }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': 'Minimize FutFox', title: 'Minimize: fold into the corner', text: '−', onclick: hidePanel })]),
-        H.fut.galleryEnabled ? el('div', { class: 'tabs', role: 'tablist' }, [tab('sbc', 'SBC'), tab('gallery', 'Gallery'), el('span', { class: 'ink', 'aria-hidden': 'true' })]) : null,
-        view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
+        el('header', { title: t('Drag to move. Double-click to put it back.') }, [el('div', { class: 'brand' }, [foxIcon(), el('h1', { text: 'FutFox' })]), el('button', { class: 'close', type: 'button', 'aria-label': t('Minimize FutFox'), title: t('Minimize: fold into the corner'), text: '−', onclick: hidePanel })]),
+        el('div', { class: 'tabs', role: 'tablist' }, [tab('club', t('Club')), tab('sbc', t('SBC')), H.fut.galleryEnabled ? tab('gallery', t('Gallery')) : null, el('span', { class: 'ink', 'aria-hidden': 'true' })]),
+        view === 'club' ? el('div', { class: 'body' }, renderClub(known))
+        : view === 'gallery' ? el('div', { class: 'body' }, renderGallery(known))
         : state.solving && entry ? el('div', { class: 'body' }, solvingPage(entry))
         : state.result && state.showSquad && entry ? el('div', { class: 'body' }, squadPage(entry))
         : el('div', { class: 'body' }, [
           el('section', {}, [
-            el('h2', { text: 'Challenge' }),
+            el('h2', { text: t('Challenge') }),
             state.challenges.length
               ? challengeMenu()
-              : el('p', { class: 'muted', text: 'Open an SBC set in the app, then press Refresh.' }),
-            el('div', { class: 'row' }, [el('button', { type: 'button', text: 'Refresh', onclick: refreshChallenges })]),
+              : el('p', { class: 'muted', text: t('Open an SBC set in the app, then press Refresh.') }),
+            el('div', { class: 'row' }, [el('button', { type: 'button', text: t('Refresh'), onclick: refreshChallenges })]),
           ]),
           entry
             ? el('section', {}, [
-                el('h2', { text: 'Requirements' }),
+                el('h2', { text: t('Requirements') }),
                 el('ul', { class: 'rules' }, [
                   streamlined
-                    ? el('li', { title: 'Points so far, of the points the challenge needs' }, [pointsIcon(), el('span', { text: `${coins(entry.challenge.submittedScore || 0)} / ${coins(entry.challenge.scoreRequirement || 0)}, up to ${H.fut.submitLimit()} cards a time` })])
+                    ? el('li', { title: t('Points so far, of the points the challenge needs') }, [pointsIcon(), el('span', { text: t('{done} / {total}, up to {cards} a time', { done: coins(entry.challenge.submittedScore || 0), total: coins(entry.challenge.scoreRequirement || 0), cards: plural('card', H.fut.submitLimit()) }) })])
                     : null,
                   ...H.fut.rulesFor(entry.challenge).map((rule) => {
                     // The game's picker only lists cards that meet a Streamlined SBC's requirements.
-                    if (streamlined) return el('li', {}, [el('span', { class: 'ok', text: '✓' }), el('span', { text: `${rule.label} – the game only offers cards that meet it` })]);
+                    if (streamlined) return el('li', {}, [el('span', { class: 'ok', text: '✓' }), el('span', { text: t('{rule} – the game only offers cards that meet it', { rule: rule.label }) })]);
                     // Match by key and value, since rulesFor() builds fresh objects each time.
                     const resultRule = state.result && state.result.rules.find((r) => r.key === rule.key && r.label === rule.label);
                     const st = ruleStatus(resultRule || rule);
@@ -2329,20 +2485,20 @@
                 ].filter(Boolean)),
               ])
             : null,
-          streamlined ? null : clubSection(known),
+          streamlined || state.clubLoadedAt ? null : clubPointer('Load your club in the Club tab so FutFox can use every card you own.'),
           streamlined ? streamlinedOptions(entry) : squadOptions(),
           el('div', { class: 'row' }, [
-            el('button', { class: 'primary', type: 'button', disabled: !entry || state.solving, onclick: solve }, state.solving ? [spinner(), 'Solving…'] : [streamlined ? 'Find cheapest cards' : 'Find cheapest squad']),
-            state.result ? el('button', { type: 'button', text: 'Show the last squad', onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
+            el('button', { class: 'primary', type: 'button', disabled: !entry || state.solving, onclick: solve }, state.solving ? [spinner(), t('Solving…')] : [t(streamlined ? 'Find cheapest cards' : 'Find cheapest squad')]),
+            state.result ? el('button', { type: 'button', text: t('Show the last squad'), onclick: () => { state.showSquad = true; state.setupScroll = panel.querySelector('.body').scrollTop; state.scrollTo = 0; render(); } }) : null,
           ]),
           state.error ? el('p', { class: 'error', text: state.error }) : null,
         ]),
-        el('footer', { text: 'Read-only: FutFox never buys, bids, lists or submits. Not affiliated with EA.' }),
+        el('footer', { text: t('Read-only: FutFox never buys, bids, lists or submits. Not affiliated with EA.') }),
       ].filter(Boolean));
       const body = panel.querySelector('.body');
       if (body) body.scrollTop = scroll;
       placeInk();
-      const dir = !last ? 0 : last.view !== view ? (view === 'gallery' ? 1 : -1) : Math.sign(page.depth - last.depth);
+      const dir = !last ? 0 : last.view !== view ? Math.sign(TABS.indexOf(view) - TABS.indexOf(last.view)) : Math.sign(page.depth - last.depth);
       if (dir && before && body && isShown(panel) && !reducedMotion()) slidePages(before, body, dir, oldScroll);
       const box = typing && panel.querySelector('.picker input');
       if (box) {

@@ -10,6 +10,8 @@
 <meta property="og:description" content="Finish SBCs and Gallery sets with the players you already own. Free and read-only.">
 <meta property="og:image" content="https://futfox-site.vercel.app/assets/og.png">
 <meta property="og:url" content="https://futfox-site.vercel.app/">
+<link rel="alternate" hreflang="en" href="https://futfox-site.vercel.app/">
+<link rel="alternate" hreflang="ar" href="https://futfox-site.vercel.app/ar/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/favicon.ico" sizes="any">
@@ -17,7 +19,7 @@
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="manifest" href="/assets/site.webmanifest">
 <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/site.css?v=6">
+<link rel="stylesheet" href="/site.css?v=10">
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
@@ -45,7 +47,10 @@
   <symbol id="follow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="bolt" viewBox="0 0 24 24"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   <symbol id="flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.5L4.8 18.2A1.8 1.8 0 0 0 6.4 21h11.2a1.8 1.8 0 0 0 1.6-2.8L14 9.5V3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/><path d="M7.2 15h9.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+  <symbol id="club" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
   <symbol id="pick" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
 </svg>
 <a class="skip" href="#main">Skip to content</a>
 
@@ -60,6 +65,7 @@
       <a class="nav-install" href="#install">Install</a>
     </nav>
     <a class="head-install" href="#install">Install</a>
+    <a class="lang-link" href="/ar/" lang="ar" hreflang="ar" aria-label="العربية">AR</a>
     <a class="gh-link" href="https://github.com/abouhilalbadr/futfox" aria-label="FutFox on GitHub"><svg aria-hidden="true"><use href="#github"/></svg></a>
   </div>
 </header>
@@ -72,7 +78,7 @@
       <p class="lede">FutFox reads an SBC's requirements, searches your club and SBC storage and suggests the cheapest squad that meets every rule. When your club falls short, it opens the market search with the filters already set.</p>
       <div class="actions">
         <a class="btn btn-primary" href="#install">Get it free for Chrome</a>
-        <a class="btn btn-ghost" href="#how">See how it works</a>
+        <button type="button" class="btn btn-ghost btn-film" aria-haspopup="dialog" aria-controls="film"><svg aria-hidden="true"><use href="#play"/></svg>Watch the film</button>
       </div>
       <p class="fineprint">Read-only. FutFox never buys, bids, lists or submits.</p>
     </div>
@@ -80,22 +86,18 @@
 
   <section id="features" class="bento" aria-label="Features">
     <div class="wrap">
-      <article class="tile tile-sbc">
+      <article class="tile b-sbc tile-sbc">
         <div class="tile-copy">
           <p class="eyebrow">SBC solver</p>
           <h2>The cheapest squad that meets every rule.</h2>
           <p>Every card on a pitch in the SBC's formation, with its chemistry, whether it's untradeable and whether it's in your club or SBC storage. The rules sit on top: tap one to see which cards meet it. Cards your club is missing get a market search with the filters already set.</p>
-          <p class="tile-note">Example squad. Your club gives different answers.</p>
         </div>
         <figure class="panel" aria-label="The FutFox panel with a suggested squad on a pitch">
           <div class="panel-head">
             <span class="title"><svg aria-hidden="true"><use href="#fox"/></svg>FutFox</span>
             <span class="close" aria-hidden="true">−</span>
           </div>
-          <div class="panel-tabs" aria-hidden="true">
-            <span class="is-on"><img src="/assets/icons/sbc.webp" alt="" width="18" height="18">SBC</span>
-            <span><img src="/assets/icons/token.webp" alt="" width="18" height="18">Gallery</span>
-          </div>
+          <div class="panel-tabs" aria-hidden="true"><span><svg><use href="#club"/></svg>Club</span><span class="is-on"><img src="/assets/icons/sbc.webp" alt="" width="18" height="18">SBC</span><span><img src="/assets/icons/token.webp" alt="" width="18" height="18">Gallery</span></div>
           <div class="panel-body">
             <span class="label">Suggested squad</span>
             <div class="summary">
@@ -118,88 +120,49 @@
           </div>
         </figure>
       </article>
-
-      <div class="bento-row">
-        <article id="streamlined" class="tile tile-split">
-          <div class="tile-copy">
-            <p class="eyebrow">Streamlined SBCs · New</p>
-            <h2>Reach the points with the cheapest cards.</h2>
-            <p>Streamlined SBCs have no formation, just a points target. FutFox asks the game's own card picker which cards count, with their points, and picks the cheapest set that reaches the target.</p>
-            <ul class="points">
-              <li><svg aria-hidden="true"><use href="#pts"/></svg><span><strong>Your rules.</strong> Rating range, most cards, points for now, fewest coins or fewest cards.</span></li>
-              <li><svg aria-hidden="true"><use href="#box"/></svg><span><strong>Club and SBC storage.</strong> Use either or both, storage cards first.</span></li>
-              <li><svg aria-hidden="true"><use href="#list"/></svg><span><strong>Tick them off.</strong> A corner checklist lists each card with its points, highest first, like the game's picker.</span></li>
-            </ul>
-          </div>
-          <figure class="panel panel-slim" aria-label="FutFox's suggested cards for a Streamlined SBC">
-            <div class="panel-body">
-              <span class="label">Suggested cards</span>
-              <div class="summary">
-                <span><svg class="pt" aria-hidden="true"><use href="#pts"/></svg><strong>6,300</strong> / 6,000</span>
-                <span><strong>3</strong> of 30 cards</span>
-                <span class="good">Reaches the target</span>
-              </div>
-              <div class="cards" aria-hidden="true"><span class="slot"><span class="fcard"><span class="r">85</span><span class="p">LW</span><svg><use href="#player"/></svg><span class="n">Caicedo</span></span><span class="slot-line"><span class="untr" title="Untradeable"></span><svg class="pt"><use href="#pts"/></svg><strong>2,100</strong><span class="sw"><svg><use href="#swap"/></svg></span></span><span class="src store">SBC storage</span></span><span class="slot"><span class="fcard"><span class="r">85</span><span class="p">CAM</span><svg><use href="#player"/></svg><span class="n">Fermín</span></span><span class="slot-line"><span class="untr" title="Untradeable"></span><svg class="pt"><use href="#pts"/></svg><strong>2,100</strong><span class="sw"><svg><use href="#swap"/></svg></span></span><span class="src">Club</span></span><span class="slot"><span class="fcard"><span class="r">85</span><span class="p">ST</span><svg><use href="#player"/></svg><span class="n">Schüller</span></span><span class="slot-line"><span class="untr" title="Untradeable"></span><svg class="pt"><use href="#pts"/></svg><strong>2,100</strong><span class="sw"><svg><use href="#swap"/></svg></span></span><span class="src">Club</span></span></div>
+      <article id="streamlined" class="tile b-stream tile-split">
+        <div class="tile-copy">
+          <p class="eyebrow">Streamlined SBCs</p>
+          <h2>Reach the points with the cheapest cards.</h2>
+          <p>Streamlined SBCs have no formation, just a points target. FutFox asks the game's own card picker which cards count, with their points, and picks the cheapest set that reaches the target.</p>
+        </div>
+        <figure class="panel panel-slim" aria-label="FutFox's suggested cards for a Streamlined SBC">
+          <div class="panel-body">
+            <span class="label">Suggested cards</span>
+            <div class="summary">
+              <span><svg class="pt" aria-hidden="true"><use href="#pts"/></svg><strong>6,300</strong> / 6,000</span>
+              <span><strong>3</strong> of 30 cards</span>
+              <span class="good">Reaches the target</span>
             </div>
-          </figure>
-        </article>
-
-        <div class="bento-stack">
-          <article class="tile">
-            <svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#swap"/></svg>
-            <h3>Change player</h3>
-            <p>Want to keep a card? Press Change and FutFox finds someone else for that spot, or a card to buy.</p>
-          </article>
-          <article class="tile">
-            <svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#box"/></svg>
-            <h3>SBC storage first</h3>
-            <p>Duplicates waiting in your SBC storage go in before club cards, so they're used up first.</p>
-          </article>
-        </div>
-      </div>
-
-      <div class="bento-row">
-        <article id="gallery" class="tile tile-gallery">
-          <div class="tile-copy">
-            <p class="eyebrow">Gallery</p>
-            <h2>Know your grade before you place a card.</h2>
-            <p>Press FutFox, then <strong>Gallery</strong>, and open any set. FutFox picks the best cards from your club for each slot, adds up the Item Score they reach and shows the grade and tokens you'd earn.</p>
-            <ul class="points">
-              <li><svg aria-hidden="true"><use href="#grade"/></svg><span><strong>Your grade and tokens.</strong> The Item Score your cards reach with their bonus tags, and how much more the next grade needs.</span></li>
-              <li><svg aria-hidden="true"><use href="#cards"/></svg><span><strong>Every slot, card by card.</strong> The card FutFox would use from your club, one you placed before it left, or the one still missing.</span></li>
-              <li><svg aria-hidden="true"><use href="#suggest"/></svg><span><strong>Suggest cards.</strong> Pick a grade and FutFox fills every empty slot: club cards first, then the squad builder list.</span></li>
-              <li><svg aria-hidden="true"><use href="#pick"/></svg><span><strong>Pick player.</strong> Placed a card that left your club? Pick it from the squad builder list and its real Item Score counts.</span></li>
-            </ul>
+            <div class="cards" aria-hidden="true"><span class="slot"><span class="fcard"><span class="r">85</span><span class="p">LW</span><svg><use href="#player"/></svg><span class="n">Caicedo</span></span><span class="slot-line"><span class="untr" title="Untradeable"></span><svg class="pt"><use href="#pts"/></svg><strong>2,100</strong><span class="sw"><svg><use href="#swap"/></svg></span></span><span class="src store">SBC storage</span></span><span class="slot"><span class="fcard"><span class="r">85</span><span class="p">CAM</span><svg><use href="#player"/></svg><span class="n">Fermín</span></span><span class="slot-line"><span class="untr" title="Untradeable"></span><svg class="pt"><use href="#pts"/></svg><strong>2,100</strong><span class="sw"><svg><use href="#swap"/></svg></span></span><span class="src">Club</span></span><span class="slot"><span class="fcard"><span class="r">85</span><span class="p">ST</span><svg><use href="#player"/></svg><span class="n">Schüller</span></span><span class="slot-line"><span class="untr" title="Untradeable"></span><svg class="pt"><use href="#pts"/></svg><strong>2,100</strong><span class="sw"><svg><use href="#swap"/></svg></span></span><span class="src">Club</span></span></div>
           </div>
-          <figure class="shot-crop">
-            <img src="/assets/gallery/set-page.png" width="500" height="1040" loading="lazy" alt="The FutFox Gallery page for one set: 5 of 10 cards, 120,650 Item Score and grade C, with suggested cards that reach grade B">
-          </figure>
-        </article>
-
-        <div class="bento-stack">
-          <article class="tile tile-accent">
-            <svg class="tile-icon" aria-hidden="true"><use href="#lock"/></svg>
-            <h3>Read-only</h3>
-            <p>Never buys, bids, lists, moves players or submits. Every coin is your own click.</p>
-          </article>
-          <article class="tile">
-            <svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#search"/></svg>
-            <h3>Market search, filled in</h3>
-            <p>Quality, position, league and nation already set for any card your club is missing.</p>
-          </article>
+        </figure>
+      </article>
+      <article id="gallery" class="tile b-gal tile-gallery">
+        <div class="tile-copy">
+          <p class="eyebrow">Gallery</p>
+          <h2>Know your grade before you place a card.</h2>
+          <p>Press FutFox, then <strong>Gallery</strong>, and open any set. FutFox picks the best cards from your club for each slot, adds up the Item Score they reach and shows the grade and tokens you'd earn.</p>
         </div>
-      </div>
-
-      <div class="bento-row bento-small">
-        <article class="tile"><svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#list"/></svg><h3>Placing checklist</h3><p>FutFox folds into a corner list: copy each name, tick it once it's in the game.</p></article>
-        <article class="tile"><svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#follow"/></svg><h3>Follows your SBC</h3><p>Open a challenge in the game and FutFox switches to it.</p></article>
-        <article class="tile"><svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#bolt"/></svg><h3>Loads in seconds</h3><p>Your club and SBC storage, read the way the Club screen does.</p></article>
-      </div>
-      <div class="bento-row bento-small">
-        <article class="tile"><h3>Free, no account</h3><p>No subscription and no ads.</p></article>
-        <article class="tile"><h3>Any platform</h3><p>PlayStation, Xbox or PC: the Web App shows the club you play with.</p></article>
-        <article class="tile"><h3>Nothing collected</h3><p>Your options, seen cards and picks stay in your browser.</p></article>
-      </div>
+        <figure class="shot-crop">
+          <img src="/assets/gallery/set-page.png" width="500" height="1040" loading="lazy" alt="The FutFox Gallery page for one set: 5 of 10 cards, 120,650 Item Score and grade C, with suggested cards that reach grade B">
+        </figure>
+      </article>
+      <article class="tile tile-small b-chg">
+        <svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#swap"/></svg>
+        <h3>Change player</h3>
+        <p>Want to keep a card? Press Change and FutFox finds someone else for that spot, or a card to buy.</p>
+      </article>
+      <article class="tile tile-small b-mkt">
+        <svg class="tile-icon tile-icon-lime" aria-hidden="true"><use href="#search"/></svg>
+        <h3>Market search, filled in</h3>
+        <p>Quality, position, league and nation already set for any card your club is missing.</p>
+      </article>
+      <article class="tile tile-small b-ro tile-accent">
+        <svg class="tile-icon" aria-hidden="true"><use href="#lock"/></svg>
+        <h3>Read-only</h3>
+        <p>Never buys, bids, lists, moves players or submits. Every coin is your own click.</p>
+      </article>
     </div>
   </section>
 
@@ -217,12 +180,12 @@
             <div class="how-more"><p id="how-text-1">Sign in to the EA SPORTS FC 27 Web App in Chrome. The FutFox button appears in the bottom-right corner.</p></div>
           </li>
           <li class="how-step">
-            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-2" data-step="2"><span class="how-no" aria-hidden="true">2</span>Open an SBC</button></h3>
-            <div class="how-more"><p id="how-text-2">Open any SBC in the game, then press <strong>FutFox</strong>: it follows the challenge you're on, Streamlined ones included. Pick another from its list any time and check the rules under Requirements.</p></div>
+            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-2" data-step="2"><span class="how-no" aria-hidden="true">2</span>Load your club</button></h3>
+            <div class="how-more"><p id="how-text-2">Press <strong>FutFox</strong>: it opens on the Club tab. Press <strong>Load my club</strong> once per session and FutFox reads your club and your SBC storage the way the Club screen does, in a few seconds.</p></div>
           </li>
           <li class="how-step">
-            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-3" data-step="3"><span class="how-no" aria-hidden="true">3</span>Load your club</button></h3>
-            <div class="how-more"><p id="how-text-3">Press <strong>Load my club</strong> once per session. FutFox reads your club and your SBC storage the way the Club screen does, in a few seconds.</p></div>
+            <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-3" data-step="3"><span class="how-no" aria-hidden="true">3</span>Open an SBC</button></h3>
+            <div class="how-more"><p id="how-text-3">Open any SBC in the game: FutFox switches to the SBC tab and follows the challenge you're on, Streamlined ones included. Pick another from its list any time and check the rules under Requirements.</p></div>
           </li>
           <li class="how-step">
             <h3><button type="button" class="how-btn" aria-expanded="false" aria-controls="how-text-4" data-step="4"><span class="how-no" aria-hidden="true">4</span>Find the cheapest squad or cards</button></h3>
@@ -236,20 +199,20 @@
         <div class="how-stage" aria-hidden="true">
           <img class="shot shot-img is-active" data-step="1" src="/assets/steps/step-1.png" width="300" height="150" alt="The FutFox button in the bottom-right corner of the Web App">
           <figure class="shot panel" data-step="2">
-            <div class="panel-head"><span class="title"><svg><use href="#fox"/></svg>FutFox</span><span class="close">−</span></div>
+            <div class="panel-head"><span class="title"><svg><use href="#fox"/></svg>FutFox</span><span class="close">−</span></div><div class="panel-tabs"><span class="is-on"><svg><use href="#club"/></svg>Club</span><span><img src="/assets/icons/sbc.webp" alt="" width="18" height="18">SBC</span><span><img src="/assets/icons/token.webp" alt="" width="18" height="18">Gallery</span></div>
+            <div class="panel-body">
+              <span class="label">Your club</span>
+              <span class="club-loading"><span class="spin"></span><span>Loading your club…</span><span class="club-count">93 players so far</span></span>
+              <span class="muted-line small">Reads your club list and SBC storage the same way the Club screen does, one page every few seconds.</span>
+            </div>
+          </figure>
+          <figure class="shot panel" data-step="3">
+            <div class="panel-head"><span class="title"><svg><use href="#fox"/></svg>FutFox</span><span class="close">−</span></div><div class="panel-tabs"><span><svg><use href="#club"/></svg>Club</span><span class="is-on"><img src="/assets/icons/sbc.webp" alt="" width="18" height="18">SBC</span><span><img src="/assets/icons/token.webp" alt="" width="18" height="18">Gallery</span></div>
             <div class="panel-body">
               <span class="label">Challenge</span>
               <span class="select picker"><span><small>Premier League &amp; Barclays WSL</small>Premier League</span><span class="chip-pts"><svg class="pt"><use href="#pts"/></svg>0 / 6,000</span></span>
               <span class="label">Requirements</span>
               <ul class="reqs"><li><svg class="pt"><use href="#pts"/></svg>0 / 6,000, up to 30 cards a time</li><li><span class="good">✓</span>OVR Min: 45</li></ul>
-            </div>
-          </figure>
-          <figure class="shot panel" data-step="3">
-            <div class="panel-body">
-              <span class="label">Your club</span>
-              <span class="muted-line">93 players so far</span>
-              <span class="fake-btn"><span class="spin"></span>Loading your club…</span>
-              <span class="muted-line small">Reads your club list and SBC storage the same way the Club screen does.</span>
             </div>
           </figure>
           <figure class="shot panel" data-step="4">
@@ -402,6 +365,10 @@
           <p>If you installed it yourself, download the latest <code>futfox.zip</code> again, replace the <code>futfox</code> folder and press the reload icon on FutFox in <code>chrome://extensions</code>. The Chrome Web Store version will update itself.</p>
         </details>
         <details>
+          <summary>Is FutFox in Arabic?</summary>
+          <p>Yes. The panel speaks Arabic when the Web App is in Arabic, and Options has a switch for English or العربية.</p>
+        </details>
+        <details>
           <summary>What does it collect?</summary>
           <p>Nothing about you. There's no account and no tracking. Once a day FutFox downloads the public list of Gallery sets, sending nothing with the request. Your options, the cards it has seen and your picks stay in your own browser. Read the <a href="/privacy">privacy policy</a>.</p>
         </details>
@@ -409,7 +376,15 @@
     </div>
   </section>
 </main>
-<script src="/site.js?v=5" defer></script>
+
+<!-- The film, without sound: wide on computers, tall on phones held upright. site.js picks the file when it opens. -->
+<dialog id="film" class="film" aria-label="FutFox in 54 seconds, without sound">
+  <button type="button" class="film-close" aria-label="Close"><svg aria-hidden="true"><use href="#close"/></svg></button>
+  <video muted playsinline controls preload="none"
+    data-wide="/assets/film/film-en-16x9.mp4" data-wide-poster="/assets/film/film-en-16x9.jpg"
+    data-tall="/assets/film/film-en-9x16.mp4" data-tall-poster="/assets/film/film-en-9x16.jpg"></video>
+</dialog>
+<script src="/site.js?v=6" defer></script>
 
 <footer class="site-footer">
   <div class="wrap">
