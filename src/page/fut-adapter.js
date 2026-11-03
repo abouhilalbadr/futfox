@@ -12,6 +12,7 @@
   const H = root.FutFox;
   const { qualityOf, parseRequirement } = H.requirements;
   const { estimatePrice } = H.solver;
+  const { t } = H.i18n;
 
   const CLUB_PAGE_SIZE = 91;
   const CLUB_MAX_PAGES = 40;
@@ -190,7 +191,7 @@
       observable.observe(owner, (obs, result) => {
         obs.unobserve(owner);
         if (result && result.success) resolve(result);
-        else reject(new Error(`EA answered ${result ? result.status : 'nothing'} while ${doing}.`));
+        else reject(new Error(t('EA answered {status} while {doing}.', { status: result ? result.status : t('nothing'), doing: t(doing) })));
       });
     });
   }
@@ -557,16 +558,19 @@
   // The league's full name: its short code (ENG 1, ESP 1) is unclear and shared, as Premier
   // League and Barclays WSL both are ENG 1.
   function leagueName(id) {
-    if (!id || id < 0) return 'Any league';
+    if (!id || id < 0) return t('Any league');
     const l = attempt(() => root.repositories.TeamConfig.getLeague(id), null);
     return l ? l.name || l.abbreviation : `League ${id}`;
   }
 
   function nationName(id) {
-    if (!id || id < 0) return 'Any nation';
+    if (!id || id < 0) return t('Any nation');
     const n = attempt(() => root.repositories.TeamConfig.getNation(id), null);
     return n ? n.name : `Nation ${id}`;
   }
+
+  // The Web App's language code ('en', 'ar'...), for the panel to follow.
+  const language = () => attempt(() => root.services.Localization.locale.language, null);
 
   function positionName(typeId) {
     return (root.PlayerPosition && root.PlayerPosition[typeId]) || String(typeId);
@@ -596,6 +600,6 @@
   H.fut = {
     isReady, getChallenges, openChallengeId, shownChallengeId, rulesFor, slotsFor, requiredSlotsFor,
     knownClubItems, knownStorageItems, rememberActiveSquad, loadClub, clubPool, isStreamlined, submitLimit, streamlinedPool, galleryEnabled: GALLERY_ENABLED, galleryCards, galleryMemory, replaceGalleryMemory, ratingUsesFloat, chemThresholds, eaChemistry,
-    leagueName, nationName, positionName, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, sbcPointsImage, cardBadges, searchSlotCards, versionName,
+    leagueName, nationName, positionName, language, openMarketSearch, leagueLogo, clubBadge, rarityImage, cardImage, playerFace, tokenImage, coinImage, sbcPointsImage, cardBadges, searchSlotCards, versionName,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -14,6 +14,7 @@
   // Open on the SBC tab, whatever the Gallery capture left in this browser.
   localStorage.setItem('futfox.settings', JSON.stringify({ view: 'sbc' }));
 </script>
+<script src="../../src/core/i18n.js"></script>
 <script src="../../src/core/requirements.js"></script>
 <script src="../../src/core/rating.js"></script>
 <script src="../../src/core/chemistry.js"></script>
@@ -63,8 +64,9 @@
   let loading = null;
   FutFox.fut = {
     isReady: () => true,
-    // Shows the SBC and Gallery tabs, as in the Web App.
+    // Shows the Club, SBC and Gallery tabs, as in the Web App.
     galleryEnabled: true,
+    language: () => 'en',
     openChallengeId: () => null,
     getChallenges: () => [{ id: 1, setName: 'League and Nation Hybrid', name: '3 Leagues & 2 Nations', status: 'OPEN', challenge: {} }],
     rulesFor: () => RULES,

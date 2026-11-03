@@ -17,6 +17,7 @@
       "world": "MAIN",
       "run_at": "document_idle",
       "js": [
+        "src/core/i18n.js",
         "src/core/requirements.js",
         "src/core/rating.js",
         "src/core/chemistry.js",

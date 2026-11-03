@@ -33,7 +33,7 @@
     if (!force && copy && Date.now() - copy.fetchedAt < MAX_AGE) return copy;
     const res = await fetch(read(DEV_SOURCE_KEY) || SOURCE, { credentials: 'omit', cache: 'no-store' });
     // 404: nothing has been published yet.
-    if (!res.ok && res.status !== 404) throw new Error(`FutFox's set list answered ${res.status}.`);
+    if (!res.ok && res.status !== 404) throw new Error(H.i18n.t("FutFox's set list answered {status}.", { status: res.status }));
     const gallery = res.status === 404 ? { publishedAt: 0, sets: [] } : H.setMatch.readGallery(await res.json());
     if (!gallery) throw new Error('The set list is in a format this version of FutFox doesn\'t know. Update FutFox.');
     const fresh = { ...gallery, fetchedAt: Date.now() };
